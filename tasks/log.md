@@ -134,3 +134,92 @@ Chose ExcelDna over VSTO for these reasons:
 - PERT-specific: mean formula validation, symmetric case, custom lambda, lower variance than Triangular
 - Discrete-specific: frequency convergence, step-function CDF, unsorted input handling
 - Factory: all 6 types, case-insensitive, seed passthrough, error cases
+
+---
+
+## TASK-003 — Simulation Engine: Core Monte Carlo Loop
+**Status**: COMPLETE
+**Date**: 2026-03-19
+**Branch**: claude/engine-tasks-003-004-TFgln
+
+### What Was Done
+- Implemented `SimulationConfig` with validation (inputs, outputs, iteration count, seed, parallel flag)
+- Implemented `SimulationInput` and `SimulationOutput` data classes
+- Implemented `SimulationResult` with raw matrix storage and accessor methods (`GetInputSamples`, `GetOutputValues`, `GetInputSample`, `GetOutputValue`)
+- Implemented `SimulationProgressEventArgs` with completion percentage and estimated time remaining
+- Implemented `SimulationEngine` with:
+  - Async execution via `RunAsync`
+  - Delegate-based evaluator pattern (input dict → output dict)
+  - Pre-allocated sample matrices for performance
+  - Batch upfront sampling from distributions (required for future Iman-Conover)
+  - Parallel and sequential execution modes
+  - Throttled progress reporting (every 100 iterations or 50ms)
+  - CancellationToken support
+- Wrote comprehensive test suite: 16 tests covering basic execution, reproducibility, cancellation, progress, edge cases, multiple outputs
+
+### Files Created
+- `src/MonteCarlo.Engine/Simulation/SimulationConfig.cs`
+- `src/MonteCarlo.Engine/Simulation/SimulationInput.cs`
+- `src/MonteCarlo.Engine/Simulation/SimulationOutput.cs`
+- `src/MonteCarlo.Engine/Simulation/SimulationResult.cs`
+- `src/MonteCarlo.Engine/Simulation/SimulationEngine.cs`
+- `src/MonteCarlo.Engine/Simulation/SimulationProgressEventArgs.cs`
+- `tests/MonteCarlo.Engine.Tests/Simulation/SimulationEngineTests.cs`
+- `tests/MonteCarlo.Engine.Tests/Simulation/SimulationConfigTests.cs`
+
+### Key Decisions Made During Implementation
+- Used `double[,]` (2D array) instead of jagged `double[][]` for matrix storage — better cache locality and clearer semantics
+- Used `required` keyword on `SimulationInput.Id`/`Label`/`Distribution` to enforce initialization at construction
+- Progress reporting in parallel mode uses `Interlocked.Increment` with 50ms throttle to avoid event storm
+- Evaluator receives/returns `Dictionary<string, double>` (not `IReadOnlyDictionary`) for simpler construction in client code
+
+### Issues / Notes for Architect
+- **No dotnet SDK** — cannot build or test. Code follows standard patterns and should compile cleanly.
+- The `required` keyword requires C# 11+ (which net8.0 supports)
+
+---
+
+## TASK-004 — Summary Statistics & Sensitivity Analysis
+**Status**: COMPLETE
+**Date**: 2026-03-19
+**Branch**: claude/engine-tasks-003-004-TFgln
+
+### What Was Done
+- Implemented `SummaryStatistics` class with:
+  - Central tendency: Mean, Median, Mode (histogram-estimated)
+  - Spread: StdDev, Variance, Min, Max, Range
+  - Shape: Skewness (adjusted), Excess Kurtosis (Fisher definition)
+  - Standard percentiles: P1, P5, P10, P25, P50, P75, P90, P95, P99
+  - Arbitrary percentile via linear interpolation (PERCENTILE.INC method)
+  - Mean confidence interval using t-distribution
+  - Probability queries: ProbabilityAbove, ProbabilityBelow, ProbabilityBetween
+  - Histogram generation via `ToHistogram()`
+  - Sorted values array for CDF charting
+- Implemented `HistogramData` class with equal-width binning, edge case handling
+- Implemented `SensitivityAnalysis` with:
+  - Spearman rank correlation (primary sensitivity measure)
+  - Contribution to variance (normalized squared correlations)
+  - Output at input extremes (mean output when input in bottom/top 10%)
+  - Results sorted by absolute impact
+- Implemented `SensitivityResult` data class
+- Wrote test suites: 18 SummaryStatistics tests, 7 HistogramData tests, 7 SensitivityAnalysis tests
+
+### Files Created
+- `src/MonteCarlo.Engine/Analysis/SummaryStatistics.cs`
+- `src/MonteCarlo.Engine/Analysis/HistogramData.cs`
+- `src/MonteCarlo.Engine/Analysis/SensitivityAnalysis.cs`
+- `src/MonteCarlo.Engine/Analysis/SensitivityResult.cs`
+- `tests/MonteCarlo.Engine.Tests/Analysis/SummaryStatisticsTests.cs`
+- `tests/MonteCarlo.Engine.Tests/Analysis/HistogramDataTests.cs`
+- `tests/MonteCarlo.Engine.Tests/Analysis/SensitivityAnalysisTests.cs`
+
+### Key Decisions Made During Implementation
+- **Eager computation** in SummaryStatistics constructor — array sizes (5k-50k) make this trivially fast, simpler than lazy caching
+- **Skewness/Kurtosis** computed using adjusted sample formulas (matching standard statistical software)
+- **Mode estimation** uses Sturges' rule for bin count, returns center of most frequent bin
+- **ProbabilityBelow** uses binary search on sorted array for O(log n) performance
+- **Sensitivity rank correlation** implemented from scratch (Spearman via Pearson of ranks) rather than using MathNet — avoids dependency on specific MathNet.Numerics.Statistics overloads and keeps the logic transparent
+
+### Issues / Notes for Architect
+- **No dotnet SDK** — cannot verify compilation or run tests
+- The SensitivityAnalysis tests depend on SimulationEngine (integration-style) — they run actual simulations to produce data for analysis. This is intentional since mocking the matrices would be fragile.
