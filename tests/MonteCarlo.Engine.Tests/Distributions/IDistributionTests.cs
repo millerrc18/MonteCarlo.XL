@@ -5,15 +5,13 @@ using Xunit;
 namespace MonteCarlo.Engine.Tests.Distributions;
 
 /// <summary>
-/// Placeholder test to verify project structure and test runner configuration.
-/// Will be expanded with distribution-specific tests in TASK-002.
+/// Tests that the IDistribution interface defines the expected contract.
 /// </summary>
 public class IDistributionTests
 {
     [Fact]
     public void IDistribution_Interface_ShouldExist()
     {
-        // Verify the IDistribution interface is accessible from the test project
         var interfaceType = typeof(IDistribution);
         interfaceType.Should().NotBeNull();
         interfaceType.IsInterface.Should().BeTrue();
@@ -26,9 +24,15 @@ public class IDistributionTests
 
         interfaceType.GetProperty("Name").Should().NotBeNull();
         interfaceType.GetProperty("Mean").Should().NotBeNull();
-        interfaceType.GetMethod("Sample").Should().NotBeNull();
-        interfaceType.GetMethod("Pdf").Should().NotBeNull();
-        interfaceType.GetMethod("Cdf").Should().NotBeNull();
+        interfaceType.GetProperty("Variance").Should().NotBeNull();
+        interfaceType.GetProperty("StdDev").Should().NotBeNull();
+        interfaceType.GetProperty("Minimum").Should().NotBeNull();
+        interfaceType.GetProperty("Maximum").Should().NotBeNull();
+        interfaceType.GetMethod("Sample", Type.EmptyTypes).Should().NotBeNull();
+        interfaceType.GetMethod("Sample", new[] { typeof(int) }).Should().NotBeNull();
+        interfaceType.GetMethod("PDF").Should().NotBeNull();
+        interfaceType.GetMethod("CDF").Should().NotBeNull();
         interfaceType.GetMethod("Percentile").Should().NotBeNull();
+        interfaceType.GetMethod("ParameterSummary").Should().NotBeNull();
     }
 }
