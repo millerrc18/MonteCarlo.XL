@@ -79,3 +79,58 @@ Chose ExcelDna over VSTO for these reasons:
 
 ### Test Results
 - Cannot run tests (no dotnet SDK). Two placeholder tests written that verify the `IDistribution` interface exists and defines the required members.
+
+---
+
+## TASK-002 — Distribution Module Implementation
+**Status**: COMPLETE
+**Date**: 2026-03-19
+**Branch**: claude/work-on-current-task-99CnH
+
+### What Was Done
+- Updated `IDistribution` interface with full contract: added `Variance`, `StdDev`, `Minimum`, `Maximum`, `Sample(int count)`, `ParameterSummary()`, and capitalized `PDF`/`CDF` method names
+- Implemented all 6 Phase 1 distributions:
+  - **NormalDistribution** — wraps MathNet `Normal`
+  - **TriangularDistribution** — wraps MathNet `Triangular`
+  - **PERTDistribution** — implemented as scaled `Beta(alpha, beta)` with configurable lambda (default 4)
+  - **LognormalDistribution** — wraps MathNet `LogNormal`, parameters are μ/σ of underlying normal
+  - **UniformDistribution** — wraps MathNet `ContinuousUniform`
+  - **DiscreteDistribution** — uses MathNet `Categorical` with sorted values for consistent CDF/Percentile
+- Implemented `DistributionFactory` with case-insensitive name lookup and parameter dictionary
+- Wrote comprehensive test suite: **143 tests, all passing**
+
+### Files Created/Modified
+- `src/MonteCarlo.Engine/Distributions/IDistribution.cs` — updated with full contract
+- `src/MonteCarlo.Engine/Distributions/NormalDistribution.cs` — new
+- `src/MonteCarlo.Engine/Distributions/TriangularDistribution.cs` — new
+- `src/MonteCarlo.Engine/Distributions/PERTDistribution.cs` — new
+- `src/MonteCarlo.Engine/Distributions/LognormalDistribution.cs` — new
+- `src/MonteCarlo.Engine/Distributions/UniformDistribution.cs` — new
+- `src/MonteCarlo.Engine/Distributions/DiscreteDistribution.cs` — new
+- `src/MonteCarlo.Engine/Distributions/DistributionFactory.cs` — new
+- `tests/MonteCarlo.Engine.Tests/Distributions/IDistributionTests.cs` — updated
+- `tests/MonteCarlo.Engine.Tests/Distributions/NormalDistributionTests.cs` — new
+- `tests/MonteCarlo.Engine.Tests/Distributions/TriangularDistributionTests.cs` — new
+- `tests/MonteCarlo.Engine.Tests/Distributions/PERTDistributionTests.cs` — new
+- `tests/MonteCarlo.Engine.Tests/Distributions/LognormalDistributionTests.cs` — new
+- `tests/MonteCarlo.Engine.Tests/Distributions/UniformDistributionTests.cs` — new
+- `tests/MonteCarlo.Engine.Tests/Distributions/DiscreteDistributionTests.cs` — new
+- `tests/MonteCarlo.Engine.Tests/Distributions/DistributionFactoryTests.cs` — new
+
+### Key Decisions Made During Implementation
+- **PERT variance**: Computed as `range² × Beta.Variance` rather than the approximate formula, since we have access to the exact Beta distribution object
+- **DiscreteDistribution sorts values**: Input values/probabilities are sorted by value at construction time so CDF and Percentile behave consistently regardless of input order
+- **DistributionFactory Discrete encoding**: Uses indexed `value_0`/`prob_0`, `value_1`/`prob_1` keys since `Dictionary<string, double>` can't directly represent arrays — pragmatic trade-off for the factory pattern
+- **Method capitalization**: Used `PDF`/`CDF` (uppercase) per the task spec, changing from the TASK-001 placeholder's `Pdf`/`Cdf`
+
+### Issues / Notes for Architect
+- **WPF projects don't build on Linux**: Expected — the `net8.0-windows` projects (Charts, UI, Addin) require the Windows Desktop SDK. Engine and Engine.Tests build and test cleanly on Linux.
+- **`dotnet build` at solution level shows 4 errors** from WPF projects but Engine builds with 0 warnings. On Windows with the .NET Desktop workload, the full solution should build cleanly.
+- All distributions accept an optional `int? seed` for reproducible RNG — confirmed by reproducibility tests.
+
+### Test Results
+- **143 tests, 143 passed, 0 failed** in ~1 second
+- Test coverage per distribution: construction validation, statistical convergence (100k samples within 1% of mean / 2% of stddev), quantile round-trip (CDF∘Percentile ≈ identity), PDF numerical integration ≈ 1.0, CDF boundary conditions, seed reproducibility
+- PERT-specific: mean formula validation, symmetric case, custom lambda, lower variance than Triangular
+- Discrete-specific: frequency convergence, step-function CDF, unsorted input handling
+- Factory: all 6 types, case-insensitive, seed passthrough, error cases
