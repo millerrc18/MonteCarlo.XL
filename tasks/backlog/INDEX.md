@@ -30,7 +30,7 @@
 
 | ID | Title | Depends On | Status |
 |----|-------|------------|--------|
-| TASK-015 | Iman-Conover Correlation Engine | 002, 003 | ⬜ QUEUED |
+| TASK-015 | Iman-Conover Correlation Engine | 002, 003 | ✅ COMPLETE |
 | TASK-016 | Correlation Matrix UI | 015, 007, 008 | ⬜ QUEUED |
 | TASK-017 | Custom Excel Functions (=MC.Normal() UDFs) | 002, 013 | ⬜ QUEUED |
 | TASK-018 | Dark Theme + Performance + UX Polish | ALL | ⬜ QUEUED |

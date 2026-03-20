@@ -674,3 +674,54 @@ Chose ExcelDna over VSTO for these reasons:
 ### Test Results
 - Cannot run tests (no dotnet SDK). ~45 new tests written across 4 test files + 5 new factory tests.
 
+
+---
+
+## TASK-015 — Iman-Conover Correlation Engine
+**Status**: COMPLETE
+**Date**: 2026-03-20
+**Branch**: claude/engine-tasks-003-004-TFgln
+
+### What Was Done
+- Created `CorrelationMatrix` class in `MonteCarlo.Engine/Correlation/`:
+  - Square matrix with `Size`, indexer, `Identity()` factory, `ToArray()`
+  - `Validate()` checks: diagonal=1.0, symmetric, values in [-1,1], positive semi-definite (via eigendecomposition)
+  - `IsPositiveSemiDefinite()` for quick check
+  - `EnsurePositiveSemiDefinite()` — spectral correction: eigendecompose, clamp negative eigenvalues to 1e-10, reconstruct, rescale diagonal to 1.0
+- Created `ImanConover` static class implementing the full algorithm:
+  1. Rank-transform with average ranks for ties
+  2. Van der Waerden scores via Φ⁻¹(R/(N+1))
+  3. Pearson correlation of score matrix
+  4. Cholesky decomposition of target and current correlations
+  5. Transformation matrix M = P × Q⁻¹
+  6. Apply transformation to scores
+  7. Rank-transform transformed scores
+  8. Rearrange original samples by target ranks (preserves marginals exactly)
+- Integrated into SimulationEngine: added `Correlation` property to `SimulationConfig`, one-line hook after sample generation
+- Wrote 12 CorrelationMatrix tests and 10 ImanConover tests
+
+### Files Created
+- `src/MonteCarlo.Engine/Correlation/CorrelationMatrix.cs`
+- `src/MonteCarlo.Engine/Correlation/ImanConover.cs`
+- `tests/MonteCarlo.Engine.Tests/Correlation/CorrelationMatrixTests.cs`
+- `tests/MonteCarlo.Engine.Tests/Correlation/ImanConoverTests.cs`
+
+### Files Modified
+- `src/MonteCarlo.Engine/Simulation/SimulationConfig.cs` — added `Correlation` property
+- `src/MonteCarlo.Engine/Simulation/SimulationEngine.cs` — added Iman-Conover hook at step 3
+
+### Key Decisions Made During Implementation
+- Used MathNet.Numerics.LinearAlgebra for Cholesky and eigendecomposition (already a project dependency)
+- Spectral correction (Higham-simplified) rather than iterative alternating projection — simpler and sufficient for our use case
+- EnsurePositiveSemiDefinite returns `this` if already PSD (no unnecessary copy)
+- The Apply method modifies the input matrix in place for performance (avoids large allocation)
+
+### Issues / Notes for Architect
+- **No dotnet SDK** — cannot build or test
+- The algorithm requires at least 3 samples (documented in exception message)
+- Cholesky decomposition will fail if the target matrix is only PSD (not PD) — users should use EnsurePositiveSemiDefinite before passing to the engine
+- Test tolerances: ±0.02 for 100k samples, ±0.005 for 50k at large N, ±0.05 for small N (100)
+
+### Test Results
+- Cannot run tests (no dotnet SDK). 12 CorrelationMatrix + 10 ImanConover tests written.
+
