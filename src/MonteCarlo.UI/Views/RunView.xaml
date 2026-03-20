@@ -1,15 +1,198 @@
 <UserControl x:Class="MonteCarlo.UI.Views.RunView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:MonteCarlo.UI.ViewModels"
+             xmlns:conv="clr-namespace:MonteCarlo.UI.Converters">
+    <UserControl.Resources>
+        <conv:PercentToWidthConverter x:Key="PercentToWidth"/>
+    </UserControl.Resources>
+
+    <UserControl.DataContext>
+        <vm:RunViewModel/>
+    </UserControl.DataContext>
+
     <Grid Background="{StaticResource BackgroundBrush}">
-        <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
-            <TextBlock Text="Running"
-                       Style="{StaticResource HeadlineMedium}"
-                       HorizontalAlignment="Center"
-                       Margin="0,0,0,8"/>
-            <TextBlock Text="Simulation progress will appear here"
-                       Style="{StaticResource BodyText}"
-                       HorizontalAlignment="Center"/>
-        </StackPanel>
+        <ScrollViewer VerticalScrollBarVisibility="Auto"
+                      HorizontalScrollBarVisibility="Disabled">
+            <StackPanel Margin="16">
+
+                <!-- Header -->
+                <TextBlock Text="RUNNING SIMULATION"
+                           Style="{StaticResource HeadlineSmall}"
+                           Foreground="{StaticResource TextTertiaryBrush}"
+                           FontSize="11"
+                           Margin="0,0,0,16"/>
+
+                <!-- Progress bar -->
+                <Grid Margin="0,0,0,16">
+                    <Border Background="{StaticResource BorderBrush}"
+                            CornerRadius="4"
+                            Height="8"/>
+                    <Border Background="{StaticResource Blue500Brush}"
+                            CornerRadius="4"
+                            Height="8"
+                            HorizontalAlignment="Left">
+                        <Border.Width>
+                            <MultiBinding Converter="{StaticResource PercentToWidth}">
+                                <Binding Path="ProgressPercent"/>
+                                <Binding Path="ActualWidth" RelativeSource="{RelativeSource AncestorType=Grid}"/>
+                            </MultiBinding>
+                        </Border.Width>
+                    </Border>
+                    <TextBlock HorizontalAlignment="Right"
+                               VerticalAlignment="Top"
+                               Margin="0,-18,0,0"
+                               Style="{StaticResource BodyText}"
+                               Foreground="{StaticResource TextPrimaryBrush}"
+                               FontFamily="{StaticResource MonoFont}">
+                        <Run Text="{Binding ProgressPercent, StringFormat='{}{0:F0}', Mode=OneWay}"/><Run Text="%"/>
+                    </TextBlock>
+                </Grid>
+
+                <!-- Iteration details -->
+                <Border Style="{StaticResource Card}" Margin="0,0,0,12">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="4"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="4"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <TextBlock Grid.Row="0" Grid.Column="0" Text="Iterations:"
+                                   Style="{StaticResource CaptionText}" VerticalAlignment="Center"/>
+                        <TextBlock Grid.Row="0" Grid.Column="1"
+                                   Style="{StaticResource BodyText}"
+                                   Foreground="{StaticResource TextPrimaryBrush}"
+                                   FontFamily="{StaticResource MonoFont}"
+                                   HorizontalAlignment="Right">
+                            <Run Text="{Binding CompletedIterations, StringFormat='{}{0:N0}', Mode=OneWay}"/>
+                            <Run Text=" / "/>
+                            <Run Text="{Binding TotalIterations, StringFormat='{}{0:N0}', Mode=OneWay}"/>
+                        </TextBlock>
+
+                        <TextBlock Grid.Row="2" Grid.Column="0" Text="Elapsed:"
+                                   Style="{StaticResource CaptionText}" VerticalAlignment="Center"/>
+                        <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding ElapsedTime}"
+                                   Style="{StaticResource BodyText}"
+                                   Foreground="{StaticResource TextPrimaryBrush}"
+                                   FontFamily="{StaticResource MonoFont}"
+                                   HorizontalAlignment="Right"/>
+
+                        <TextBlock Grid.Row="4" Grid.Column="0" Text="Remaining:"
+                                   Style="{StaticResource CaptionText}" VerticalAlignment="Center"/>
+                        <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding EstimatedRemaining}"
+                                   Style="{StaticResource BodyText}"
+                                   Foreground="{StaticResource TextPrimaryBrush}"
+                                   FontFamily="{StaticResource MonoFont}"
+                                   HorizontalAlignment="Right"/>
+                    </Grid>
+                </Border>
+
+                <!-- Live preview stats -->
+                <TextBlock Text="LIVE PREVIEW"
+                           Style="{StaticResource HeadlineSmall}"
+                           Foreground="{StaticResource TextTertiaryBrush}"
+                           FontSize="11"
+                           Margin="0,4,0,8"/>
+
+                <Border Style="{StaticResource Card}" Margin="0,0,0,12">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="4"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="4"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="4"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="4"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <TextBlock Grid.Row="0" Grid.Column="0" Text="Mean:" Style="{StaticResource CaptionText}"/>
+                        <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding LiveMean}"
+                                   Style="{StaticResource BodyText}" Foreground="{StaticResource TextPrimaryBrush}"
+                                   FontFamily="{StaticResource MonoFont}" HorizontalAlignment="Right"/>
+
+                        <TextBlock Grid.Row="2" Grid.Column="0" Text="Median:" Style="{StaticResource CaptionText}"/>
+                        <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding LiveMedian}"
+                                   Style="{StaticResource BodyText}" Foreground="{StaticResource TextPrimaryBrush}"
+                                   FontFamily="{StaticResource MonoFont}" HorizontalAlignment="Right"/>
+
+                        <TextBlock Grid.Row="4" Grid.Column="0" Text="Std Dev:" Style="{StaticResource CaptionText}"/>
+                        <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding LiveStdDev}"
+                                   Style="{StaticResource BodyText}" Foreground="{StaticResource TextPrimaryBrush}"
+                                   FontFamily="{StaticResource MonoFont}" HorizontalAlignment="Right"/>
+
+                        <TextBlock Grid.Row="6" Grid.Column="0" Text="P5:" Style="{StaticResource CaptionText}"/>
+                        <TextBlock Grid.Row="6" Grid.Column="1" Text="{Binding LiveP5}"
+                                   Style="{StaticResource BodyText}" Foreground="{StaticResource TextPrimaryBrush}"
+                                   FontFamily="{StaticResource MonoFont}" HorizontalAlignment="Right"/>
+
+                        <TextBlock Grid.Row="8" Grid.Column="0" Text="P95:" Style="{StaticResource CaptionText}"/>
+                        <TextBlock Grid.Row="8" Grid.Column="1" Text="{Binding LiveP95}"
+                                   Style="{StaticResource BodyText}" Foreground="{StaticResource TextPrimaryBrush}"
+                                   FontFamily="{StaticResource MonoFont}" HorizontalAlignment="Right"/>
+                    </Grid>
+                </Border>
+
+                <!-- Convergence indicators -->
+                <TextBlock Text="CONVERGENCE"
+                           Style="{StaticResource HeadlineSmall}"
+                           Foreground="{StaticResource TextTertiaryBrush}"
+                           FontSize="11"
+                           Margin="0,4,0,8"/>
+
+                <Border Style="{StaticResource Card}" Margin="0,0,0,16">
+                    <ItemsControl ItemsSource="{Binding ConvergenceIndicators}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Grid Margin="0,2">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="60"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0" Text="{Binding StatName}"
+                                               Style="{StaticResource CaptionText}"
+                                               VerticalAlignment="Center"/>
+                                    <Border Grid.Column="1" Height="3" CornerRadius="1.5"
+                                            Background="{StaticResource BorderBrush}"
+                                            Margin="4,0" VerticalAlignment="Center"/>
+                                    <TextBlock Grid.Column="2" Text="{Binding StatusText}"
+                                               Style="{StaticResource CaptionText}"
+                                               FontWeight="SemiBold"
+                                               VerticalAlignment="Center"/>
+                                </Grid>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </Border>
+
+                <!-- Stop button -->
+                <Button Style="{StaticResource SecondaryButton}"
+                        Command="{Binding StopSimulationCommand}"
+                        HorizontalAlignment="Stretch"
+                        Padding="16,12"
+                        FontSize="15"
+                        BorderBrush="{StaticResource Red500Brush}">
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                        <TextBlock Text="&#x25A0;" Foreground="{StaticResource Red500Brush}" Margin="0,0,8,0"/>
+                        <TextBlock Text="Stop Simulation" Foreground="{StaticResource Red500Brush}"/>
+                    </StackPanel>
+                </Button>
+
+            </StackPanel>
+        </ScrollViewer>
     </Grid>
 </UserControl>
