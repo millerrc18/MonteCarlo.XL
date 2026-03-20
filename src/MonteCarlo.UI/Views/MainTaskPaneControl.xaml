@@ -1,0 +1,68 @@
+<UserControl x:Class="MonteCarlo.UI.Views.MainTaskPaneControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:MonteCarlo.UI.ViewModels"
+             xmlns:conv="clr-namespace:MonteCarlo.UI.Converters"
+             MinWidth="320">
+
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="pack://application:,,,/MonteCarlo.UI;component/Styles/GlobalStyles.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+            <conv:StringMatchConverter x:Key="StringMatchConverter"/>
+        </ResourceDictionary>
+    </UserControl.Resources>
+
+    <UserControl.DataContext>
+        <vm:MainViewModel/>
+    </UserControl.DataContext>
+
+    <Grid Background="{StaticResource BackgroundBrush}">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>  <!-- Header -->
+            <RowDefinition Height="*"/>     <!-- Content -->
+            <RowDefinition Height="Auto"/>  <!-- Tab bar -->
+        </Grid.RowDefinitions>
+
+        <!-- Header bar -->
+        <Border Grid.Row="0"
+                Background="{StaticResource SurfaceBrush}"
+                BorderBrush="{StaticResource BorderBrush}"
+                BorderThickness="0,0,0,1"
+                Padding="16,12">
+            <Grid>
+                <TextBlock Text="{Binding Title}"
+                           Style="{StaticResource HeadlineSmall}"
+                           VerticalAlignment="Center"/>
+                <Button Content="&#x2699;"
+                        Style="{StaticResource GhostButton}"
+                        HorizontalAlignment="Right"
+                        FontSize="16"
+                        Command="{Binding NavigateToSettingsCommand}"
+                        ToolTip="Settings"/>
+            </Grid>
+        </Border>
+
+        <!-- Content area — displays the current view -->
+        <ContentControl Grid.Row="1"
+                        Content="{Binding CurrentView}"/>
+
+        <!-- Bottom tab bar -->
+        <Border Grid.Row="2"
+                Background="{StaticResource SurfaceBrush}"
+                BorderBrush="{StaticResource BorderBrush}"
+                BorderThickness="0,1,0,0">
+            <UniformGrid Rows="1" HorizontalAlignment="Center">
+                <RadioButton Content="Setup"
+                             Style="{StaticResource TabBarButton}"
+                             IsChecked="{Binding CurrentViewName, Converter={StaticResource StringMatchConverter}, ConverterParameter=Setup, Mode=OneWay}"
+                             Command="{Binding NavigateToSetupCommand}"/>
+                <RadioButton Content="Results"
+                             Style="{StaticResource TabBarButton}"
+                             IsChecked="{Binding CurrentViewName, Converter={StaticResource StringMatchConverter}, ConverterParameter=Results, Mode=OneWay}"
+                             Command="{Binding NavigateToResultsCommand}"/>
+            </UniformGrid>
+        </Border>
+    </Grid>
+</UserControl>
