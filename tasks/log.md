@@ -489,3 +489,54 @@ Chose ExcelDna over VSTO for these reasons:
 ### Test Results
 - No tests — this is a visual rendering control. Layout math could be unit-tested if desired.
 
+
+---
+
+## TASK-011 — Config Persistence + Run View + Convergence
+**Status**: COMPLETE
+**Date**: 2026-03-20
+**Branch**: claude/engine-tasks-003-004-TFgln
+
+### What Was Done
+
+**Part A: Config Persistence**
+- Created `SimulationProfile`, `SavedInput`, `SavedOutput` in MonteCarlo.Engine with System.Text.Json serialization attributes
+- Created `ConfigPersistence` in MonteCarlo.Addin using CustomXMLParts with namespace `urn:montecarlo-xl:config:v1`
+- JSON payload wrapped in XML CDATA for clean storage
+- Fallback to hidden `__MC_Config` sheet if CustomXMLParts unavailable
+- Save, Load, Clear, and GetProfileNames operations
+
+**Part B: Run View**
+- Created `RunViewModel` with progress tracking, live stats, convergence indicators, and Stop event
+- Replaced placeholder RunView with full UI: progress bar (custom Border-based), iteration counter, elapsed/remaining time, live preview stats (Mean, Median, StdDev, P5, P95), convergence panel, and red Stop button
+- Created `PercentToWidthConverter` for the progress bar fill width
+
+**Part C: Convergence Monitor**
+- Created `ConvergenceChecker` in MonteCarlo.Engine with rolling window stability detection
+- Monitors Mean, P50, P90, StdDev at configurable checkpoint intervals
+- Reports Stable/Drifting/Unstable status based on relative change rate vs tolerance
+- 12 unit tests covering stable/unstable series, tight tolerance, insufficient data, reset
+
+### Files Created/Modified
+- `src/MonteCarlo.Engine/Simulation/SimulationProfile.cs` — Config model
+- `src/MonteCarlo.Engine/Analysis/ConvergenceChecker.cs` — Convergence monitor
+- `src/MonteCarlo.Addin/Excel/ConfigPersistence.cs` — CustomXMLPart persistence
+- `src/MonteCarlo.UI/ViewModels/RunViewModel.cs` — Run view VM
+- `src/MonteCarlo.UI/Views/RunView.xaml/.cs` — Full run view replacing placeholder
+- `src/MonteCarlo.UI/Converters/PercentToWidthConverter.cs` — Progress bar converter
+- `tests/MonteCarlo.Engine.Tests/Analysis/ConvergenceCheckerTests.cs` — 12 tests
+
+### Key Decisions Made During Implementation
+- Used a custom Border-based progress bar instead of WPF ProgressBar for full design system control (color, corner radius)
+- Auto-save/auto-load hooks not wired yet — will be connected in TASK-013 (Orchestrator)
+- ConvergenceChecker stores full checkpoint history (not just windowed) for potential future charting
+- Convergence indicator colors are strings (hex) in the ViewModel since WPF converters will handle brush binding
+
+### Issues / Notes for Architect
+- The progress bar uses a MultiBinding with PercentToWidth converter — this is clean but the binding to parent Grid.ActualWidth may need runtime verification
+- Auto-save debouncing not yet implemented in SetupViewModel — planned for TASK-013 wiring
+- No .NET SDK — cannot verify compilation or run tests
+
+### Test Results
+- 12 ConvergenceChecker tests written (cannot run without .NET SDK)
+
