@@ -1,0 +1,15 @@
+<UserControl x:Class="MonteCarlo.UI.Views.ResultsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Grid Background="{StaticResource BackgroundBrush}">
+        <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+            <TextBlock Text="Results"
+                       Style="{StaticResource HeadlineMedium}"
+                       HorizontalAlignment="Center"
+                       Margin="0,0,0,8"/>
+            <TextBlock Text="Histogram, statistics, and tornado chart"
+                       Style="{StaticResource BodyText}"
+                       HorizontalAlignment="Center"/>
+        </StackPanel>
+    </Grid>
+</UserControl>
