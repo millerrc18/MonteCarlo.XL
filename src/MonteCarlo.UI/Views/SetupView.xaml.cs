@@ -1,4 +1,5 @@
 using System.Windows.Controls;
+using MonteCarlo.UI.ViewModels;
 
 namespace MonteCarlo.UI.Views;
 
@@ -11,4 +12,9 @@ public partial class SetupView : UserControl
     {
         InitializeComponent();
     }
+
+    /// <summary>
+    /// Gets the SetupViewModel for external wiring (e.g., cell selection, run events).
+    /// </summary>
+    public SetupViewModel ViewModel => (SetupViewModel)DataContext;
 }
