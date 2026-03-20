@@ -540,3 +540,38 @@ Chose ExcelDna over VSTO for these reasons:
 ### Test Results
 - 12 ConvergenceChecker tests written (cannot run without .NET SDK)
 
+
+---
+
+## TASK-012 — Results Export to Excel Sheet
+**Status**: COMPLETE
+**Date**: 2026-03-20
+**Branch**: claude/engine-tasks-003-004-TFgln
+
+### What Was Done
+- Created `ChartImageRenderer` with WPF RenderTargetBitmap (high-DPI) and SkiaSharp SKBitmap export to PNG bytes
+- Created `ResultsExporter` with ExportSummary and ExportRawData methods
+- ExportSummary writes: title section, summary stats table, percentiles table, sensitivity table (top 10), input assumptions table, embedded chart images
+- Professional formatting: bold section headers with bottom borders, alternating row shading (#F8FAFC), auto-fit columns, number-formatted values, colored sheet tabs
+- ExportRawData writes iteration-level data as a single 2D array write for performance
+- Helper methods for column letter conversion, number format detection, distribution formatting
+
+### Files Created/Modified
+- `src/MonteCarlo.Addin/Export/ChartImageRenderer.cs` — PNG rendering from WPF and SkiaSharp
+- `src/MonteCarlo.Addin/Export/ResultsExporter.cs` — Full export implementation
+
+### Key Decisions Made During Implementation
+- Used 2D array write (`Range.Value2 = data`) for raw data export — orders of magnitude faster than cell-by-cell
+- Sheet names truncated to 31 chars (Excel limit)
+- Tab color uses BGR format (Excel COM convention)
+- Existing sheets with same name are cleared and reused rather than creating duplicates
+- Chart images use temp files for embedding (Excel COM requires file paths for AddPicture)
+
+### Issues / Notes for Architect
+- The ExportSummary method requires chart PNG bytes as parameters — the Orchestrator (TASK-013) will need to render the charts before calling export
+- BGR color values for Excel COM should be verified at runtime
+- No .NET SDK — cannot verify compilation
+
+### Test Results
+- No tests — COM-dependent code. Manual testing required.
+

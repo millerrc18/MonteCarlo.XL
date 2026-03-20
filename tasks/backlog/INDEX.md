@@ -17,7 +17,7 @@
 | TASK-009 | Results Dashboard — Histogram, CDF, Stats Panel | 004, 007 | ✅ COMPLETE |
 | TASK-010 | Tornado Chart (Custom SkiaSharp) | 005, 007 | ✅ COMPLETE |
 | TASK-011 | Config Persistence + Run View + Convergence | 003, 006, 007 | ✅ COMPLETE |
-| TASK-012 | Results Export to Excel Sheet | 004, 005, 006, 009, 010 | ⬜ QUEUED |
+| TASK-012 | Results Export to Excel Sheet | 004, 005, 006, 009, 010 | ✅ COMPLETE |
 | TASK-013 | Simulation Orchestrator (End-to-End Integration) | 002–012 | ⬜ QUEUED |
 
 ## Phase 2 — Advanced Features
