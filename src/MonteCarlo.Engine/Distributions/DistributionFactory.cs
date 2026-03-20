@@ -8,7 +8,8 @@ public static class DistributionFactory
 {
     private static readonly IReadOnlyList<string> _available = new[]
     {
-        "Normal", "Triangular", "PERT", "Lognormal", "Uniform", "Discrete"
+        "Normal", "Triangular", "PERT", "Lognormal", "Uniform", "Discrete",
+        "Beta", "Weibull", "Exponential", "Poisson"
     };
 
     /// <summary>
@@ -37,6 +38,10 @@ public static class DistributionFactory
             "lognormal" => CreateLognormal(parameters, seed),
             "uniform" => CreateUniform(parameters, seed),
             "discrete" => CreateDiscrete(parameters, seed),
+            "beta" => CreateBeta(parameters, seed),
+            "weibull" => CreateWeibull(parameters, seed),
+            "exponential" => CreateExponential(parameters, seed),
+            "poisson" => CreatePoisson(parameters, seed),
             _ => throw new ArgumentException($"Unknown distribution: '{name}'. Available: {string.Join(", ", _available)}.", nameof(name))
         };
     }
@@ -90,4 +95,16 @@ public static class DistributionFactory
 
         return new DiscreteDistribution(values.ToArray(), probs.ToArray(), seed);
     }
+
+    private static BetaDistribution CreateBeta(Dictionary<string, double> p, int? seed) =>
+        new(GetRequired(p, "alpha"), GetRequired(p, "beta"), seed);
+
+    private static WeibullDistribution CreateWeibull(Dictionary<string, double> p, int? seed) =>
+        new(GetRequired(p, "shape"), GetRequired(p, "scale"), seed);
+
+    private static ExponentialDistribution CreateExponential(Dictionary<string, double> p, int? seed) =>
+        new(GetRequired(p, "rate"), seed);
+
+    private static PoissonDistribution CreatePoisson(Dictionary<string, double> p, int? seed) =>
+        new(GetRequired(p, "lambda"), seed);
 }

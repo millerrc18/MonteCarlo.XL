@@ -9,16 +9,20 @@ public class DistributionFactoryTests
     // --- Available Distributions ---
 
     [Fact]
-    public void AvailableDistributions_ContainsAllSix()
+    public void AvailableDistributions_ContainsAllTen()
     {
         var available = DistributionFactory.AvailableDistributions;
-        available.Should().HaveCount(6);
+        available.Should().HaveCount(10);
         available.Should().Contain("Normal");
         available.Should().Contain("Triangular");
         available.Should().Contain("PERT");
         available.Should().Contain("Lognormal");
         available.Should().Contain("Uniform");
         available.Should().Contain("Discrete");
+        available.Should().Contain("Beta");
+        available.Should().Contain("Weibull");
+        available.Should().Contain("Exponential");
+        available.Should().Contain("Poisson");
     }
 
     // --- Creates Each Type ---
@@ -112,6 +116,51 @@ public class DistributionFactoryTests
         dist.Should().BeOfType<DiscreteDistribution>();
         double expectedMean = 10 * 0.3 + 20 * 0.7;
         dist.Mean.Should().BeApproximately(expectedMean, 1e-10);
+    }
+
+    [Fact]
+    public void Create_Beta()
+    {
+        var dist = DistributionFactory.Create("Beta", new Dictionary<string, double>
+        {
+            { "alpha", 2 },
+            { "beta", 5 }
+        });
+        dist.Should().BeOfType<BetaDistribution>();
+        dist.Mean.Should().BeApproximately(2.0 / 7.0, 1e-10);
+    }
+
+    [Fact]
+    public void Create_Weibull()
+    {
+        var dist = DistributionFactory.Create("Weibull", new Dictionary<string, double>
+        {
+            { "shape", 2 },
+            { "scale", 100 }
+        });
+        dist.Should().BeOfType<WeibullDistribution>();
+    }
+
+    [Fact]
+    public void Create_Exponential()
+    {
+        var dist = DistributionFactory.Create("Exponential", new Dictionary<string, double>
+        {
+            { "rate", 0.5 }
+        });
+        dist.Should().BeOfType<ExponentialDistribution>();
+        dist.Mean.Should().BeApproximately(2.0, 1e-10);
+    }
+
+    [Fact]
+    public void Create_Poisson()
+    {
+        var dist = DistributionFactory.Create("Poisson", new Dictionary<string, double>
+        {
+            { "lambda", 4.5 }
+        });
+        dist.Should().BeOfType<PoissonDistribution>();
+        dist.Mean.Should().BeApproximately(4.5, 1e-10);
     }
 
     // --- Case Insensitive ---
