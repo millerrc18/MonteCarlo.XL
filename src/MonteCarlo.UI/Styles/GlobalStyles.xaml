@@ -97,7 +97,6 @@
         <Setter Property="FontSize" Value="11"/>
         <Setter Property="FontWeight" Value="Normal"/>
         <Setter Property="Foreground" Value="{StaticResource TextTertiaryBrush}"/>
-        <Setter Property="TextTransform" Value="Uppercase" />
     </Style>
 
     <!-- ========================================

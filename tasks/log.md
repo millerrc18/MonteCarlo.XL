@@ -223,3 +223,126 @@ Chose ExcelDna over VSTO for these reasons:
 ### Issues / Notes for Architect
 - **No dotnet SDK** — cannot verify compilation or run tests
 - The SensitivityAnalysis tests depend on SimulationEngine (integration-style) — they run actual simulations to produce data for analysis. This is intentional since mocking the matrices would be fragile.
+
+---
+
+## TASK-005 — Sensitivity Analysis (Gap Fill)
+**Status**: COMPLETE
+**Date**: 2026-03-20
+**Branch**: main
+
+### What Was Done
+- Added `Swing` computed property to `SensitivityResult` (|OutputAtInputP90 - OutputAtInputP10|)
+- Added `ComputeTornadoSwing()` static method to `SensitivityAnalysis` — evaluator-based direct swing calculation
+- Added 4 missing tests: single input, equal contributions, Swing property, evaluator-based tornado swing
+
+### Files Modified
+- `src/MonteCarlo.Engine/Analysis/SensitivityResult.cs` — added Swing property
+- `src/MonteCarlo.Engine/Analysis/SensitivityAnalysis.cs` — added ComputeTornadoSwing method
+- `tests/MonteCarlo.Engine.Tests/Analysis/SensitivityAnalysisTests.cs` — added 4 tests
+
+---
+
+## TASK-006 — Excel I/O Layer
+**Status**: COMPLETE
+**Date**: 2026-03-20
+**Branch**: main
+
+### What Was Done
+- Created `CellReference` model with equality/hashing for use as dictionary keys
+- Created `IWorkbookManager` interface and `WorkbookManager` implementation:
+  - ReadCellValue / ReadCellValues (batched by sheet) with numeric validation
+  - WriteCellValue / WriteRange (single COM call for 2D arrays)
+  - WriteResultsSheet (headers + data to named sheet)
+  - GetActiveCell, SheetExists, EnsureSheet
+  - Screen updating disabled during batch writes
+- Created `IInputTagManager` / `InputTagManager`:
+  - Tag/untag cells as inputs with distribution config
+  - `ToSimulationInputs()` converts tags to engine inputs via DistributionFactory
+- Created `IOutputTagManager` / `OutputTagManager`:
+  - Tag/untag cells as outputs
+  - `ToSimulationOutputs()` converts tags to engine outputs
+- Created `ICellHighlighter` / `CellHighlighter`:
+  - Blue (#DBEAFE) background for inputs, green (#DCFCE7) for outputs
+  - RefreshAll with screen updating disabled
+- Created `TaggedInput` and `TaggedOutput` data models
+
+### Files Created
+- `src/MonteCarlo.Addin/Excel/CellReference.cs`
+- `src/MonteCarlo.Addin/Excel/IWorkbookManager.cs`
+- `src/MonteCarlo.Addin/Excel/WorkbookManager.cs`
+- `src/MonteCarlo.Addin/Excel/TaggedInput.cs`
+- `src/MonteCarlo.Addin/Excel/TaggedOutput.cs`
+- `src/MonteCarlo.Addin/Excel/IInputTagManager.cs`
+- `src/MonteCarlo.Addin/Excel/InputTagManager.cs`
+- `src/MonteCarlo.Addin/Excel/IOutputTagManager.cs`
+- `src/MonteCarlo.Addin/Excel/OutputTagManager.cs`
+- `src/MonteCarlo.Addin/Excel/ICellHighlighter.cs`
+- `src/MonteCarlo.Addin/Excel/CellHighlighter.cs`
+
+### Key Decisions
+- All classes have interfaces for testability (UI code can mock the Excel layer)
+- CellReference uses case-insensitive equality for sheet names and cell addresses
+- WorkbookManager groups batch reads by sheet to minimize COM round-trips
+- InputTagManager.ToSimulationInputs reads current cell values as BaseValue and uses DistributionFactory
+
+### Issues / Notes for Architect
+- **No dotnet SDK** — cannot build. All COM interop code follows ExcelDna conventions.
+- Testing is manual (requires Excel). Interfaces enable mocking in UI tests.
+
+---
+
+## TASK-007 — Ribbon & WPF Task Pane Shell
+**Status**: COMPLETE
+**Date**: 2026-03-20
+**Branch**: main
+
+### What Was Done
+- Created `GlobalStyles.xaml` with full design system:
+  - Color palette: 8 primary colors + 7 neutrals with SolidColorBrush variants
+  - Typography: 6 text styles (HeadlineLarge through StatLabel) + mono font
+  - Spacing constants: Xs(4) through Xxl(32)
+  - Button styles: PrimaryButton (blue), SecondaryButton (outlined), GhostButton (text)
+  - Card style, TabBarButton style for bottom navigation
+  - Hover/press/disabled triggers on all interactive styles
+- Created `MainTaskPaneControl` (WPF UserControl):
+  - Header bar with title + settings gear button
+  - Content area bound to ViewModel.CurrentView via ContentControl
+  - Bottom tab bar with Setup/Results RadioButton navigation
+  - Loads GlobalStyles.xaml as merged resource dictionary
+- Created `MainViewModel` with CommunityToolkit.Mvvm:
+  - NavigateTo commands for Setup, Results, Settings, Run
+  - CurrentView and CurrentViewName observable properties
+- Created 4 placeholder views: SetupView, RunView, ResultsView, SettingsView
+- Created `StringMatchConverter` for RadioButton IsChecked binding
+- Created `TaskPaneController` — manages ExcelDna Custom Task Pane lifecycle
+- Created `TaskPaneHost` — WinForms UserControl bridging to WPF via ElementHost
+- Updated `MonteCarloRibbon`:
+  - Task Pane is now a toggleButton with getPressed callback
+  - All buttons have screentips/supertips
+  - Run callback shows task pane, Settings callback shows task pane
+- Updated `AddIn.AutoOpen/AutoClose` to initialize all services
+- Updated `MonteCarlo.Addin.csproj`: added UseWPF, UseWindowsForms, ExcelDna.Interop
+
+### Files Created
+- `src/MonteCarlo.UI/Styles/GlobalStyles.xaml`
+- `src/MonteCarlo.UI/Views/MainTaskPaneControl.xaml` + `.xaml.cs`
+- `src/MonteCarlo.UI/Views/SetupView.xaml` + `.xaml.cs`
+- `src/MonteCarlo.UI/Views/RunView.xaml` + `.xaml.cs`
+- `src/MonteCarlo.UI/Views/ResultsView.xaml` + `.xaml.cs`
+- `src/MonteCarlo.UI/Views/SettingsView.xaml` + `.xaml.cs`
+- `src/MonteCarlo.UI/Converters/StringMatchConverter.cs`
+- `src/MonteCarlo.Addin/TaskPane/TaskPaneController.cs`
+- `src/MonteCarlo.Addin/TaskPane/TaskPaneHost.cs`
+
+### Files Modified
+- `src/MonteCarlo.UI/ViewModels/MainViewModel.cs` — full navigation logic
+- `src/MonteCarlo.Addin/AddIn.cs` — service initialization
+- `src/MonteCarlo.Addin/MonteCarloRibbon.cs` — toggle button, callbacks
+- `src/MonteCarlo.Addin/MonteCarlo.Addin.csproj` — WPF/WinForms/Interop
+
+### Issues / Notes for Architect
+- **No dotnet SDK or Excel** — cannot build or smoke-test
+- Task pane defaults to 380px wide, docked right
+- GlobalStyles.xaml is loaded in MainTaskPaneControl.Resources (no App.xaml in Excel add-in)
+- The StatLabel style uses TextTransform="Uppercase" — this is not a native WPF property and would need a converter if actually used; consider removing or implementing via a text converter in a future task
