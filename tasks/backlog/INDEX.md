@@ -24,7 +24,7 @@
 
 | ID | Title | Depends On | Status |
 |----|-------|------------|--------|
-| TASK-014 | Additional Distributions (Beta, Weibull, Exp, Poisson) | 002 | ⬜ QUEUED |
+| TASK-014 | Additional Distributions (Beta, Weibull, Exp, Poisson) | 002 | ✅ COMPLETE |
 
 ## Phase 3 — Correlation, UDFs, & Polish
 

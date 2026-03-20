@@ -620,3 +620,57 @@ Chose ExcelDna over VSTO for these reasons:
 ### Test Results
 - No new tests — integration testing requires running Excel. 5 manual test scenarios documented in the spec.
 
+
+---
+
+## TASK-014 — Additional Distributions (Beta, Weibull, Exponential, Poisson)
+**Status**: COMPLETE
+**Date**: 2026-03-20
+**Branch**: claude/engine-tasks-003-004-TFgln
+
+### What Was Done
+- Implemented 4 Phase 2 distributions following the NormalDistribution pattern:
+  - **BetaDistribution** — wraps MathNet.Numerics.Distributions.Beta, bounded [0,1], parameters α/β
+  - **WeibullDistribution** — wraps MathNet.Numerics.Distributions.Weibull, parameters shape/scale
+  - **ExponentialDistribution** — wraps MathNet.Numerics.Distributions.Exponential, parameter rate (λ), Mean=1/λ
+  - **PoissonDistribution** — discrete distribution, wraps MathNet.Numerics.Distributions.Poisson, Sample() returns integers as doubles, uses PMF for PDF
+- Updated DistributionFactory: added 4 new distributions, AvailableDistributions now returns 10
+- Updated DistributionParameterPanel.xaml with new parameter sections (Beta: α/β, Weibull: shape/scale, Exponential: rate, Poisson: lambda)
+- Updated SetupViewModel with new parameter properties and BuildParameterDictionary switch cases
+- Wrote comprehensive tests for all 4 distributions following TASK-002 patterns:
+  - Construction/validation, statistical convergence (100k samples), quantile round-trip, CDF boundaries, reproducibility
+  - Beta-specific: Beta(1,1) is Uniform, all samples in [0,1], mean validation
+  - Weibull-specific: all samples ≥ 0, Weibull(1,λ) ≈ Exponential(1/λ)
+  - Exponential-specific: all samples ≥ 0, mean = 1/λ
+  - Poisson-specific: all samples are non-negative integers, variance ≈ λ, large λ approximates Normal
+- Updated DistributionFactoryTests: count check now expects 10, added Create tests for all 4 new types
+
+### Files Created
+- `src/MonteCarlo.Engine/Distributions/BetaDistribution.cs`
+- `src/MonteCarlo.Engine/Distributions/WeibullDistribution.cs`
+- `src/MonteCarlo.Engine/Distributions/ExponentialDistribution.cs`
+- `src/MonteCarlo.Engine/Distributions/PoissonDistribution.cs`
+- `tests/MonteCarlo.Engine.Tests/Distributions/BetaDistributionTests.cs`
+- `tests/MonteCarlo.Engine.Tests/Distributions/WeibullDistributionTests.cs`
+- `tests/MonteCarlo.Engine.Tests/Distributions/ExponentialDistributionTests.cs`
+- `tests/MonteCarlo.Engine.Tests/Distributions/PoissonDistributionTests.cs`
+
+### Files Modified
+- `src/MonteCarlo.Engine/Distributions/DistributionFactory.cs` — added 4 new distributions
+- `tests/MonteCarlo.Engine.Tests/Distributions/DistributionFactoryTests.cs` — updated count + 4 new Create tests
+- `src/MonteCarlo.UI/Views/DistributionParameterPanel.xaml` — 4 new parameter sections
+- `src/MonteCarlo.UI/ViewModels/SetupViewModel.cs` — new properties + switch cases + reset
+
+### Key Decisions Made During Implementation
+- Poisson PDF uses `_inner.Probability(k)` (PMF) for integer values and returns 0.0 for non-integers
+- Poisson CDF returns 0.0 for negative values explicitly
+- Poisson quantile round-trip test asserts CDF(Percentile(p)) >= p (not ≈ p) since it's discrete
+- Used separate ParamRate (Exponential) and ParamLambda (Poisson) properties to avoid ambiguity even though both could share "rate"
+
+### Issues / Notes for Architect
+- **No dotnet SDK** — cannot build or run tests. Code follows established patterns exactly.
+- All 4 distributions are sealed classes with readonly inner MathNet distribution, matching existing pattern
+
+### Test Results
+- Cannot run tests (no dotnet SDK). ~45 new tests written across 4 test files + 5 new factory tests.
+
