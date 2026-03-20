@@ -450,3 +450,42 @@ Chose ExcelDna over VSTO for these reasons:
 ### Test Results
 - No tests — this is a UI/charting task. Cannot build without .NET SDK.
 
+
+---
+
+## TASK-010 — Tornado Chart (Custom SkiaSharp)
+**Status**: COMPLETE
+**Date**: 2026-03-20
+**Branch**: claude/engine-tasks-003-004-TFgln
+
+### What Was Done
+- Created `TornadoChart` as a custom SkiaSharp `SKElement` control in MonteCarlo.Charts
+- Renders bidirectional horizontal bars: blue (#3B82F6) for increase, orange (#F97316) for decrease
+- Bars sorted by absolute impact (largest at top), with 2px corner radius on outer ends
+- Center baseline with "Base: $X.XM" label below
+- Input labels right-aligned on the left axis
+- Bar-tip annotations showing output range (P10 — P90 values)
+- Header labels ("◀ Decreases" / "Increases ▶") at the top
+- Hover interaction: highlights bar pair and shows dark tooltip with input name, P10/P90 output values, swing amount, and variance contribution
+- MaxInputsToShow (default 10) with ShowAll toggle
+- Configurable ValueFormatter for number display
+- Empty state rendering when no data is available
+
+### Files Created/Modified
+- `src/MonteCarlo.Charts/Controls/TornadoChart.cs` — Full custom SkiaSharp control (~420 lines)
+
+### Key Decisions Made During Implementation
+- Used SKRoundRect with per-corner radii for the 2px outer-end bar radius effect
+- Hit-testing uses Y-band detection (simpler than full rect containment) since bars span the full width contextually
+- Tooltip positioned above the hovered bar, with fallback below if near the top
+- Label column and annotation column widths are measured dynamically based on actual text width
+- Chart does not use XAML (pure code control) as recommended by the spec — SkiaSharp SKElement doesn't need XAML
+
+### Issues / Notes for Architect
+- The `DrawRoundRect` with asymmetric corner radii uses `SKRoundRect(rect, rx1, ry1, rx2, ry2)` constructor — need to verify this is the correct SkiaSharp API (may need per-corner `SetRectRadii` instead)
+- No sub-label (distribution info) below input labels yet — kept labels single-line for cleaner look at 380px task pane width. Can be added if desired.
+- No .NET SDK available — cannot verify compilation
+
+### Test Results
+- No tests — this is a visual rendering control. Layout math could be unit-tested if desired.
+
