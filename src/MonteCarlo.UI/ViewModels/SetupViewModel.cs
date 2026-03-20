@@ -132,6 +132,15 @@ public partial class SetupViewModel : ObservableObject
     /// <summary>Whether the Run button should be enabled.</summary>
     public bool CanRun => Inputs.Count > 0 && Outputs.Count > 0;
 
+    /// <summary>Whether the Define Correlations button is enabled (2+ inputs).</summary>
+    public bool CanDefineCorrelations => Inputs.Count >= 2;
+
+    /// <summary>Saved correlation matrix values. Null means independent.</summary>
+    public double[,]? CorrelationMatrixValues { get; set; }
+
+    /// <summary>Event raised when the user wants to open the correlation editor.</summary>
+    public event Action? CorrelationEditorRequested;
+
     /// <summary>Event raised when the user clicks Run Simulation.</summary>
     public event EventHandler? RunSimulationRequested;
 
@@ -163,8 +172,18 @@ public partial class SetupViewModel : ObservableObject
 
     public SetupViewModel()
     {
-        Inputs.CollectionChanged += (_, _) => OnPropertyChanged(nameof(CanRun));
+        Inputs.CollectionChanged += (_, _) =>
+        {
+            OnPropertyChanged(nameof(CanRun));
+            OnPropertyChanged(nameof(CanDefineCorrelations));
+        };
         Outputs.CollectionChanged += (_, _) => OnPropertyChanged(nameof(CanRun));
+    }
+
+    [RelayCommand]
+    private void OpenCorrelationEditor()
+    {
+        CorrelationEditorRequested?.Invoke();
     }
 
     partial void OnSelectedDistributionChanged(string value)

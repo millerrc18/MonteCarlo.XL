@@ -110,6 +110,25 @@
                            Margin="0,4,0,12"
                            Visibility="{Binding Inputs.Count, Converter={StaticResource CountToVisibility}}"/>
 
+                <!-- Correlation button (visible when 2+ inputs) -->
+                <Button Style="{StaticResource GhostButton}"
+                        Command="{Binding OpenCorrelationEditorCommand}"
+                        HorizontalAlignment="Left"
+                        Padding="8,6"
+                        Margin="0,0,0,8">
+                    <Button.IsEnabled>
+                        <Binding Path="CanDefineCorrelations"/>
+                    </Button.IsEnabled>
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="📊 " FontSize="12"/>
+                        <TextBlock FontSize="12" Foreground="{StaticResource Blue500Brush}">
+                            <Run Text="Define Correlations ("/>
+                            <Run Text="{Binding Inputs.Count, Mode=OneWay}"/>
+                            <Run Text=" inputs)"/>
+                        </TextBlock>
+                    </StackPanel>
+                </Button>
+
                 <!-- === OUTPUTS SECTION === -->
                 <Grid Margin="0,8,0,8">
                     <Grid.ColumnDefinitions>
