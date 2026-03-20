@@ -19,15 +19,26 @@ public class MonteCarloRibbon : ExcelRibbon
               <tab id='MonteCarloTab' label='MonteCarlo.XL'>
                 <group id='SimulationGroup' label='Simulation'>
                   <button id='RunButton' label='Run' size='large'
-                          imageMso='PlayMacro' onAction='OnRunSimulation' />
+                          imageMso='PlayMacro' onAction='OnRunSimulation'
+                          screentip='Run Simulation'
+                          supertip='Start a Monte Carlo simulation with the current input/output configuration.' />
                   <button id='StopButton' label='Stop' size='large'
-                          imageMso='CancelRequest' onAction='OnStopSimulation' />
+                          imageMso='RecordStop' onAction='OnStopSimulation'
+                          screentip='Stop Simulation'
+                          supertip='Cancel the currently running simulation.' />
                 </group>
                 <group id='ViewGroup' label='View'>
-                  <button id='TaskPaneButton' label='Task Pane' size='large'
-                          imageMso='SheetInsert' onAction='OnToggleTaskPane' />
+                  <toggleButton id='TaskPaneButton' label='Task Pane' size='large'
+                          imageMso='TaskPane' onAction='OnToggleTaskPane'
+                          getPressed='GetTaskPanePressed'
+                          screentip='Toggle Task Pane'
+                          supertip='Show or hide the MonteCarlo.XL task pane.' />
+                </group>
+                <group id='SettingsGroup' label='Settings'>
                   <button id='SettingsButton' label='Settings' size='normal'
-                          imageMso='PropertySheet' onAction='OnOpenSettings' />
+                          imageMso='PropertySheet' onAction='OnOpenSettings'
+                          screentip='Settings'
+                          supertip='Open simulation settings (iteration count, seed, theme).' />
                 </group>
               </tab>
             </tabs>
@@ -40,7 +51,9 @@ public class MonteCarloRibbon : ExcelRibbon
     /// </summary>
     public void OnRunSimulation(IRibbonControl control)
     {
-        // TODO: Trigger simulation engine
+        // Show task pane on run view
+        AddIn.TaskPane?.Show();
+        // TODO: Trigger simulation engine via the MainViewModel
     }
 
     /// <summary>
@@ -48,22 +61,31 @@ public class MonteCarloRibbon : ExcelRibbon
     /// </summary>
     public void OnStopSimulation(IRibbonControl control)
     {
-        // TODO: Cancel simulation
+        // TODO: Cancel simulation via CancellationTokenSource
     }
 
     /// <summary>
     /// Callback: Toggle the task pane visibility.
     /// </summary>
-    public void OnToggleTaskPane(IRibbonControl control)
+    public void OnToggleTaskPane(IRibbonControl control, bool pressed)
     {
-        // TODO: Show/hide WPF task pane
+        AddIn.TaskPane?.Toggle();
     }
 
     /// <summary>
-    /// Callback: Open settings view.
+    /// Returns whether the task pane toggle button is pressed.
+    /// </summary>
+    public bool GetTaskPanePressed(IRibbonControl control)
+    {
+        return AddIn.TaskPane?.IsVisible ?? false;
+    }
+
+    /// <summary>
+    /// Callback: Open settings view in the task pane.
     /// </summary>
     public void OnOpenSettings(IRibbonControl control)
     {
-        // TODO: Navigate to settings
+        AddIn.TaskPane?.Show();
+        // TODO: Navigate task pane to settings view
     }
 }
