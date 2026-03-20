@@ -14,7 +14,7 @@
 | TASK-006 | Excel I/O Layer (COM Interop) | — | ✅ COMPLETE |
 | TASK-007 | Ribbon + WPF Task Pane Shell + Style System | — | ✅ COMPLETE |
 | TASK-008 | Setup View (Input/Output Config UI) | 002, 006, 007 | ✅ COMPLETE |
-| TASK-009 | Results Dashboard — Histogram, CDF, Stats Panel | 004, 007 | ⬜ QUEUED |
+| TASK-009 | Results Dashboard — Histogram, CDF, Stats Panel | 004, 007 | ✅ COMPLETE |
 | TASK-010 | Tornado Chart (Custom SkiaSharp) | 005, 007 | ⬜ QUEUED |
 | TASK-011 | Config Persistence + Run View + Convergence | 003, 006, 007 | ⬜ QUEUED |
 | TASK-012 | Results Export to Excel Sheet | 004, 005, 006, 009, 010 | ⬜ QUEUED |

@@ -403,3 +403,50 @@ Chose ExcelDna over VSTO for these reasons:
 - No tests — this is a pure UI task (WPF views/viewmodels). ViewModels use CommunityToolkit.Mvvm source generators.
 - Cannot build without .NET SDK in this environment.
 
+
+---
+
+## TASK-009 — Results Dashboard — Histogram, CDF, Stats Panel
+**Status**: COMPLETE
+**Date**: 2026-03-20
+**Branch**: claude/engine-tasks-003-004-TFgln
+
+### What Was Done
+- Created `ChartTheme` in MonteCarlo.Charts with shared color palette, axis factory methods, percentile marker and target line section builders
+- Created `HistogramChart` control using LiveCharts2 ColumnSeries with blue bars at 0.85 opacity, amber dashed P10/P50/P90 percentile markers, optional red dashed target line with annotation
+- Created `CDFChart` control using LiveCharts2 LineSeries with smooth S-curve, area fill at 0.08 opacity, and horizontal percentile reference lines
+- Created `ResultsViewModel` with output selection, stats computation, chart data binding, target analysis with live probability calculation, and clipboard copy
+- Created `NumberFormatter` utility for intelligent value formatting across magnitudes ($M, $K, %, raw decimals)
+- Created `HeadlineStatCard` — large P50 value with label and 95% CI range
+- Created `StatsPanelControl` — 2-column grid: Mean/StdDev, P5/P95, Min/Max, Skewness/Kurtosis using MonoFont
+- Created `TargetLineControl` — target value input with live P(above)/P(below) calculation
+- Replaced placeholder ResultsView with full dashboard: output dropdown, headline stat, histogram/CDF with toggle, stats panel, target analysis, export/copy buttons
+
+### Files Created/Modified
+- `src/MonteCarlo.Charts/Themes/ChartTheme.cs` — Color palette, axis/section factories
+- `src/MonteCarlo.Charts/Controls/HistogramChart.xaml/.cs` — Histogram with markers
+- `src/MonteCarlo.Charts/Controls/CDFChart.xaml/.cs` — CDF S-curve
+- `src/MonteCarlo.UI/Converters/NumberFormatter.cs` — Smart formatting
+- `src/MonteCarlo.UI/ViewModels/ResultsViewModel.cs` — Results VM
+- `src/MonteCarlo.UI/Views/HeadlineStatCard.xaml/.cs` — Big P50 card
+- `src/MonteCarlo.UI/Views/StatsPanelControl.xaml/.cs` — Stats grid
+- `src/MonteCarlo.UI/Views/TargetLineControl.xaml/.cs` — Target analysis
+- `src/MonteCarlo.UI/Views/ResultsView.xaml/.cs` — Full dashboard replacing placeholder
+
+### Key Decisions Made During Implementation
+- Histogram maps bin indices back to real values using BinCenters/BinEdges for percentile marker positioning
+- CDF subsamples sorted values to ~200 points for LiveCharts2 performance
+- PDF/CDF toggle uses a pair of RadioButtons styled as TabBarButtons with a shared ToggleChartModeCommand
+- Clipboard copy formats as a plain text table with proper alignment
+- ResultsView creates its own DataContext (ResultsViewModel) inline in XAML — LoadResults() is called externally
+- Chart controls use DependencyProperties so they can be bound directly from the ResultsViewModel
+
+### Issues / Notes for Architect
+- Export to Sheet button is wired visually but the command is deferred to TASK-012
+- The PDF/CDF toggle using RadioButtons + BoolToVisibility may need refinement if the converter doesn't work as a RadioButton IsChecked binding — a simple button toggle might be cleaner
+- LiveCharts2 ColumnSeries doesn't support border-radius on bars — bars will have square edges
+- No .NET SDK available — cannot verify compilation
+
+### Test Results
+- No tests — this is a UI/charting task. Cannot build without .NET SDK.
+
