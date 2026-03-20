@@ -776,3 +776,57 @@ Chose ExcelDna over VSTO for these reasons:
 - The CorrelationView navigation (MainViewModel wiring) is not implemented — the Addin or MainViewModel needs to wire SetupViewModel.CorrelationEditorRequested to show CorrelationView
 - Sticky headers for scrolling large matrices (>6 inputs) are not implemented — would need a more complex layout. ScrollViewer with hint text is the fallback.
 
+
+---
+
+## TASK-017 — Custom Excel Functions (=MC.Normal() UDFs)
+**Status**: COMPLETE
+**Date**: 2026-03-20
+**Branch**: claude/engine-tasks-003-004-TFgln
+
+### What Was Done
+- Created `MonteCarloFunctions` static class with 9 ExcelDna UDFs:
+  - MC.Normal(mean, stdDev) → mean
+  - MC.Triangular(min, mode, max) → mode
+  - MC.PERT(min, mode, max) → mode
+  - MC.Lognormal(mu, sigma) → exp(μ + σ²/2)
+  - MC.Uniform(min, max) → midpoint
+  - MC.Beta(alpha, beta) → α/(α+β)
+  - MC.Weibull(shape, scale) → scale × Γ(1 + 1/shape)
+  - MC.Exponential(rate) → 1/λ
+  - MC.Poisson(lambda) → λ
+  - All return #VALUE! for invalid parameters
+  - All registered with Category = "MonteCarlo.XL"
+- Created `MCFunctionScanner` for detecting MC.* formulas in worksheets:
+  - Regex-based formula parser for =MC.FunctionName(args...)
+  - Parameter name mapping for all 9 function types
+  - ScanWorksheet scans UsedRange for MC formulas
+  - ResolveParameters handles both literal numbers and cell references
+  - SplitArguments respects nested parentheses
+- Created `DetectedMCFunction` data class
+- Updated `SimulationOrchestrator`:
+  - Scans active sheet for MC.* formulas before simulation
+  - Adds auto-detected inputs, skipping GUI-tagged duplicates
+  - Saves original formulas before simulation
+  - Restores original formulas in finally block after simulation
+
+### Files Created
+- `src/MonteCarlo.Addin/UDF/MonteCarloFunctions.cs`
+- `src/MonteCarlo.Addin/UDF/MCFunctionScanner.cs`
+
+### Files Modified
+- `src/MonteCarlo.Addin/Services/SimulationOrchestrator.cs` — MC function scanning + formula save/restore
+
+### Key Decisions
+- Used Approach A (formula scanning) as recommended in spec — simpler and more reliable than registration during UDF execution
+- MC.Weibull expected value uses MathNet.Numerics.SpecialFunctions.Gamma rather than implementing our own
+- MC function scanning is non-fatal — failures don't prevent simulation from running with tagged inputs
+- Formula restoration happens in finally block to ensure cleanup even on error/cancellation
+- taggedInputs is now a mutable List<> instead of using IReadOnlyList from GetAllInputs()
+
+### Issues / Notes for Architect
+- No dotnet SDK — cannot build
+- UDF tests would need Excel runtime; the UDF return values could be unit-tested as simple method calls though
+- The formula regex is basic (`=MC.FunctionName(args)`) — doesn't handle nested MC calls or complex expressions as arguments
+- MC function scanning only scans the active sheet — could be extended to scan all sheets if needed
+
