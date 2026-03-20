@@ -1,6 +1,7 @@
 using System.Windows;
 using ExcelDna.Integration;
 using MonteCarlo.Addin.Excel;
+using MonteCarlo.Addin.UDF;
 using MonteCarlo.Engine.Analysis;
 using MonteCarlo.Engine.Distributions;
 using MonteCarlo.Engine.Simulation;
@@ -60,9 +61,49 @@ public class SimulationOrchestrator
         _convergenceChecker.Reset();
         var app = (Application)ExcelDnaUtil.Application;
 
-        // 1. Build inputs
-        var taggedInputs = _inputManager.GetAllInputs();
+        // 1. Build inputs from GUI-tagged cells
+        var taggedInputs = new List<TaggedInput>(_inputManager.GetAllInputs());
         var taggedOutputs = _outputManager.GetAllOutputs();
+
+        // 1b. Scan for MC.* formula cells and add as auto-detected inputs
+        var mcFunctionScanner = new MCFunctionScanner();
+        var mcFunctions = new List<DetectedMCFunction>();
+        var originalFormulas = new Dictionary<string, string>();
+        var taggedCellRefs = new HashSet<string>(taggedInputs.Select(i => i.Cell.FullReference));
+
+        try
+        {
+            var activeSheet = ((Worksheet)app.ActiveSheet);
+            mcFunctions = mcFunctionScanner.ScanWorksheet(activeSheet);
+
+            foreach (var func in mcFunctions)
+            {
+                // Skip if already tagged via the GUI (avoid duplicates)
+                if (taggedCellRefs.Contains(func.Cell.FullReference))
+                    continue;
+
+                var parameters = mcFunctionScanner.ResolveParameters(func, activeSheet);
+                if (parameters == null) continue;
+
+                // Save the original formula for restoration
+                try
+                {
+                    dynamic cell = activeSheet.Range[func.Cell.CellAddress];
+                    originalFormulas[func.Cell.FullReference] = cell.Formula.ToString();
+                }
+                catch { }
+
+                taggedInputs.Add(new TaggedInput
+                {
+                    Cell = func.Cell,
+                    Label = func.Cell.CellAddress,
+                    DistributionName = func.DistributionName,
+                    Parameters = parameters
+                });
+                taggedCellRefs.Add(func.Cell.FullReference);
+            }
+        }
+        catch { /* MC function scanning is non-fatal */ }
 
         if (taggedInputs.Count == 0)
             throw new InvalidOperationException("No inputs configured.");
@@ -194,6 +235,23 @@ public class SimulationOrchestrator
                         string sheet = parts[0].Trim('\'');
                         string cell = parts[1];
                         _workbook.WriteCellValue(sheet, cell, originalValue);
+                    }
+                }
+                catch { }
+            }
+
+            // Restore MC.* formulas that were overwritten during simulation
+            foreach (var (cellRef, formula) in originalFormulas)
+            {
+                try
+                {
+                    var parts = cellRef.Split('!');
+                    if (parts.Length == 2)
+                    {
+                        string sheetName = parts[0].Trim('\'');
+                        string cellAddr = parts[1];
+                        Worksheet ws = app.Sheets[sheetName];
+                        ws.Range[cellAddr].Formula = formula;
                     }
                 }
                 catch { }
