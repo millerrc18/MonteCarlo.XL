@@ -26,6 +26,55 @@ public class SimulationProfile
     /// <summary>Configured simulation outputs.</summary>
     [JsonPropertyName("outputs")]
     public List<SavedOutput> Outputs { get; set; } = new();
+
+    /// <summary>
+    /// Optional correlation matrix between inputs. Null means independent (no correlation).
+    /// Stored as a flat array in row-major order for JSON serialization.
+    /// </summary>
+    [JsonPropertyName("correlationMatrix")]
+    public double[]? CorrelationMatrixFlat { get; set; }
+
+    /// <summary>
+    /// Size of the correlation matrix (K for a K×K matrix).
+    /// </summary>
+    [JsonPropertyName("correlationMatrixSize")]
+    public int CorrelationMatrixSize { get; set; }
+
+    /// <summary>
+    /// Sets the correlation matrix from a 2D array.
+    /// </summary>
+    [JsonIgnore]
+    public double[,]? CorrelationMatrix
+    {
+        get
+        {
+            if (CorrelationMatrixFlat == null || CorrelationMatrixSize <= 0)
+                return null;
+
+            int n = CorrelationMatrixSize;
+            var matrix = new double[n, n];
+            for (int i = 0; i < n; i++)
+                for (int j = 0; j < n; j++)
+                    matrix[i, j] = CorrelationMatrixFlat[i * n + j];
+            return matrix;
+        }
+        set
+        {
+            if (value == null)
+            {
+                CorrelationMatrixFlat = null;
+                CorrelationMatrixSize = 0;
+                return;
+            }
+
+            int n = value.GetLength(0);
+            CorrelationMatrixSize = n;
+            CorrelationMatrixFlat = new double[n * n];
+            for (int i = 0; i < n; i++)
+                for (int j = 0; j < n; j++)
+                    CorrelationMatrixFlat[i * n + j] = value[i, j];
+        }
+    }
 }
 
 /// <summary>
