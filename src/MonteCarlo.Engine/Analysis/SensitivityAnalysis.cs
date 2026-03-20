@@ -86,6 +86,83 @@ public static class SensitivityAnalysis
         return results;
     }
 
+    /// <summary>
+    /// Compute tornado swing values by directly evaluating the model with each input
+    /// at its P10/P90 while holding all other inputs at their base values.
+    /// This is more precise than conditional means when an evaluator is available.
+    /// </summary>
+    /// <param name="result">The completed simulation result.</param>
+    /// <param name="outputIndex">Index of the output to analyze.</param>
+    /// <param name="evaluator">The model evaluator function.</param>
+    /// <returns>Sensitivity results with swing values from direct evaluation, sorted by swing descending.</returns>
+    public static List<SensitivityResult> ComputeTornadoSwing(
+        SimulationResult result,
+        int outputIndex,
+        Func<Dictionary<string, double>, Dictionary<string, double>> evaluator)
+    {
+        if (result == null) throw new ArgumentNullException(nameof(result));
+        if (evaluator == null) throw new ArgumentNullException(nameof(evaluator));
+        if (outputIndex < 0 || outputIndex >= result.Config.Outputs.Count)
+            throw new ArgumentOutOfRangeException(nameof(outputIndex));
+
+        var config = result.Config;
+        string outputId = config.Outputs[outputIndex].Id;
+
+        // Build base case input dictionary (all inputs at mean/base values)
+        var baseInputs = new Dictionary<string, double>();
+        var inputSamples = new Dictionary<string, double[]>();
+        foreach (var input in config.Inputs)
+        {
+            baseInputs[input.Id] = input.Distribution.Mean;
+            inputSamples[input.Id] = result.GetInputSamples(input.Id);
+        }
+
+        var results = new List<SensitivityResult>(config.Inputs.Count);
+
+        foreach (var input in config.Inputs)
+        {
+            var samples = inputSamples[input.Id];
+            var sorted = samples.OrderBy(x => x).ToArray();
+            double p10Value = sorted[(int)(sorted.Length * 0.10)];
+            double p90Value = sorted[(int)(sorted.Length * 0.90)];
+
+            // Evaluate at P10
+            var p10Inputs = new Dictionary<string, double>(baseInputs) { [input.Id] = p10Value };
+            var p10Outputs = evaluator(p10Inputs);
+            double outputAtP10 = p10Outputs[outputId];
+
+            // Evaluate at P90
+            var p90Inputs = new Dictionary<string, double>(baseInputs) { [input.Id] = p90Value };
+            var p90Outputs = evaluator(p90Inputs);
+            double outputAtP90 = p90Outputs[outputId];
+
+            // Also compute rank correlation from the simulation data
+            var outputValues = new double[result.IterationCount];
+            for (int i = 0; i < result.IterationCount; i++)
+                outputValues[i] = result.OutputMatrix[i, outputIndex];
+
+            int inputIdx = config.Inputs.IndexOf(input);
+            var inputValues = new double[result.IterationCount];
+            for (int i = 0; i < result.IterationCount; i++)
+                inputValues[i] = result.InputMatrix[i, inputIdx];
+
+            double rankCorrelation = PearsonCorrelation(ComputeRanks(inputValues), ComputeRanks(outputValues));
+
+            results.Add(new SensitivityResult
+            {
+                InputId = input.Id,
+                InputLabel = input.Label,
+                RankCorrelation = rankCorrelation,
+                OutputAtInputP10 = outputAtP10,
+                OutputAtInputP90 = outputAtP90
+            });
+        }
+
+        // Sort by swing descending
+        results.Sort((a, b) => b.Swing.CompareTo(a.Swing));
+        return results;
+    }
+
     private static double[] ComputeRanks(double[] values)
     {
         int n = values.Length;

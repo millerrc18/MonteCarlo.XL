@@ -22,4 +22,7 @@ public class SensitivityResult
 
     /// <summary>Mean output value when this input is in its top 10%.</summary>
     public double OutputAtInputP90 { get; init; }
+
+    /// <summary>Absolute swing: |OutputAtInputP90 - OutputAtInputP10|.</summary>
+    public double Swing => Math.Abs(OutputAtInputP90 - OutputAtInputP10);
 }
