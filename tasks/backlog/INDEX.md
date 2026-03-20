@@ -13,7 +13,7 @@
 | TASK-005 | Sensitivity Analysis Engine | 003, 004 | ✅ COMPLETE |
 | TASK-006 | Excel I/O Layer (COM Interop) | — | ✅ COMPLETE |
 | TASK-007 | Ribbon + WPF Task Pane Shell + Style System | — | ✅ COMPLETE |
-| TASK-008 | Setup View (Input/Output Config UI) | 002, 006, 007 | ⬜ QUEUED |
+| TASK-008 | Setup View (Input/Output Config UI) | 002, 006, 007 | ✅ COMPLETE |
 | TASK-009 | Results Dashboard — Histogram, CDF, Stats Panel | 004, 007 | ⬜ QUEUED |
 | TASK-010 | Tornado Chart (Custom SkiaSharp) | 005, 007 | ⬜ QUEUED |
 | TASK-011 | Config Persistence + Run View + Convergence | 003, 006, 007 | ⬜ QUEUED |
@@ -40,7 +40,7 @@
 ## Critical Path (fastest route to first working simulation)
 
 ```
-002 ✅ → 003 ✅ → 004 ✅ → 005 ✅ → 006 ✅ → 007 ✅ → 008 → 009 → 011 → 013
+002 ✅ → 003 ✅ → 004 ✅ → 005 ✅ → 006 ✅ → 007 ✅ → 008 ✅ → 009 → 011 → 013
 ```
 
 Tasks 006 and 007 can run in parallel (no interdependencies).

@@ -346,3 +346,60 @@ Chose ExcelDna over VSTO for these reasons:
 - Task pane defaults to 380px wide, docked right
 - GlobalStyles.xaml is loaded in MainTaskPaneControl.Resources (no App.xaml in Excel add-in)
 - The StatLabel style uses TextTransform="Uppercase" — this is not a native WPF property and would need a converter if actually used; consider removing or implementing via a text converter in a future task
+
+---
+
+## TASK-008 — Setup View (Input/Output Config UI)
+**Status**: COMPLETE
+**Date**: 2026-03-20
+**Branch**: claude/engine-tasks-003-004-TFgln
+
+### What Was Done
+- Created `SetupViewModel` with full input/output management, distribution parameter editing, cell selection mode, iteration count presets, seed lock toggle
+- Created `InputCardViewModel` with distribution preview points computation (50-point PDF sampling from P1 to P99)
+- Created `OutputCardViewModel` for output cell display
+- Created `CellSelectionService` in Services/ — mediates between WPF UI and Excel cell selection events
+- Created `DistributionPreviewControl` — mini sparkline using WPF Canvas + Polyline/Polygon with blue fill at 12% opacity
+- Created `InputCardControl` — card displaying label, cell ref, distribution summary, and mini preview curve
+- Created `OutputCardControl` — card displaying label and cell ref
+- Created `InputEditorControl` — inline editor with cell selection button, label field, distribution dropdown, and dynamic parameter fields
+- Created `DistributionParameterPanel` — switches parameter fields based on selected distribution (Normal: mean/stddev, Triangular/PERT: min/mode/max, Uniform: min/max, Lognormal: mu/sigma, Discrete: dynamic value/probability pairs)
+- Replaced placeholder `SetupView.xaml` with full implementation: header, iteration config card, inputs section with +Add and inline editor, outputs section with +Add and inline editor, empty state messages, Run Simulation button
+- Added 4 value converters: BoolToVisibilityConverter, DistributionVisibilityConverter, NullToCollapsedConverter, CountToVisibilityConverter
+- Updated `MainViewModel` to retain a persistent SetupView instance with ViewModel accessor
+
+### Files Created/Modified
+- `src/MonteCarlo.UI/ViewModels/SetupViewModel.cs` — Main setup VM with all commands and events
+- `src/MonteCarlo.UI/ViewModels/InputCardViewModel.cs` — Input card display VM with preview points
+- `src/MonteCarlo.UI/ViewModels/OutputCardViewModel.cs` — Output card display VM
+- `src/MonteCarlo.UI/ViewModels/MainViewModel.cs` — Updated: persistent SetupView, SetupViewModel accessor
+- `src/MonteCarlo.UI/Services/CellSelectionService.cs` — Cell selection mediation service
+- `src/MonteCarlo.UI/Views/SetupView.xaml/.cs` — Full setup view replacing placeholder
+- `src/MonteCarlo.UI/Views/InputEditorControl.xaml/.cs` — Inline input editor
+- `src/MonteCarlo.UI/Views/InputCardControl.xaml/.cs` — Input display card
+- `src/MonteCarlo.UI/Views/OutputCardControl.xaml/.cs` — Output display card
+- `src/MonteCarlo.UI/Views/DistributionParameterPanel.xaml/.cs` — Dynamic distribution parameter fields
+- `src/MonteCarlo.UI/Views/DistributionPreviewControl.xaml/.cs` — Mini PDF sparkline
+- `src/MonteCarlo.UI/Converters/BoolToVisibilityConverter.cs`
+- `src/MonteCarlo.UI/Converters/DistributionVisibilityConverter.cs`
+- `src/MonteCarlo.UI/Converters/NullToCollapsedConverter.cs`
+- `src/MonteCarlo.UI/Converters/CountToVisibilityConverter.cs`
+
+### Key Decisions Made During Implementation
+- Used events (RunSimulationRequested, CellSelectionRequested, InputAdded/Removed, OutputAdded/Removed) for Addin-layer wiring instead of direct COM calls, keeping MonteCarlo.UI free of Excel dependencies
+- Distribution parameters stored as individual string properties (ParamMean, ParamStdDev, etc.) rather than a Dictionary, enabling straightforward XAML binding with UpdateSourceTrigger=PropertyChanged
+- Discrete distribution uses ObservableCollection<DiscretePairViewModel> with dynamic add/remove rows
+- Preview sparkline uses WPF Polyline fallback (not LiveCharts2) since it's just a simple curve shape — lighter weight and no chart library dependency for the preview
+- MainViewModel now retains a single SetupView instance rather than creating new ones on each navigation, so the Addin layer can wire events once
+
+### Issues / Notes for Architect
+- No .NET SDK available to build/test — all code follows project conventions
+- The InputEditorControl uses a "📌" Unicode emoji for the cell-select button — may need to be replaced with an icon if it doesn't render well in all Excel/Windows versions
+- The seed lock uses a "🔒" Unicode emoji — same consideration
+- Cell selection wiring (hooking SheetSelectionChange) will be completed in TASK-013 (Orchestrator) when the Addin layer ties everything together
+- The SetupView creates its own DataContext (SetupViewModel) inline in XAML — the MainViewModel provides a convenience accessor for external wiring
+
+### Test Results
+- No tests — this is a pure UI task (WPF views/viewmodels). ViewModels use CommunityToolkit.Mvvm source generators.
+- Cannot build without .NET SDK in this environment.
+
