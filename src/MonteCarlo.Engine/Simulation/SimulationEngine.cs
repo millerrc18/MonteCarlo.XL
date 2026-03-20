@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using MonteCarlo.Engine.Correlation;
 
 namespace MonteCarlo.Engine.Simulation;
 
@@ -70,11 +71,17 @@ public class SimulationEngine
             }
         }
 
-        // Step 3: Build output index map for fast lookup
+        // Step 3: Apply Iman-Conover rank correlation if specified
+        if (config.Correlation != null)
+        {
+            ImanConover.Apply(inputMatrix, config.Correlation);
+        }
+
+        // Step 4: Build output index map for fast lookup
         var outputIds = config.Outputs.Select(o => o.Id).ToArray();
         var inputIds = config.Inputs.Select(inp => inp.Id).ToArray();
 
-        // Step 4: Evaluate outputs for each iteration
+        // Step 5: Evaluate outputs for each iteration
         if (config.ParallelExecution)
         {
             int completedCount = 0;

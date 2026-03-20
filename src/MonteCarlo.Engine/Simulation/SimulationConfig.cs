@@ -1,3 +1,5 @@
+using MonteCarlo.Engine.Correlation;
+
 namespace MonteCarlo.Engine.Simulation;
 
 /// <summary>
@@ -30,6 +32,12 @@ public class SimulationConfig
     /// Should be false for Excel recalc mode (COM is single-threaded).
     /// </summary>
     public bool ParallelExecution { get; set; } = true;
+
+    /// <summary>
+    /// Optional Spearman rank correlation matrix between inputs.
+    /// Null means inputs are independent (no correlation applied).
+    /// </summary>
+    public CorrelationMatrix? Correlation { get; set; }
 
     /// <summary>
     /// Validates the configuration and throws <see cref="ArgumentException"/> if invalid.
