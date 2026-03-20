@@ -98,6 +98,18 @@ public partial class SetupViewModel : ObservableObject
     [ObservableProperty] private string _paramMu = "0";
     /// <summary>Lognormal: Sigma.</summary>
     [ObservableProperty] private string _paramSigma = "1";
+    /// <summary>Beta: Alpha.</summary>
+    [ObservableProperty] private string _paramAlpha = "2";
+    /// <summary>Beta: Beta.</summary>
+    [ObservableProperty] private string _paramBeta = "5";
+    /// <summary>Weibull: Shape.</summary>
+    [ObservableProperty] private string _paramShape = "2";
+    /// <summary>Weibull: Scale.</summary>
+    [ObservableProperty] private string _paramScale = "100";
+    /// <summary>Exponential/Poisson: Rate/Lambda.</summary>
+    [ObservableProperty] private string _paramRate = "1";
+    /// <summary>Poisson: Lambda.</summary>
+    [ObservableProperty] private string _paramLambda = "4.5";
 
     /// <summary>Discrete value/probability pairs.</summary>
     [ObservableProperty]
@@ -372,6 +384,20 @@ public partial class SetupViewModel : ObservableObject
                 p["mu"] = ParseDouble(ParamMu, "μ");
                 p["sigma"] = ParseDouble(ParamSigma, "σ");
                 break;
+            case "beta":
+                p["alpha"] = ParseDouble(ParamAlpha, "Alpha");
+                p["beta"] = ParseDouble(ParamBeta, "Beta");
+                break;
+            case "weibull":
+                p["shape"] = ParseDouble(ParamShape, "Shape");
+                p["scale"] = ParseDouble(ParamScale, "Scale");
+                break;
+            case "exponential":
+                p["rate"] = ParseDouble(ParamRate, "Rate");
+                break;
+            case "poisson":
+                p["lambda"] = ParseDouble(ParamLambda, "Lambda");
+                break;
             case "discrete":
                 for (int i = 0; i < DiscretePairs.Count; i++)
                 {
@@ -405,6 +431,12 @@ public partial class SetupViewModel : ObservableObject
         ParamMax = "100";
         ParamMu = "0";
         ParamSigma = "1";
+        ParamAlpha = "2";
+        ParamBeta = "5";
+        ParamShape = "2";
+        ParamScale = "100";
+        ParamRate = "1";
+        ParamLambda = "4.5";
         DiscretePairs = new ObservableCollection<DiscretePairViewModel>
         {
             new() { Value = "0", Probability = "0.5" },

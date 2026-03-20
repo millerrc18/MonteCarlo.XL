@@ -62,6 +62,40 @@
                      Style="{StaticResource ParamInput}"/>
         </StackPanel>
 
+        <!-- Beta parameters -->
+        <StackPanel Visibility="{Binding SelectedDistribution, Converter={StaticResource DistVis}, ConverterParameter=Beta}">
+            <TextBlock Text="Alpha (α)" Style="{StaticResource ParamLabel}"/>
+            <TextBox Text="{Binding ParamAlpha, UpdateSourceTrigger=PropertyChanged}"
+                     Style="{StaticResource ParamInput}"/>
+            <TextBlock Text="Beta (β)" Style="{StaticResource ParamLabel}"/>
+            <TextBox Text="{Binding ParamBeta, UpdateSourceTrigger=PropertyChanged}"
+                     Style="{StaticResource ParamInput}"/>
+        </StackPanel>
+
+        <!-- Weibull parameters -->
+        <StackPanel Visibility="{Binding SelectedDistribution, Converter={StaticResource DistVis}, ConverterParameter=Weibull}">
+            <TextBlock Text="Shape (k)" Style="{StaticResource ParamLabel}"/>
+            <TextBox Text="{Binding ParamShape, UpdateSourceTrigger=PropertyChanged}"
+                     Style="{StaticResource ParamInput}"/>
+            <TextBlock Text="Scale (λ)" Style="{StaticResource ParamLabel}"/>
+            <TextBox Text="{Binding ParamScale, UpdateSourceTrigger=PropertyChanged}"
+                     Style="{StaticResource ParamInput}"/>
+        </StackPanel>
+
+        <!-- Exponential parameters -->
+        <StackPanel Visibility="{Binding SelectedDistribution, Converter={StaticResource DistVis}, ConverterParameter=Exponential}">
+            <TextBlock Text="Rate (λ)" Style="{StaticResource ParamLabel}"/>
+            <TextBox Text="{Binding ParamRate, UpdateSourceTrigger=PropertyChanged}"
+                     Style="{StaticResource ParamInput}"/>
+        </StackPanel>
+
+        <!-- Poisson parameters -->
+        <StackPanel Visibility="{Binding SelectedDistribution, Converter={StaticResource DistVis}, ConverterParameter=Poisson}">
+            <TextBlock Text="Rate (λ)" Style="{StaticResource ParamLabel}"/>
+            <TextBox Text="{Binding ParamLambda, UpdateSourceTrigger=PropertyChanged}"
+                     Style="{StaticResource ParamInput}"/>
+        </StackPanel>
+
         <!-- Discrete parameters -->
         <StackPanel Visibility="{Binding SelectedDistribution, Converter={StaticResource DistVis}, ConverterParameter=Discrete}">
             <ItemsControl ItemsSource="{Binding DiscretePairs}">
