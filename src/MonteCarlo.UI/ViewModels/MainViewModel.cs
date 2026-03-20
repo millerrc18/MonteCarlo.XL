@@ -18,6 +18,16 @@ public partial class MainViewModel : ObservableObject
     [ObservableProperty]
     private string _currentViewName = "Setup";
 
+    /// <summary>
+    /// The persistent SetupView instance so its ViewModel can be accessed externally.
+    /// </summary>
+    public SetupView SetupView { get; } = new();
+
+    /// <summary>
+    /// Convenience accessor for the SetupViewModel.
+    /// </summary>
+    public SetupViewModel SetupViewModel => SetupView.ViewModel;
+
     public MainViewModel()
     {
         NavigateToSetup();
@@ -26,7 +36,7 @@ public partial class MainViewModel : ObservableObject
     [RelayCommand]
     private void NavigateToSetup()
     {
-        CurrentView = new SetupView();
+        CurrentView = SetupView;
         CurrentViewName = "Setup";
     }
 
