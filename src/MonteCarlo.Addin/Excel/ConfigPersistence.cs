@@ -2,6 +2,7 @@ using System.Text.Json;
 using System.Xml;
 using ExcelDna.Integration;
 using MonteCarlo.Engine.Simulation;
+using Microsoft.Office.Core;
 using Microsoft.Office.Interop.Excel;
 
 namespace MonteCarlo.Addin.Excel;

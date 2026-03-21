@@ -85,8 +85,7 @@
                             <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
                         <TextBlock Text="{Binding ValidationMessage}"
-                                   VerticalAlignment="Center"
-                                   Style="{StaticResource CaptionText}">
+                                   VerticalAlignment="Center">
                             <TextBlock.Style>
                                 <Style TargetType="TextBlock" BasedOn="{StaticResource CaptionText}">
                                     <Setter Property="Foreground" Value="#166534"/>

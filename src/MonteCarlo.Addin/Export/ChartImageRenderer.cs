@@ -20,7 +20,7 @@ public static class ChartImageRenderer
     /// <param name="dpi">Output DPI (default 192 for high-DPI).</param>
     public static byte[] RenderWpfControl(FrameworkElement control, int width, int height, double dpi = 192)
     {
-        control.Measure(new Size(width, height));
+        control.Measure(new System.Windows.Size(width, height));
         control.Arrange(new Rect(0, 0, width, height));
         control.UpdateLayout();
 

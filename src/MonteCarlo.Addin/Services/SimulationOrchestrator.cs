@@ -6,7 +6,6 @@ using MonteCarlo.Engine.Analysis;
 using MonteCarlo.Engine.Distributions;
 using MonteCarlo.Engine.Simulation;
 using Microsoft.Office.Interop.Excel;
-using Application = Microsoft.Office.Interop.Excel.Application;
 
 namespace MonteCarlo.Addin.Services;
 
@@ -188,7 +187,7 @@ public class SimulationOrchestrator
 
             for (int i = 0; i < config.Outputs.Count; i++)
             {
-                var outputValues = result.GetOutputValues(i);
+                var outputValues = result.GetOutputValues(config.Outputs[i].Id);
                 statsByOutput[config.Outputs[i].Id] = new SummaryStatistics(outputValues);
 
                 try
@@ -209,7 +208,7 @@ public class SimulationOrchestrator
                 Result = result,
                 StatsByOutput = statsByOutput,
                 SensitivityByOutput = sensitivityByOutput,
-                TotalElapsed = result.Elapsed
+                TotalElapsed = result.ElapsedTime
             });
         }
         catch (OperationCanceledException)

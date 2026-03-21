@@ -2,7 +2,6 @@ using ExcelDna.Integration;
 using MonteCarlo.Addin.Excel;
 using MonteCarlo.Addin.Services;
 using MonteCarlo.Addin.TaskPane;
-using Application = Microsoft.Office.Interop.Excel.Application;
 
 namespace MonteCarlo.Addin;
 

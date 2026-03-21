@@ -129,8 +129,8 @@ public class ResultsExporter
             var data = new object[rowCount, colCount + 1];
             var inputSamples = new double[result.Config.Inputs.Count][];
             for (int j = 0; j < result.Config.Inputs.Count; j++)
-                inputSamples[j] = result.GetInputSamples(j);
-            var outputValues = result.GetOutputValues(outputIndex);
+                inputSamples[j] = result.GetInputSamples(result.Config.Inputs[j].Id);
+            var outputValues = result.GetOutputValues(result.Config.Outputs[outputIndex].Id);
 
             for (int i = 0; i < rowCount; i++)
             {

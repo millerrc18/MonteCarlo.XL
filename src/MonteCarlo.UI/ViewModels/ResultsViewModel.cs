@@ -149,7 +149,7 @@ public partial class ResultsViewModel : ObservableObject
 
         if (outputIndex < 0) return;
 
-        var outputValues = SimulationResult.GetOutputValues(outputIndex);
+        var outputValues = SimulationResult.GetOutputValues(SelectedOutputId);
         var stats = new SummaryStatistics(outputValues);
         CurrentStats = stats;
         HistogramData = stats.ToHistogram();

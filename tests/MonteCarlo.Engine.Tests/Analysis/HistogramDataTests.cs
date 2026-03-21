@@ -1,3 +1,4 @@
+using Xunit;
 using FluentAssertions;
 using MonteCarlo.Engine.Analysis;
 using MonteCarlo.Engine.Distributions;

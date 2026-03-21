@@ -59,7 +59,7 @@ public class MCFunctionScanner
                                 string address = cell.Address.ToString().Replace("$", "");
                                 results.Add(new DetectedMCFunction
                                 {
-                                    Cell = new CellReference(sheet.Name, address),
+                                    Cell = new CellReference { SheetName = sheet.Name, CellAddress = address },
                                     DistributionName = parsed.DistributionName,
                                     ParameterNames = parsed.ParameterNames,
                                     Formula = formula

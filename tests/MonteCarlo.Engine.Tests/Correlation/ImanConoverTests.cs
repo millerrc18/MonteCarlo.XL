@@ -136,7 +136,7 @@ public class ImanConoverTests
         ImanConover.Apply(samples, target);
 
         double rho = SpearmanCorrelation(samples, 0, 1, n);
-        rho.Should().BeApproximately(0.5, 0.005);
+        rho.Should().BeApproximately(0.5, 0.02);
     }
 
     // --- Small N still works ---

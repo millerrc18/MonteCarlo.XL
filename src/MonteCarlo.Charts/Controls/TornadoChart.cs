@@ -211,7 +211,7 @@ public class TornadoChart : SKElement
                     : (p10IsLower ? BarDecreaseColor : BarIncreaseColor),
                 IsAntialias = true
             };
-            canvas.DrawRoundRect(new SKRoundRect(leftRect, BarCornerRadius, 0, 0, BarCornerRadius), leftPaint);
+            canvas.DrawRoundRect(new SKRoundRect(leftRect, BarCornerRadius, BarCornerRadius), leftPaint);
 
             // Draw right bar (increase side)
             var rightRect = new SKRect(centerX, y, centerX + rightBarWidth, y + BarHeight);
@@ -222,7 +222,7 @@ public class TornadoChart : SKElement
                     : (p10IsLower ? BarIncreaseColor : BarDecreaseColor),
                 IsAntialias = true
             };
-            canvas.DrawRoundRect(new SKRoundRect(rightRect, 0, BarCornerRadius, BarCornerRadius, 0), rightPaint);
+            canvas.DrawRoundRect(new SKRoundRect(rightRect, BarCornerRadius, BarCornerRadius), rightPaint);
 
             // Store full rect for hit-testing
             _barRects.Add(new SKRect(centerX - leftBarWidth, y, centerX + rightBarWidth, y + BarHeight));
