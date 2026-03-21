@@ -81,7 +81,18 @@ public sealed class PoissonDistribution : IDistribution
             throw new ArgumentOutOfRangeException(nameof(p), p, "Percentile must be between 0 and 1.");
 
         // For discrete distributions, return the smallest integer k where CDF(k) >= p
-        return _inner.InverseCumulativeDistribution(p);
+        // Math.NET's Poisson doesn't have InverseCumulativeDistribution,
+        // so we search manually.
+        if (p <= 0.0) return 0.0;
+        if (p >= 1.0) return double.PositiveInfinity;
+
+        int k = 0;
+        while (_inner.CumulativeDistribution(k) < p)
+        {
+            k++;
+            if (k > _inner.Lambda * 20 + 100) break; // safety limit
+        }
+        return k;
     }
 
     /// <inheritdoc />

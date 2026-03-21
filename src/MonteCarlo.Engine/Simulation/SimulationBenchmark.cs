@@ -37,7 +37,7 @@ public static class SimulationBenchmark
         {
             IterationCount = iterationCount,
             RandomSeed = 42,
-            UseParallelEvaluation = true
+            ParallelExecution = true
         };
 
         // Create synthetic Normal inputs

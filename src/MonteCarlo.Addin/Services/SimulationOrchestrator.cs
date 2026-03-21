@@ -124,7 +124,7 @@ public class SimulationOrchestrator
         {
             IterationCount = iterationCount,
             RandomSeed = randomSeed,
-            UseParallelEvaluation = false // COM is single-threaded
+            ParallelExecution = false // COM is single-threaded
         };
 
         foreach (var input in taggedInputs)

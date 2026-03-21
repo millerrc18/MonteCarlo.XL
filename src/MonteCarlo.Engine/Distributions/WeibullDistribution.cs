@@ -65,7 +65,15 @@ public sealed class WeibullDistribution : IDistribution
     public double CDF(double x) => _inner.CumulativeDistribution(x);
 
     /// <inheritdoc />
-    public double Percentile(double p) => _inner.InverseCumulativeDistribution(p);
+    public double Percentile(double p)
+    {
+        if (p < 0.0 || p > 1.0)
+            throw new ArgumentOutOfRangeException(nameof(p), "Percentile must be between 0.0 and 1.0.");
+        if (p == 0.0) return 0.0;
+        if (p == 1.0) return double.PositiveInfinity;
+        // Analytical inverse CDF: x = scale * (-ln(1-p))^(1/shape)
+        return _inner.Scale * Math.Pow(-Math.Log(1.0 - p), 1.0 / _inner.Shape);
+    }
 
     /// <inheritdoc />
     public string ParameterSummary() => $"Weibull(k={_inner.Shape}, λ={_inner.Scale})";
