@@ -24,14 +24,14 @@
             <TextBlock Grid.Row="0" Grid.Column="0" Text="Mean"
                        Style="{StaticResource CaptionText}" VerticalAlignment="Center"/>
             <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding MeanFormatted}"
-                       Style="{StaticResource BodyText}" Foreground="{StaticResource TextPrimaryBrush}"
+                       Style="{StaticResource BodyText}" Foreground="{DynamicResource TextPrimaryBrush}"
                        FontFamily="{StaticResource MonoFont}"
                        HorizontalAlignment="Right" VerticalAlignment="Center"/>
 
             <TextBlock Grid.Row="0" Grid.Column="3" Text="Std Dev"
                        Style="{StaticResource CaptionText}" VerticalAlignment="Center"/>
             <TextBlock Grid.Row="0" Grid.Column="4" Text="{Binding StdDevFormatted}"
-                       Style="{StaticResource BodyText}" Foreground="{StaticResource TextPrimaryBrush}"
+                       Style="{StaticResource BodyText}" Foreground="{DynamicResource TextPrimaryBrush}"
                        FontFamily="{StaticResource MonoFont}"
                        HorizontalAlignment="Right" VerticalAlignment="Center"/>
 
@@ -39,14 +39,14 @@
             <TextBlock Grid.Row="2" Grid.Column="0" Text="P5"
                        Style="{StaticResource CaptionText}" VerticalAlignment="Center"/>
             <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding P5Formatted}"
-                       Style="{StaticResource BodyText}" Foreground="{StaticResource TextPrimaryBrush}"
+                       Style="{StaticResource BodyText}" Foreground="{DynamicResource TextPrimaryBrush}"
                        FontFamily="{StaticResource MonoFont}"
                        HorizontalAlignment="Right" VerticalAlignment="Center"/>
 
             <TextBlock Grid.Row="2" Grid.Column="3" Text="P95"
                        Style="{StaticResource CaptionText}" VerticalAlignment="Center"/>
             <TextBlock Grid.Row="2" Grid.Column="4" Text="{Binding P95Formatted}"
-                       Style="{StaticResource BodyText}" Foreground="{StaticResource TextPrimaryBrush}"
+                       Style="{StaticResource BodyText}" Foreground="{DynamicResource TextPrimaryBrush}"
                        FontFamily="{StaticResource MonoFont}"
                        HorizontalAlignment="Right" VerticalAlignment="Center"/>
 
@@ -54,14 +54,14 @@
             <TextBlock Grid.Row="4" Grid.Column="0" Text="Min"
                        Style="{StaticResource CaptionText}" VerticalAlignment="Center"/>
             <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding MinFormatted}"
-                       Style="{StaticResource BodyText}" Foreground="{StaticResource TextPrimaryBrush}"
+                       Style="{StaticResource BodyText}" Foreground="{DynamicResource TextPrimaryBrush}"
                        FontFamily="{StaticResource MonoFont}"
                        HorizontalAlignment="Right" VerticalAlignment="Center"/>
 
             <TextBlock Grid.Row="4" Grid.Column="3" Text="Max"
                        Style="{StaticResource CaptionText}" VerticalAlignment="Center"/>
             <TextBlock Grid.Row="4" Grid.Column="4" Text="{Binding MaxFormatted}"
-                       Style="{StaticResource BodyText}" Foreground="{StaticResource TextPrimaryBrush}"
+                       Style="{StaticResource BodyText}" Foreground="{DynamicResource TextPrimaryBrush}"
                        FontFamily="{StaticResource MonoFont}"
                        HorizontalAlignment="Right" VerticalAlignment="Center"/>
 
@@ -69,14 +69,14 @@
             <TextBlock Grid.Row="6" Grid.Column="0" Text="Skew"
                        Style="{StaticResource CaptionText}" VerticalAlignment="Center"/>
             <TextBlock Grid.Row="6" Grid.Column="1" Text="{Binding SkewnessFormatted}"
-                       Style="{StaticResource BodyText}" Foreground="{StaticResource TextPrimaryBrush}"
+                       Style="{StaticResource BodyText}" Foreground="{DynamicResource TextPrimaryBrush}"
                        FontFamily="{StaticResource MonoFont}"
                        HorizontalAlignment="Right" VerticalAlignment="Center"/>
 
             <TextBlock Grid.Row="6" Grid.Column="3" Text="Kurt"
                        Style="{StaticResource CaptionText}" VerticalAlignment="Center"/>
             <TextBlock Grid.Row="6" Grid.Column="4" Text="{Binding KurtosisFormatted}"
-                       Style="{StaticResource BodyText}" Foreground="{StaticResource TextPrimaryBrush}"
+                       Style="{StaticResource BodyText}" Foreground="{DynamicResource TextPrimaryBrush}"
                        FontFamily="{StaticResource MonoFont}"
                        HorizontalAlignment="Right" VerticalAlignment="Center"/>
         </Grid>

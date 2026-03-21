@@ -830,3 +830,86 @@ Chose ExcelDna over VSTO for these reasons:
 - The formula regex is basic (`=MC.FunctionName(args)`) — doesn't handle nested MC calls or complex expressions as arguments
 - MC function scanning only scans the active sheet — could be extended to scan all sheets if needed
 
+---
+
+## TASK-018 — Dark Theme, Performance Optimization, and UX Polish
+**Status**: COMPLETE
+**Date**: 2026-03-21
+**Branch**: claude/engine-tasks-003-004-TFgln
+
+### What Was Done
+
+**Part A: Dark Theme**
+- LightTheme.xaml and DarkTheme.xaml already existed with correct color palettes from prior work
+- Updated ThemeManager to sync ChartTheme dark mode when applying themes (ChartTheme.SetDarkMode)
+- Updated ChartTheme to support theme-dependent neutral colors (label, border, gridline) via SetDarkMode()
+- Updated TornadoChart to use theme-adaptive colors from ChartTheme instead of hardcoded light-mode values
+- Built full SettingsView with Light/Dark/System radio buttons wired to ThemeManager
+- ThemeManager loads/saves preference via Windows registry, applies via ResourceDictionary swapping
+- Wired theme initialization into MainTaskPaneControl code-behind (load saved theme on construction)
+- Moved MergedDictionaries management to code-behind for proper theme dict insertion order
+
+**Part B: Performance Optimization**
+- Added `EnableEvents = false` during simulation in SimulationOrchestrator (alongside existing ScreenUpdating/Calculation)
+- Refactored evaluator to pre-group inputs/outputs by sheet for batch COM operations
+- Memory pre-allocation already confirmed in SimulationEngine (Step 1)
+- Progress throttling already confirmed (every 100 iterations with 50ms min gap)
+- Created SimulationBenchmark class: synthetic test with N Normal inputs, trivial evaluator, reports iterations/sec and µs/iteration
+
+**Part C: UX Polish**
+- Created ValidatedTextBox control: debounced validation (300ms), red/green border states, inline error message display
+- Created SkeletonLoader control: animated pulsing gray rectangle, supports dark mode theme colors
+- Created NumberInputTextBox: paste support, scientific notation parsing, comma/currency stripping, formatted display on blur
+- Added fade transition animation (200ms) on view content changes via TargetUpdated trigger in MainTaskPaneControl
+- Enhanced SetupView empty states: icon + heading + description + CTA button for both inputs and outputs sections
+- Added ResultsView empty state: "No results yet" with icon and instruction when no simulation has run (uses HasResults property)
+- Added error states in RunView: error card with type classification, human-readable message, and Try Again button
+- Added RunViewModel.ShowError() with error classification (Configuration, Excel, Memory, Simulation)
+- Updated MainViewModel.OnSimulationError to show error in RunView instead of navigating away
+- Wired RetryRequested event to re-run simulation from error state
+- Added keyboard shortcuts: Ctrl+Shift+R (Run), Ctrl+Shift+S (Stop), Ctrl+Shift+T (Toggle pane)
+- Created KeyboardShortcuts.cs with ExcelDna-registered macro commands
+- Registered/unregistered shortcuts in AddIn.AutoOpen/AutoClose via Application.OnKey()
+
+### Files Created
+- `src/MonteCarlo.UI/Controls/ValidatedTextBox.xaml` + `.xaml.cs` — validated text input control
+- `src/MonteCarlo.UI/Controls/SkeletonLoader.xaml` + `.xaml.cs` — animated loading placeholder
+- `src/MonteCarlo.UI/Controls/NumberInputTextBox.cs` — enhanced numeric input with formatting
+- `src/MonteCarlo.Engine/Simulation/SimulationBenchmark.cs` — synthetic benchmark runner
+- `src/MonteCarlo.Addin/KeyboardShortcuts.cs` — ExcelDna keyboard shortcut macros
+
+### Files Modified
+- `src/MonteCarlo.UI/Views/SettingsView.xaml` — full theme selector UI
+- `src/MonteCarlo.UI/Views/SettingsView.xaml.cs` — theme selection logic
+- `src/MonteCarlo.UI/Views/MainTaskPaneControl.xaml` — fade transition, removed inline merged dict
+- `src/MonteCarlo.UI/Views/MainTaskPaneControl.xaml.cs` — theme initialization on construction
+- `src/MonteCarlo.UI/Views/SetupView.xaml` — enhanced empty states with CTAs
+- `src/MonteCarlo.UI/Views/ResultsView.xaml` — added empty state, wrapped content in HasResults visibility
+- `src/MonteCarlo.UI/Views/RunView.xaml` — error card, Stop button visibility binding
+- `src/MonteCarlo.UI/ViewModels/RunViewModel.cs` — error state properties, ShowError(), RetrySimulation
+- `src/MonteCarlo.UI/ViewModels/ResultsViewModel.cs` — HasResults property
+- `src/MonteCarlo.UI/ViewModels/MainViewModel.cs` — OnSimulationError takes Exception, retry wiring
+- `src/MonteCarlo.UI/Services/ThemeManager.cs` — ChartTheme sync on theme apply
+- `src/MonteCarlo.Charts/Themes/ChartTheme.cs` — SetDarkMode() for theme-adaptive colors
+- `src/MonteCarlo.Charts/Controls/TornadoChart.cs` — theme-adaptive label/baseline colors
+- `src/MonteCarlo.Addin/Services/SimulationOrchestrator.cs` — EnableEvents, batch evaluator
+- `src/MonteCarlo.Addin/AddIn.cs` — keyboard shortcut registration/cleanup
+
+### Key Decisions
+- Theme dictionary is inserted at MergedDictionaries[0] in code-behind rather than XAML to allow runtime swapping
+- ChartTheme uses static mutable state (SetDarkMode) for simplicity since WPF + SkiaSharp don't share resource systems
+- TornadoChart label color uses slate-100 for dark mode (high contrast on dark surface) vs slate-900 for light mode
+- Error classification is type-based (COMException → "Excel Error") rather than message-based for reliability
+- Keyboard shortcuts use Application.OnKey() mapped to ExcelDna [ExcelCommand] macros
+- NumberInputTextBox is a standalone class (not UserControl) inheriting from TextBox for maximum flexibility
+
+### Issues / Notes for Architect
+- No dotnet SDK — cannot build or test
+- The progress bar doesn't use WPF animation for smooth width transitions (DoubleAnimation would conflict with the MultiBinding converter); the throttled updates from the engine provide reasonable visual smoothness
+- SkeletonLoader theme adaptation sets the base color but doesn't restart the XAML EventTrigger storyboard — the pulsing animation color range stays at light-mode values when switching to dark mode at runtime (would need code-behind storyboard management to fix properly)
+- SystemParameters.MinimizeAnimation check for disabling animations is not yet implemented — could be added to a style trigger
+- Escape key handling for cancel actions would need InputBindings on individual controls rather than Application.OnKey since Excel intercepts Escape
+
+### Test Results
+- Cannot run tests (no dotnet SDK)
+

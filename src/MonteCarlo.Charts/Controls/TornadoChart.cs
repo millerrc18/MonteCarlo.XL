@@ -80,10 +80,14 @@ public class TornadoChart : SKElement
     private static readonly SKColor BarDecreaseColor = SKColor.Parse("#F97316");
     private static readonly SKColor BarHoverIncreaseColor = SKColor.Parse("#60A5FA");
     private static readonly SKColor BarHoverDecreaseColor = SKColor.Parse("#FB923C");
-    private static readonly SKColor BaselineColor = SKColor.Parse("#E2E8F0");
-    private static readonly SKColor LabelColor = SKColor.Parse("#0F172A");
-    private static readonly SKColor SubLabelColor = SKColor.Parse("#94A3B8");
-    private static readonly SKColor AnnotationColor = SKColor.Parse("#64748B");
+
+    // Theme-adaptive colors accessed via ChartTheme
+    private static SKColor BaselineColor => Themes.ChartTheme.BorderColor;
+    private static SKColor LabelColor => Themes.ChartTheme.IsDarkMode
+        ? SKColor.Parse("#F1F5F9")   // slate-100 for dark
+        : SKColor.Parse("#0F172A");  // slate-900 for light
+    private static SKColor SubLabelColor => Themes.ChartTheme.LabelColor;
+    private static SKColor AnnotationColor => Themes.ChartTheme.LabelColor;
 
     #endregion
 

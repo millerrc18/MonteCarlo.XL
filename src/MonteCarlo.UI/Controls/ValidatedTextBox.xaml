@@ -1,0 +1,26 @@
+<UserControl x:Class="MonteCarlo.UI.Controls.ValidatedTextBox"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <StackPanel>
+        <Border x:Name="InputBorder"
+                BorderThickness="1"
+                BorderBrush="{DynamicResource BorderBrush}"
+                CornerRadius="4"
+                Background="{DynamicResource SurfaceBrush}">
+            <TextBox x:Name="InnerTextBox"
+                     BorderThickness="0"
+                     Background="Transparent"
+                     Foreground="{DynamicResource TextPrimaryBrush}"
+                     FontFamily="{StaticResource MonoFont}"
+                     FontSize="13"
+                     Padding="8,6"
+                     TextChanged="OnTextChanged"/>
+        </Border>
+        <TextBlock x:Name="ErrorMessage"
+                   Visibility="Collapsed"
+                   Foreground="{StaticResource Red500Brush}"
+                   FontSize="11"
+                   FontFamily="{StaticResource DefaultFont}"
+                   Margin="4,2,0,0"/>
+    </StackPanel>
+</UserControl>

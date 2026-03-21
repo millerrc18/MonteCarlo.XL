@@ -6,19 +6,14 @@
              MinWidth="320">
 
     <UserControl.Resources>
-        <ResourceDictionary>
-            <ResourceDictionary.MergedDictionaries>
-                <ResourceDictionary Source="pack://application:,,,/MonteCarlo.UI;component/Styles/GlobalStyles.xaml"/>
-            </ResourceDictionary.MergedDictionaries>
-            <conv:StringMatchConverter x:Key="StringMatchConverter"/>
-        </ResourceDictionary>
+        <conv:StringMatchConverter x:Key="StringMatchConverter"/>
     </UserControl.Resources>
 
     <UserControl.DataContext>
         <vm:MainViewModel/>
     </UserControl.DataContext>
 
-    <Grid Background="{StaticResource BackgroundBrush}">
+    <Grid Background="{DynamicResource BackgroundBrush}">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>  <!-- Header -->
             <RowDefinition Height="*"/>     <!-- Content -->
@@ -27,8 +22,8 @@
 
         <!-- Header bar -->
         <Border Grid.Row="0"
-                Background="{StaticResource SurfaceBrush}"
-                BorderBrush="{StaticResource BorderBrush}"
+                Background="{DynamicResource SurfaceBrush}"
+                BorderBrush="{DynamicResource BorderBrush}"
                 BorderThickness="0,0,0,1"
                 Padding="16,12">
             <Grid>
@@ -44,14 +39,30 @@
             </Grid>
         </Border>
 
-        <!-- Content area — displays the current view -->
+        <!-- Content area — displays the current view with fade transition -->
         <ContentControl Grid.Row="1"
-                        Content="{Binding CurrentView}"/>
+                        Content="{Binding CurrentView, NotifyOnTargetUpdated=True}">
+            <ContentControl.Style>
+                <Style TargetType="ContentControl">
+                    <Style.Triggers>
+                        <EventTrigger RoutedEvent="ContentControl.TargetUpdated">
+                            <BeginStoryboard>
+                                <Storyboard>
+                                    <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                                                     From="0" To="1"
+                                                     Duration="0:0:0.2"/>
+                                </Storyboard>
+                            </BeginStoryboard>
+                        </EventTrigger>
+                    </Style.Triggers>
+                </Style>
+            </ContentControl.Style>
+        </ContentControl>
 
         <!-- Bottom tab bar -->
         <Border Grid.Row="2"
-                Background="{StaticResource SurfaceBrush}"
-                BorderBrush="{StaticResource BorderBrush}"
+                Background="{DynamicResource SurfaceBrush}"
+                BorderBrush="{DynamicResource BorderBrush}"
                 BorderThickness="0,1,0,0">
             <UniformGrid Rows="1" HorizontalAlignment="Center">
                 <RadioButton Content="Setup"

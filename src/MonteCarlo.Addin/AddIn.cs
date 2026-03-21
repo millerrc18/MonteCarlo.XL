@@ -2,6 +2,7 @@ using ExcelDna.Integration;
 using MonteCarlo.Addin.Excel;
 using MonteCarlo.Addin.Services;
 using MonteCarlo.Addin.TaskPane;
+using Application = Microsoft.Office.Interop.Excel.Application;
 
 namespace MonteCarlo.Addin;
 
@@ -58,6 +59,48 @@ public class AddIn : IExcelAddIn
         {
             // Config load failure is not fatal
         }
+
+        // Register keyboard shortcuts
+        RegisterKeyboardShortcuts();
+    }
+
+    /// <summary>
+    /// Registers global keyboard shortcuts in Excel via Application.OnKey().
+    /// </summary>
+    private static void RegisterKeyboardShortcuts()
+    {
+        try
+        {
+            var app = (Application)ExcelDnaUtil.Application;
+
+            // Ctrl+Shift+R — Run simulation
+            app.OnKey("^+R", "MonteCarloRunSimulation");
+
+            // Ctrl+Shift+S — Stop simulation
+            app.OnKey("^+S", "MonteCarloStopSimulation");
+
+            // Ctrl+Shift+T — Toggle task pane
+            app.OnKey("^+T", "MonteCarloToggleTaskPane");
+        }
+        catch
+        {
+            // Keyboard shortcut registration is non-fatal
+        }
+    }
+
+    /// <summary>
+    /// Unregisters keyboard shortcuts on cleanup.
+    /// </summary>
+    private static void UnregisterKeyboardShortcuts()
+    {
+        try
+        {
+            var app = (Application)ExcelDnaUtil.Application;
+            app.OnKey("^+R");
+            app.OnKey("^+S");
+            app.OnKey("^+T");
+        }
+        catch { }
     }
 
     /// <summary>
@@ -65,6 +108,7 @@ public class AddIn : IExcelAddIn
     /// </summary>
     public void AutoClose()
     {
+        UnregisterKeyboardShortcuts();
         TaskPane?.Dispose();
         TaskPane = null;
         Workbook = null;

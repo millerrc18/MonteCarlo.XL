@@ -14,7 +14,7 @@
         <vm:SetupViewModel/>
     </UserControl.DataContext>
 
-    <Grid Background="{StaticResource BackgroundBrush}">
+    <Grid Background="{DynamicResource BackgroundBrush}">
         <ScrollViewer VerticalScrollBarVisibility="Auto"
                       HorizontalScrollBarVisibility="Disabled">
             <StackPanel Margin="16">
@@ -22,7 +22,7 @@
                 <!-- === HEADER === -->
                 <TextBlock Text="SIMULATION SETUP"
                            Style="{StaticResource HeadlineSmall}"
-                           Foreground="{StaticResource TextTertiaryBrush}"
+                           Foreground="{DynamicResource TextTertiaryBrush}"
                            FontSize="11"
                            Margin="0,0,0,16"/>
 
@@ -52,7 +52,7 @@
                                          Padding="8,6"
                                          FontFamily="{StaticResource MonoFont}"
                                          FontSize="13"
-                                         BorderBrush="{StaticResource BorderBrush}"
+                                         BorderBrush="{DynamicResource BorderBrush}"
                                          BorderThickness="1"/>
                             </StackPanel>
 
@@ -77,7 +77,7 @@
                     </Grid.ColumnDefinitions>
                     <TextBlock Grid.Column="0" Text="INPUTS"
                                Style="{StaticResource HeadlineSmall}"
-                               Foreground="{StaticResource TextTertiaryBrush}"
+                               Foreground="{DynamicResource TextTertiaryBrush}"
                                FontSize="11"
                                VerticalAlignment="Center"/>
                     <Button Grid.Column="1"
@@ -104,11 +104,30 @@
                 </ItemsControl>
 
                 <!-- Empty state for inputs -->
-                <TextBlock Text="No inputs configured. Click + Add to tag a cell."
-                           Style="{StaticResource BodyText}"
-                           FontStyle="Italic"
-                           Margin="0,4,0,12"
-                           Visibility="{Binding Inputs.Count, Converter={StaticResource CountToVisibility}}"/>
+                <Border Style="{StaticResource Card}"
+                        Margin="0,4,0,12"
+                        Visibility="{Binding Inputs.Count, Converter={StaticResource CountToVisibility}}">
+                    <StackPanel HorizontalAlignment="Center" Margin="0,8">
+                        <TextBlock Text="&#x1F3B2;"
+                                   FontSize="28"
+                                   HorizontalAlignment="Center"
+                                   Margin="0,0,0,8"/>
+                        <TextBlock Text="Add your first uncertain input"
+                                   Style="{StaticResource BodyText}"
+                                   Foreground="{DynamicResource TextPrimaryBrush}"
+                                   FontWeight="SemiBold"
+                                   HorizontalAlignment="Center"/>
+                        <TextBlock Text="Select a cell in Excel and click + Add above"
+                                   Style="{StaticResource CaptionText}"
+                                   HorizontalAlignment="Center"
+                                   Margin="0,4,0,8"/>
+                        <Button Content="+ Add Input"
+                                Style="{StaticResource PrimaryButton}"
+                                Command="{Binding ShowAddInputCommand}"
+                                HorizontalAlignment="Center"
+                                Padding="16,8"/>
+                    </StackPanel>
+                </Border>
 
                 <!-- Correlation button (visible when 2+ inputs) -->
                 <Button Style="{StaticResource GhostButton}"
@@ -137,7 +156,7 @@
                     </Grid.ColumnDefinitions>
                     <TextBlock Grid.Column="0" Text="OUTPUTS"
                                Style="{StaticResource HeadlineSmall}"
-                               Foreground="{StaticResource TextTertiaryBrush}"
+                               Foreground="{DynamicResource TextTertiaryBrush}"
                                FontSize="11"
                                VerticalAlignment="Center"/>
                     <Button Grid.Column="1"
@@ -171,7 +190,7 @@
                                      Padding="8,6"
                                      FontFamily="{StaticResource MonoFont}"
                                      FontSize="13"
-                                     BorderBrush="{StaticResource BorderBrush}"
+                                     BorderBrush="{DynamicResource BorderBrush}"
                                      BorderThickness="1"/>
                             <Button Grid.Column="1"
                                     Style="{StaticResource SecondaryButton}"
@@ -194,7 +213,7 @@
                                  Padding="8,6"
                                  FontFamily="{StaticResource DefaultFont}"
                                  FontSize="13"
-                                 BorderBrush="{StaticResource BorderBrush}"
+                                 BorderBrush="{DynamicResource BorderBrush}"
                                  BorderThickness="1"
                                  Margin="0,0,0,12"/>
 
@@ -230,11 +249,30 @@
                 </ItemsControl>
 
                 <!-- Empty state for outputs -->
-                <TextBlock Text="No outputs configured. Click + Add to tag a cell."
-                           Style="{StaticResource BodyText}"
-                           FontStyle="Italic"
-                           Margin="0,4,0,16"
-                           Visibility="{Binding Outputs.Count, Converter={StaticResource CountToVisibility}}"/>
+                <Border Style="{StaticResource Card}"
+                        Margin="0,4,0,16"
+                        Visibility="{Binding Outputs.Count, Converter={StaticResource CountToVisibility}}">
+                    <StackPanel HorizontalAlignment="Center" Margin="0,8">
+                        <TextBlock Text="&#x1F4CA;"
+                                   FontSize="28"
+                                   HorizontalAlignment="Center"
+                                   Margin="0,0,0,8"/>
+                        <TextBlock Text="Tag an output cell to track"
+                                   Style="{StaticResource BodyText}"
+                                   Foreground="{DynamicResource TextPrimaryBrush}"
+                                   FontWeight="SemiBold"
+                                   HorizontalAlignment="Center"/>
+                        <TextBlock Text="Select a formula cell whose result you want to analyze"
+                                   Style="{StaticResource CaptionText}"
+                                   HorizontalAlignment="Center"
+                                   Margin="0,4,0,8"/>
+                        <Button Content="+ Add Output"
+                                Style="{StaticResource PrimaryButton}"
+                                Command="{Binding ShowAddOutputCommand}"
+                                HorizontalAlignment="Center"
+                                Padding="16,8"/>
+                    </StackPanel>
+                </Border>
 
                 <!-- === RUN BUTTON === -->
                 <Button Style="{StaticResource PrimaryButton}"

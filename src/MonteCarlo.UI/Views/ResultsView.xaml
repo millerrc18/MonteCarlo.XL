@@ -13,9 +13,30 @@
         <vm:ResultsViewModel/>
     </UserControl.DataContext>
 
-    <Grid Background="{StaticResource BackgroundBrush}">
+    <Grid Background="{DynamicResource BackgroundBrush}">
+
+        <!-- Empty state (no results yet) -->
+        <StackPanel VerticalAlignment="Center"
+                    HorizontalAlignment="Center"
+                    Margin="32"
+                    Visibility="{Binding HasResults, Converter={StaticResource BoolVis}, ConverterParameter=invert}">
+            <TextBlock Text="&#x1F4C8;"
+                       FontSize="40"
+                       HorizontalAlignment="Center"
+                       Margin="0,0,0,12"/>
+            <TextBlock Text="No results yet"
+                       Style="{StaticResource HeadlineMedium}"
+                       HorizontalAlignment="Center"
+                       Margin="0,0,0,4"/>
+            <TextBlock Text="Run a simulation to see results here"
+                       Style="{StaticResource BodyText}"
+                       HorizontalAlignment="Center"/>
+        </StackPanel>
+
+        <!-- Results content (visible when HasResults = true) -->
         <ScrollViewer VerticalScrollBarVisibility="Auto"
-                      HorizontalScrollBarVisibility="Disabled">
+                      HorizontalScrollBarVisibility="Disabled"
+                      Visibility="{Binding HasResults, Converter={StaticResource BoolVis}}">
             <StackPanel Margin="16">
 
                 <!-- Header with output selector -->
@@ -26,7 +47,7 @@
                     </Grid.ColumnDefinitions>
                     <TextBlock Grid.Column="0" Text="RESULTS"
                                Style="{StaticResource HeadlineSmall}"
-                               Foreground="{StaticResource TextTertiaryBrush}"
+                               Foreground="{DynamicResource TextTertiaryBrush}"
                                FontSize="11"
                                VerticalAlignment="Center"
                                Margin="0,0,12,0"/>

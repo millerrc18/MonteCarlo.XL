@@ -5,13 +5,14 @@
              xmlns:conv="clr-namespace:MonteCarlo.UI.Converters">
     <UserControl.Resources>
         <conv:PercentToWidthConverter x:Key="PercentToWidth"/>
+        <conv:BoolToVisibilityConverter x:Key="BoolVis"/>
     </UserControl.Resources>
 
     <UserControl.DataContext>
         <vm:RunViewModel/>
     </UserControl.DataContext>
 
-    <Grid Background="{StaticResource BackgroundBrush}">
+    <Grid Background="{DynamicResource BackgroundBrush}">
         <ScrollViewer VerticalScrollBarVisibility="Auto"
                       HorizontalScrollBarVisibility="Disabled">
             <StackPanel Margin="16">
@@ -19,13 +20,13 @@
                 <!-- Header -->
                 <TextBlock Text="RUNNING SIMULATION"
                            Style="{StaticResource HeadlineSmall}"
-                           Foreground="{StaticResource TextTertiaryBrush}"
+                           Foreground="{DynamicResource TextTertiaryBrush}"
                            FontSize="11"
                            Margin="0,0,0,16"/>
 
                 <!-- Progress bar -->
                 <Grid Margin="0,0,0,16">
-                    <Border Background="{StaticResource BorderBrush}"
+                    <Border Background="{DynamicResource BorderBrush}"
                             CornerRadius="4"
                             Height="8"/>
                     <Border Background="{StaticResource Blue500Brush}"
@@ -43,7 +44,7 @@
                                VerticalAlignment="Top"
                                Margin="0,-18,0,0"
                                Style="{StaticResource BodyText}"
-                               Foreground="{StaticResource TextPrimaryBrush}"
+                               Foreground="{DynamicResource TextPrimaryBrush}"
                                FontFamily="{StaticResource MonoFont}">
                         <Run Text="{Binding ProgressPercent, StringFormat='{}{0:F0}', Mode=OneWay}"/><Run Text="%"/>
                     </TextBlock>
@@ -68,7 +69,7 @@
                                    Style="{StaticResource CaptionText}" VerticalAlignment="Center"/>
                         <TextBlock Grid.Row="0" Grid.Column="1"
                                    Style="{StaticResource BodyText}"
-                                   Foreground="{StaticResource TextPrimaryBrush}"
+                                   Foreground="{DynamicResource TextPrimaryBrush}"
                                    FontFamily="{StaticResource MonoFont}"
                                    HorizontalAlignment="Right">
                             <Run Text="{Binding CompletedIterations, StringFormat='{}{0:N0}', Mode=OneWay}"/>
@@ -80,7 +81,7 @@
                                    Style="{StaticResource CaptionText}" VerticalAlignment="Center"/>
                         <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding ElapsedTime}"
                                    Style="{StaticResource BodyText}"
-                                   Foreground="{StaticResource TextPrimaryBrush}"
+                                   Foreground="{DynamicResource TextPrimaryBrush}"
                                    FontFamily="{StaticResource MonoFont}"
                                    HorizontalAlignment="Right"/>
 
@@ -88,7 +89,7 @@
                                    Style="{StaticResource CaptionText}" VerticalAlignment="Center"/>
                         <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding EstimatedRemaining}"
                                    Style="{StaticResource BodyText}"
-                                   Foreground="{StaticResource TextPrimaryBrush}"
+                                   Foreground="{DynamicResource TextPrimaryBrush}"
                                    FontFamily="{StaticResource MonoFont}"
                                    HorizontalAlignment="Right"/>
                     </Grid>
@@ -97,7 +98,7 @@
                 <!-- Live preview stats -->
                 <TextBlock Text="LIVE PREVIEW"
                            Style="{StaticResource HeadlineSmall}"
-                           Foreground="{StaticResource TextTertiaryBrush}"
+                           Foreground="{DynamicResource TextTertiaryBrush}"
                            FontSize="11"
                            Margin="0,4,0,8"/>
 
@@ -121,27 +122,27 @@
 
                         <TextBlock Grid.Row="0" Grid.Column="0" Text="Mean:" Style="{StaticResource CaptionText}"/>
                         <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding LiveMean}"
-                                   Style="{StaticResource BodyText}" Foreground="{StaticResource TextPrimaryBrush}"
+                                   Style="{StaticResource BodyText}" Foreground="{DynamicResource TextPrimaryBrush}"
                                    FontFamily="{StaticResource MonoFont}" HorizontalAlignment="Right"/>
 
                         <TextBlock Grid.Row="2" Grid.Column="0" Text="Median:" Style="{StaticResource CaptionText}"/>
                         <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding LiveMedian}"
-                                   Style="{StaticResource BodyText}" Foreground="{StaticResource TextPrimaryBrush}"
+                                   Style="{StaticResource BodyText}" Foreground="{DynamicResource TextPrimaryBrush}"
                                    FontFamily="{StaticResource MonoFont}" HorizontalAlignment="Right"/>
 
                         <TextBlock Grid.Row="4" Grid.Column="0" Text="Std Dev:" Style="{StaticResource CaptionText}"/>
                         <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding LiveStdDev}"
-                                   Style="{StaticResource BodyText}" Foreground="{StaticResource TextPrimaryBrush}"
+                                   Style="{StaticResource BodyText}" Foreground="{DynamicResource TextPrimaryBrush}"
                                    FontFamily="{StaticResource MonoFont}" HorizontalAlignment="Right"/>
 
                         <TextBlock Grid.Row="6" Grid.Column="0" Text="P5:" Style="{StaticResource CaptionText}"/>
                         <TextBlock Grid.Row="6" Grid.Column="1" Text="{Binding LiveP5}"
-                                   Style="{StaticResource BodyText}" Foreground="{StaticResource TextPrimaryBrush}"
+                                   Style="{StaticResource BodyText}" Foreground="{DynamicResource TextPrimaryBrush}"
                                    FontFamily="{StaticResource MonoFont}" HorizontalAlignment="Right"/>
 
                         <TextBlock Grid.Row="8" Grid.Column="0" Text="P95:" Style="{StaticResource CaptionText}"/>
                         <TextBlock Grid.Row="8" Grid.Column="1" Text="{Binding LiveP95}"
-                                   Style="{StaticResource BodyText}" Foreground="{StaticResource TextPrimaryBrush}"
+                                   Style="{StaticResource BodyText}" Foreground="{DynamicResource TextPrimaryBrush}"
                                    FontFamily="{StaticResource MonoFont}" HorizontalAlignment="Right"/>
                     </Grid>
                 </Border>
@@ -149,7 +150,7 @@
                 <!-- Convergence indicators -->
                 <TextBlock Text="CONVERGENCE"
                            Style="{StaticResource HeadlineSmall}"
-                           Foreground="{StaticResource TextTertiaryBrush}"
+                           Foreground="{DynamicResource TextTertiaryBrush}"
                            FontSize="11"
                            Margin="0,4,0,8"/>
 
@@ -167,7 +168,7 @@
                                                Style="{StaticResource CaptionText}"
                                                VerticalAlignment="Center"/>
                                     <Border Grid.Column="1" Height="3" CornerRadius="1.5"
-                                            Background="{StaticResource BorderBrush}"
+                                            Background="{DynamicResource BorderBrush}"
                                             Margin="4,0" VerticalAlignment="Center"/>
                                     <TextBlock Grid.Column="2" Text="{Binding StatusText}"
                                                Style="{StaticResource CaptionText}"
@@ -179,18 +180,42 @@
                     </ItemsControl>
                 </Border>
 
-                <!-- Stop button -->
+                <!-- Stop button (visible during run) -->
                 <Button Style="{StaticResource SecondaryButton}"
                         Command="{Binding StopSimulationCommand}"
                         HorizontalAlignment="Stretch"
                         Padding="16,12"
                         FontSize="15"
-                        BorderBrush="{StaticResource Red500Brush}">
+                        BorderBrush="{StaticResource Red500Brush}"
+                        Visibility="{Binding IsRunning, Converter={StaticResource BoolVis}}">
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
                         <TextBlock Text="&#x25A0;" Foreground="{StaticResource Red500Brush}" Margin="0,0,8,0"/>
                         <TextBlock Text="Stop Simulation" Foreground="{StaticResource Red500Brush}"/>
                     </StackPanel>
                 </Button>
+
+                <!-- Error card (visible when error occurs) -->
+                <Border Style="{StaticResource Card}"
+                        BorderBrush="{StaticResource Red500Brush}"
+                        BorderThickness="1"
+                        Margin="0,8,0,0"
+                        Visibility="{Binding HasError, Converter={StaticResource BoolVis}}">
+                    <StackPanel>
+                        <TextBlock Text="{Binding ErrorType}"
+                                   Style="{StaticResource HeadlineSmall}"
+                                   Foreground="{StaticResource Red500Brush}"
+                                   Margin="0,0,0,8"/>
+                        <TextBlock Text="{Binding ErrorMessage}"
+                                   Style="{StaticResource BodyText}"
+                                   TextWrapping="Wrap"
+                                   Margin="0,0,0,12"/>
+                        <Button Content="Try Again"
+                                Style="{StaticResource PrimaryButton}"
+                                Command="{Binding RetrySimulationCommand}"
+                                HorizontalAlignment="Left"
+                                Padding="16,8"/>
+                    </StackPanel>
+                </Border>
 
             </StackPanel>
         </ScrollViewer>

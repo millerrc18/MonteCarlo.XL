@@ -1,0 +1,22 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!-- Dark Theme Colors -->
+    <Color x:Key="Background">#1E293B</Color>      <!-- slate-800 -->
+    <Color x:Key="Surface">#334155</Color>          <!-- slate-700 -->
+    <Color x:Key="SurfaceHover">#475569</Color>     <!-- slate-600 -->
+    <Color x:Key="Border">#475569</Color>           <!-- slate-600 -->
+    <Color x:Key="TextPrimary">#F1F5F9</Color>      <!-- slate-100 -->
+    <Color x:Key="TextSecondary">#94A3B8</Color>    <!-- slate-400 -->
+    <Color x:Key="TextTertiary">#64748B</Color>     <!-- slate-500 -->
+
+    <!-- Brushes -->
+    <SolidColorBrush x:Key="BackgroundBrush" Color="{StaticResource Background}"/>
+    <SolidColorBrush x:Key="SurfaceBrush" Color="{StaticResource Surface}"/>
+    <SolidColorBrush x:Key="SurfaceHoverBrush" Color="{StaticResource SurfaceHover}"/>
+    <SolidColorBrush x:Key="BorderBrush" Color="{StaticResource Border}"/>
+    <SolidColorBrush x:Key="TextPrimaryBrush" Color="{StaticResource TextPrimary}"/>
+    <SolidColorBrush x:Key="TextSecondaryBrush" Color="{StaticResource TextSecondary}"/>
+    <SolidColorBrush x:Key="TextTertiaryBrush" Color="{StaticResource TextTertiary}"/>
+
+</ResourceDictionary>

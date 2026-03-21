@@ -171,10 +171,12 @@ public class SimulationOrchestrator
 
         var savedCalculation = app.Calculation;
         var savedScreenUpdating = app.ScreenUpdating;
+        var savedEnableEvents = app.EnableEvents;
 
         try
         {
             app.ScreenUpdating = false;
+            app.EnableEvents = false;
             app.Calculation = XlCalculation.xlCalculationManual;
 
             var result = await engine.RunAsync(config, evaluator, _cts.Token);
@@ -258,6 +260,7 @@ public class SimulationOrchestrator
             }
 
             app.Calculate();
+            app.EnableEvents = savedEnableEvents;
             app.ScreenUpdating = savedScreenUpdating;
             _cts = null;
         }
@@ -329,29 +332,51 @@ public class SimulationOrchestrator
         IReadOnlyList<TaggedOutput> taggedOutputs,
         Application app)
     {
-        // Build lookup for fast cell writing
+        // Build lookup for fast cell writing, grouped by sheet for batch COM calls
         var inputCells = taggedInputs.ToDictionary(
             i => i.Cell.FullReference,
             i => i.Cell);
 
+        // Pre-group inputs by sheet for batch writing
+        var inputsBySheet = taggedInputs
+            .GroupBy(i => i.Cell.SheetName, StringComparer.OrdinalIgnoreCase)
+            .ToDictionary(
+                g => g.Key,
+                g => g.Select(i => i.Cell).ToArray(),
+                StringComparer.OrdinalIgnoreCase);
+
+        // Pre-cache sheet references for output reading
+        var outputsBySheet = taggedOutputs
+            .GroupBy(o => o.Cell.SheetName, StringComparer.OrdinalIgnoreCase)
+            .ToDictionary(
+                g => g.Key,
+                g => g.ToArray(),
+                StringComparer.OrdinalIgnoreCase);
+
         return inputs =>
         {
-            // Write all input values to Excel
-            foreach (var (id, value) in inputs)
+            // Write input values to Excel — batch by sheet to minimize COM round-trips
+            foreach (var (sheetName, cells) in inputsBySheet)
             {
-                if (inputCells.TryGetValue(id, out var cell))
-                    _workbook.WriteCellValue(cell.SheetName, cell.CellAddress, value);
+                foreach (var cell in cells)
+                {
+                    if (inputs.TryGetValue(cell.FullReference, out var value))
+                        _workbook.WriteCellValue(sheetName, cell.CellAddress, value);
+                }
             }
 
             // Recalculate
             app.Calculate();
 
-            // Read all output values
-            var outputs = new Dictionary<string, double>();
-            foreach (var output in taggedOutputs)
+            // Read all output values — batch by sheet
+            var outputs = new Dictionary<string, double>(taggedOutputs.Count);
+            foreach (var (sheetName, sheetOutputs) in outputsBySheet)
             {
-                double val = _workbook.ReadCellValue(output.Cell.SheetName, output.Cell.CellAddress);
-                outputs[output.Cell.FullReference] = val;
+                foreach (var output in sheetOutputs)
+                {
+                    double val = _workbook.ReadCellValue(sheetName, output.Cell.CellAddress);
+                    outputs[output.Cell.FullReference] = val;
+                }
             }
 
             return outputs;

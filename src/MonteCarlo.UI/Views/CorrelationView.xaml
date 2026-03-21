@@ -10,7 +10,7 @@
     <DockPanel>
         <!-- Header -->
         <Border DockPanel.Dock="Top" Padding="16,12" BorderThickness="0,0,0,1"
-                BorderBrush="{StaticResource BorderBrush}">
+                BorderBrush="{DynamicResource BorderBrush}">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
@@ -18,7 +18,7 @@
                 </Grid.ColumnDefinitions>
                 <TextBlock Text="INPUT CORRELATIONS"
                            Style="{StaticResource HeadlineSmall}"
-                           Foreground="{StaticResource TextPrimaryBrush}"
+                           Foreground="{DynamicResource TextPrimaryBrush}"
                            VerticalAlignment="Center"/>
                 <Button Grid.Column="1" Content="?"
                         Style="{StaticResource GhostButton}"
@@ -29,7 +29,7 @@
 
         <!-- Footer buttons -->
         <Border DockPanel.Dock="Bottom" Padding="16,8" BorderThickness="0,1,0,0"
-                BorderBrush="{StaticResource BorderBrush}">
+                BorderBrush="{DynamicResource BorderBrush}">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto"/>
@@ -51,11 +51,11 @@
         <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="16,12">
             <StackPanel>
                 <!-- Tip -->
-                <Border Background="{StaticResource SurfaceBrush}"
+                <Border Background="{DynamicResource SurfaceBrush}"
                         CornerRadius="6" Padding="12,8" Margin="0,0,0,12">
                     <TextBlock TextWrapping="Wrap"
                                Style="{StaticResource CaptionText}"
-                               Foreground="{StaticResource TextSecondaryBrush}">
+                               Foreground="{DynamicResource TextSecondaryBrush}">
                         <Run Text="Tip:"/> Enter Spearman rank correlations (-1 to +1).
                         Leave as 0 for independent inputs.
                     </TextBlock>
@@ -109,7 +109,7 @@
                 <!-- Scroll hint for many inputs -->
                 <TextBlock Text="Scroll horizontally to see all inputs."
                            Style="{StaticResource CaptionText}"
-                           Foreground="{StaticResource TextTertiaryBrush}"
+                           Foreground="{DynamicResource TextTertiaryBrush}"
                            FontSize="10" Margin="0,4,0,0"
                            Visibility="Collapsed"
                            x:Name="ScrollHint"/>

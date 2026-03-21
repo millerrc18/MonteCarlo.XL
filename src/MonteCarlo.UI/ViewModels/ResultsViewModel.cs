@@ -49,6 +49,14 @@ public partial class ResultsViewModel : ObservableObject
     /// <summary>Number of iterations in the simulation.</summary>
     [ObservableProperty] private string _iterationCountFormatted = "—";
 
+    /// <summary>Whether results are available for display.</summary>
+    public bool HasResults => SimulationResult != null;
+
+    partial void OnSimulationResultChanged(SimulationResult? value)
+    {
+        OnPropertyChanged(nameof(HasResults));
+    }
+
     /// <summary>
     /// Load results from a completed simulation.
     /// </summary>

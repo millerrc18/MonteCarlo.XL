@@ -66,6 +66,13 @@ public partial class MainViewModel : ObservableObject
             CancelSimulationRequested?.Invoke(this, EventArgs.Empty);
         };
 
+        // Wire RunViewModel's retry event
+        RunViewModel.RetryRequested += (_, _) =>
+        {
+            RunViewModel.Reset(SetupViewModel.IterationCount);
+            RunSimulationRequested?.Invoke(this, EventArgs.Empty);
+        };
+
         NavigateToSetup();
     }
 
@@ -115,11 +122,9 @@ public partial class MainViewModel : ObservableObject
     /// <summary>
     /// Called by the Addin layer when simulation fails.
     /// </summary>
-    public void OnSimulationError(string errorMessage)
+    public void OnSimulationError(Exception ex)
     {
-        RunViewModel.IsRunning = false;
-        // Could show error in RunView — for now navigate back to setup
-        NavigateToSetup();
+        RunViewModel.ShowError(ex);
     }
 
     [RelayCommand]

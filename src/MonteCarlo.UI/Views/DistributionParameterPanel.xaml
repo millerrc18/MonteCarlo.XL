@@ -12,9 +12,9 @@
             <Setter Property="FontSize" Value="13"/>
             <Setter Property="Padding" Value="8,6"/>
             <Setter Property="Margin" Value="0,0,0,8"/>
-            <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}"/>
             <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="Background" Value="{StaticResource BackgroundBrush}"/>
+            <Setter Property="Background" Value="{DynamicResource BackgroundBrush}"/>
         </Style>
     </UserControl.Resources>
 

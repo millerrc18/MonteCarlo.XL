@@ -31,8 +31,20 @@ public partial class RunViewModel : ObservableObject
     /// <summary>Whether the simulation is currently running.</summary>
     [ObservableProperty] private bool _isRunning;
 
+    /// <summary>Whether a simulation error occurred.</summary>
+    [ObservableProperty] private bool _hasError;
+
+    /// <summary>Error type for display (e.g., "Cell Reference Error").</summary>
+    [ObservableProperty] private string _errorType = string.Empty;
+
+    /// <summary>Human-readable error message.</summary>
+    [ObservableProperty] private string _errorMessage = string.Empty;
+
     /// <summary>Event raised when the user clicks the Stop button.</summary>
     public event EventHandler? StopRequested;
+
+    /// <summary>Event raised when the user clicks Retry after an error.</summary>
+    public event EventHandler? RetryRequested;
 
     /// <summary>
     /// Update progress from a SimulationProgressEventArgs.
@@ -94,6 +106,35 @@ public partial class RunViewModel : ObservableObject
         StopRequested?.Invoke(this, EventArgs.Empty);
     }
 
+    [RelayCommand]
+    private void RetrySimulation()
+    {
+        HasError = false;
+        RetryRequested?.Invoke(this, EventArgs.Empty);
+    }
+
+    /// <summary>
+    /// Show an error state in the run view.
+    /// </summary>
+    public void ShowError(Exception ex)
+    {
+        IsRunning = false;
+        HasError = true;
+        ErrorType = ClassifyError(ex);
+        ErrorMessage = ex.Message;
+    }
+
+    private static string ClassifyError(Exception ex)
+    {
+        return ex switch
+        {
+            InvalidOperationException => "Configuration Error",
+            System.Runtime.InteropServices.COMException => "Excel Error",
+            OutOfMemoryException => "Memory Error",
+            _ => "Simulation Error"
+        };
+    }
+
     /// <summary>
     /// Reset the view model for a new run.
     /// </summary>
@@ -111,6 +152,7 @@ public partial class RunViewModel : ObservableObject
         LiveP95 = "—";
         ConvergenceIndicators.Clear();
         IsRunning = true;
+        HasError = false;
     }
 
     private static string FormatTimeSpan(TimeSpan ts)
