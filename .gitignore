@@ -53,3 +53,5 @@ Desktop.ini
 *.bak
 *.swp
 *~
+.dotnet/
+dotnet-install.sh
