@@ -24,7 +24,7 @@ public static class NumberFormatter
 
         var abs = Math.Abs(value);
 
-        if (hint == "currency" || abs >= 1000)
+        if (hint == "currency")
         {
             if (abs >= 1_000_000_000)
                 return $"${value / 1_000_000_000:F1}B";
@@ -34,6 +34,13 @@ public static class NumberFormatter
                 return $"${value / 1_000:F1}K";
             return $"${value:F0}";
         }
+
+        if (abs >= 1_000_000_000)
+            return $"{value / 1_000_000_000:F1}B";
+        if (abs >= 1_000_000)
+            return $"{value / 1_000_000:F1}M";
+        if (abs >= 1_000)
+            return $"{value / 1_000:F1}K";
 
         if (abs >= 1)
             return value.ToString("F2", CultureInfo.InvariantCulture);
