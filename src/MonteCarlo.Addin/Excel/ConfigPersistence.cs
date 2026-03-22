@@ -2,7 +2,6 @@ using System.Text.Json;
 using System.Xml;
 using ExcelDna.Integration;
 using MonteCarlo.Engine.Simulation;
-using Microsoft.Office.Core;
 using Microsoft.Office.Interop.Excel;
 
 namespace MonteCarlo.Addin.Excel;
@@ -10,6 +9,8 @@ namespace MonteCarlo.Addin.Excel;
 /// <summary>
 /// Saves and loads simulation configuration inside the Excel workbook
 /// using CustomXMLParts. Falls back to a hidden sheet if needed.
+/// Uses dynamic COM late-binding for CustomXMLPart to avoid
+/// a hard dependency on Microsoft.Office.Core interop assembly.
 /// </summary>
 public class ConfigPersistence
 {
@@ -23,9 +24,6 @@ public class ConfigPersistence
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase
     };
 
-    /// <summary>
-    /// Save the simulation profile into the active workbook's CustomXMLPart.
-    /// </summary>
     public void Save(SimulationProfile profile)
     {
         var app = (Application)ExcelDnaUtil.Application;
@@ -35,34 +33,24 @@ public class ConfigPersistence
         string json = JsonSerializer.Serialize(profile, JsonOptions);
         string xml = WrapInXml(json, profile.Name);
 
-        // Remove existing config part if present
         RemoveExistingPart(workbook);
 
-        // Add new part
-        workbook.CustomXMLParts.Add(xml);
+        dynamic parts = workbook.CustomXMLParts;
+        parts.Add(xml);
     }
 
-    /// <summary>
-    /// Load the simulation profile from the active workbook.
-    /// Returns null if no config exists.
-    /// </summary>
     public SimulationProfile? Load()
     {
         var app = (Application)ExcelDnaUtil.Application;
         var workbook = app.ActiveWorkbook;
         if (workbook == null) return null;
 
-        // Try CustomXMLPart first
         var profile = LoadFromCustomXml(workbook);
         if (profile != null) return profile;
 
-        // Fallback: try hidden sheet
         return LoadFromHiddenSheet(workbook);
     }
 
-    /// <summary>
-    /// Delete any saved config from the workbook.
-    /// </summary>
     public void Clear()
     {
         var app = (Application)ExcelDnaUtil.Application;
@@ -73,9 +61,6 @@ public class ConfigPersistence
         RemoveHiddenSheet(workbook);
     }
 
-    /// <summary>
-    /// List all saved profile names.
-    /// </summary>
     public List<string> GetProfileNames()
     {
         var profile = Load();
@@ -85,7 +70,6 @@ public class ConfigPersistence
 
     private static string WrapInXml(string json, string profileName)
     {
-        // Escape CDATA end markers in JSON (edge case)
         string safeJson = json.Replace("]]>", "]]]]><![CDATA[>");
 
         return $"""
@@ -98,15 +82,18 @@ public class ConfigPersistence
 
     private static SimulationProfile? LoadFromCustomXml(Workbook workbook)
     {
-        foreach (CustomXMLPart part in workbook.CustomXMLParts)
+        dynamic parts = workbook.CustomXMLParts;
+        int count = parts.Count;
+
+        for (int idx = 1; idx <= count; idx++)
         {
             try
             {
-                if (part.BuiltIn) continue;
-                string xml = part.XML;
+                dynamic part = parts[idx];
+                if ((bool)part.BuiltIn) continue;
+                string xml = (string)part.XML;
                 if (!xml.Contains(CustomXmlNamespace)) continue;
 
-                // Parse XML and extract JSON from CDATA
                 var doc = new XmlDocument();
                 doc.LoadXml(xml);
 
@@ -122,10 +109,7 @@ public class ConfigPersistence
                     PropertyNamingPolicy = JsonNamingPolicy.CamelCase
                 });
             }
-            catch
-            {
-                // Skip malformed parts
-            }
+            catch { }
         }
 
         return null;
@@ -164,21 +148,29 @@ public class ConfigPersistence
 
     private static void RemoveExistingPart(Workbook workbook)
     {
-        var toRemove = new List<CustomXMLPart>();
-        foreach (CustomXMLPart part in workbook.CustomXMLParts)
+        try
         {
-            try
-            {
-                if (!part.BuiltIn && part.XML.Contains(CustomXmlNamespace))
-                    toRemove.Add(part);
-            }
-            catch { }
-        }
+            dynamic parts = workbook.CustomXMLParts;
+            int count = parts.Count;
+            var indicesToRemove = new List<int>();
 
-        foreach (var part in toRemove)
-        {
-            try { part.Delete(); } catch { }
+            for (int idx = 1; idx <= count; idx++)
+            {
+                try
+                {
+                    dynamic part = parts[idx];
+                    if (!(bool)part.BuiltIn && ((string)part.XML).Contains(CustomXmlNamespace))
+                        indicesToRemove.Add(idx);
+                }
+                catch { }
+            }
+
+            for (int i = indicesToRemove.Count - 1; i >= 0; i--)
+            {
+                try { parts[indicesToRemove[i]].Delete(); } catch { }
+            }
         }
+        catch { }
     }
 
     private static void RemoveHiddenSheet(Workbook workbook)
