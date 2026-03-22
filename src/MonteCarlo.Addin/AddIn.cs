@@ -1,3 +1,4 @@
+using System.Windows.Forms;
 using ExcelDna.Integration;
 using MonteCarlo.Addin.Excel;
 using MonteCarlo.Addin.Services;
@@ -36,31 +37,42 @@ public class AddIn : IExcelAddIn
     /// </summary>
     public void AutoOpen()
     {
-        TaskPane = new TaskPaneController();
-        Workbook = new WorkbookManager();
-        InputTags = new InputTagManager();
-        OutputTags = new OutputTagManager();
-        Highlighter = new CellHighlighter();
-        ConfigPersistence = new ConfigPersistence();
-        Orchestrator = new SimulationOrchestrator(
-            Workbook, InputTags, OutputTags, ConfigPersistence);
-
-        // Auto-load saved config if present
         try
         {
-            var profile = ConfigPersistence.Load();
-            if (profile != null)
-            {
-                // Profile loaded — SetupViewModel will be populated when task pane opens
-            }
-        }
-        catch
-        {
-            // Config load failure is not fatal
-        }
+            TaskPane = new TaskPaneController();
+            Workbook = new WorkbookManager();
+            InputTags = new InputTagManager();
+            OutputTags = new OutputTagManager();
+            Highlighter = new CellHighlighter();
+            ConfigPersistence = new ConfigPersistence();
+            Orchestrator = new SimulationOrchestrator(
+                Workbook, InputTags, OutputTags, ConfigPersistence);
 
-        // Register keyboard shortcuts
-        RegisterKeyboardShortcuts();
+            // Auto-load saved config if present
+            try
+            {
+                var profile = ConfigPersistence.Load();
+                if (profile != null)
+                {
+                    // Profile loaded — SetupViewModel will be populated when task pane opens
+                }
+            }
+            catch
+            {
+                // Config load failure is not fatal
+            }
+
+            // Register keyboard shortcuts
+            RegisterKeyboardShortcuts();
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show(
+                $"MonteCarlo.XL failed to initialize:\n\n{ex.GetType().Name}: {ex.Message}\n\n{ex.StackTrace}",
+                "MonteCarlo.XL Startup Error",
+                MessageBoxButtons.OK,
+                MessageBoxIcon.Error);
+        }
     }
 
     /// <summary>

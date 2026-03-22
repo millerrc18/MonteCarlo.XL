@@ -1,3 +1,4 @@
+using System.Windows.Forms;
 using ExcelDna.Integration.CustomUI;
 
 namespace MonteCarlo.Addin.TaskPane;
@@ -21,9 +22,7 @@ public class TaskPaneController : IDisposable
     /// </summary>
     public void Toggle()
     {
-        if (_taskPane == null)
-            CreateTaskPane();
-
+        EnsureCreated();
         _taskPane!.Visible = !_taskPane.Visible;
     }
 
@@ -32,9 +31,7 @@ public class TaskPaneController : IDisposable
     /// </summary>
     public void Show()
     {
-        if (_taskPane == null)
-            CreateTaskPane();
-
+        EnsureCreated();
         _taskPane!.Visible = true;
     }
 
@@ -47,12 +44,30 @@ public class TaskPaneController : IDisposable
             _taskPane.Visible = false;
     }
 
-    private void CreateTaskPane()
+    private void EnsureCreated()
     {
-        _host = new TaskPaneHost();
-        _taskPane = CustomTaskPaneFactory.CreateCustomTaskPane(_host, "MonteCarlo.XL");
-        _taskPane.DockPosition = MsoCTPDockPosition.msoCTPDockPositionRight;
-        _taskPane.Width = 380;
+        if (_taskPane != null) return;
+
+        try
+        {
+            _host = new TaskPaneHost();
+            _taskPane = CustomTaskPaneFactory.CreateCustomTaskPane(_host, "MonteCarlo.XL");
+            _taskPane.DockPosition = MsoCTPDockPosition.msoCTPDockPositionRight;
+            _taskPane.Width = 380;
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show(
+                $"Failed to create task pane:\n\n{ex.GetType().Name}: {ex.Message}\n\n{ex.StackTrace}",
+                "MonteCarlo.XL Error",
+                MessageBoxButtons.OK,
+                MessageBoxIcon.Error);
+
+            // Clean up partial state
+            _host?.Dispose();
+            _host = null;
+            _taskPane = null;
+        }
     }
 
     public void Dispose()
@@ -65,8 +80,12 @@ public class TaskPaneController : IDisposable
 
         if (_taskPane != null)
         {
-            _taskPane.Visible = false;
-            _taskPane.Delete();
+            try
+            {
+                _taskPane.Visible = false;
+                _taskPane.Delete();
+            }
+            catch { }
             _taskPane = null;
         }
     }

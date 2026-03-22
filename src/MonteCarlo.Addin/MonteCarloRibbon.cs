@@ -1,3 +1,5 @@
+using System.Runtime.InteropServices;
+using System.Windows.Forms;
 using ExcelDna.Integration.CustomUI;
 
 namespace MonteCarlo.Addin;
@@ -5,6 +7,7 @@ namespace MonteCarlo.Addin;
 /// <summary>
 /// Defines the custom ribbon tab for MonteCarlo.XL in Excel.
 /// </summary>
+[ComVisible(true)]
 public class MonteCarloRibbon : ExcelRibbon
 {
     /// <summary>
@@ -23,13 +26,13 @@ public class MonteCarloRibbon : ExcelRibbon
                           screentip='Run Simulation'
                           supertip='Start a Monte Carlo simulation with the current input/output configuration.' />
                   <button id='StopButton' label='Stop' size='large'
-                          imageMso='RecordStop' onAction='OnStopSimulation'
+                          imageMso='CancelRequest' onAction='OnStopSimulation'
                           screentip='Stop Simulation'
                           supertip='Cancel the currently running simulation.' />
                 </group>
                 <group id='ViewGroup' label='View'>
                   <toggleButton id='TaskPaneButton' label='Task Pane' size='large'
-                          imageMso='TaskPane' onAction='OnToggleTaskPane'
+                          imageMso='SheetShow' onAction='OnToggleTaskPane'
                           getPressed='GetTaskPanePressed'
                           screentip='Toggle Task Pane'
                           supertip='Show or hide the MonteCarlo.XL task pane.' />
@@ -51,9 +54,15 @@ public class MonteCarloRibbon : ExcelRibbon
     /// </summary>
     public void OnRunSimulation(IRibbonControl control)
     {
-        // Show task pane on run view
-        AddIn.TaskPane?.Show();
-        // TODO: Trigger simulation engine via the MainViewModel
+        try
+        {
+            AddIn.TaskPane?.Show();
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"Error running simulation:\n{ex}", "MonteCarlo.XL Error",
+                MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
     }
 
     /// <summary>
@@ -69,7 +78,15 @@ public class MonteCarloRibbon : ExcelRibbon
     /// </summary>
     public void OnToggleTaskPane(IRibbonControl control, bool pressed)
     {
-        AddIn.TaskPane?.Toggle();
+        try
+        {
+            AddIn.TaskPane?.Toggle();
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"Error toggling task pane:\n{ex}", "MonteCarlo.XL Error",
+                MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
     }
 
     /// <summary>
@@ -85,7 +102,14 @@ public class MonteCarloRibbon : ExcelRibbon
     /// </summary>
     public void OnOpenSettings(IRibbonControl control)
     {
-        AddIn.TaskPane?.Show();
-        // TODO: Navigate task pane to settings view
+        try
+        {
+            AddIn.TaskPane?.Show();
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"Error opening settings:\n{ex}", "MonteCarlo.XL Error",
+                MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
     }
 }
