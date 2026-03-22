@@ -27,6 +27,20 @@ Performed a methodical, file-by-file review of all 111 source files (~14,500 lin
 - **Issue**: In the `Parallel.For` execution path, the `lastProgressReport` variable (a `TimeSpan` struct) was read and written from multiple threads without synchronization. Multiple threads could simultaneously read the same stale value and all decide to fire progress events, or worse, cause torn reads of the 8-byte struct on 32-bit platforms.
 - **Fix**: Replaced `TimeSpan lastProgressReport` with `long lastProgressReportTicks` and used `Interlocked.Read` / `Interlocked.Exchange` for all accesses, ensuring atomic thread-safe operations.
 
+### User-Facing Formatting
+
+**3. NumberFormatter.cs — Spurious dollar sign on all values >= 1000**
+- **File**: `src/MonteCarlo.UI/Converters/NumberFormatter.cs` (line 27)
+- **Issue**: The condition `hint == "currency" || abs >= 1000` caused ALL values >= 1000 to be formatted with a `$` prefix (e.g., `$5.0K` instead of `5.0K`), even when the hint was null (non-currency). Every stat panel value, chart annotation, and clipboard copy for outputs above 1000 would incorrectly show a dollar sign.
+- **Fix**: Separated the currency-hint path from the magnitude-abbreviation path. Non-currency values >= 1000 now format as `5.0K`, `1.2M`, `3.4B` without the `$` prefix.
+
+### UDF Validation
+
+**4. MonteCarloFunctions.cs — MCTriangular/MCPERT reject valid edge cases**
+- **File**: `src/MonteCarlo.Addin/UDF/MonteCarloFunctions.cs` (lines 35, 50)
+- **Issue**: The UDFs `MC.Triangular` and `MC.PERT` used strict inequality validation (`min >= mode || mode >= max`), rejecting cases where `mode == min` or `mode == max`. However, the engine's `TriangularDistribution` and `PERTDistribution` both accept these edge cases (mode at boundary). Users typing `=MC.Triangular(0, 0, 100)` would get `#VALUE!` error despite it being a valid distribution.
+- **Fix**: Changed validation to `min >= max || mode < min || mode > max`, matching the engine's acceptance of boundary modes.
+
 ---
 
 ## Verified Correct (No Bugs Found)

@@ -963,3 +963,8 @@ Chose ExcelDna over VSTO for these reasons:
 - Build: 0 errors, 1 warning (CS0067 ConvergenceUpdated — expected per task spec)
 - Tests: 327 passed, 0 failed, 0 skipped
 
+
+### Additional Bugs Found (Second Pass)
+3. **NumberFormatter.cs**: Spurious `$` prefix on all values >= 1000 even when not currency — separated currency path from magnitude abbreviation
+4. **MonteCarloFunctions.cs**: MCTriangular/MCPERT UDFs rejected valid edge cases (mode==min, mode==max) — relaxed validation to match engine
+
