@@ -913,3 +913,53 @@ Chose ExcelDna over VSTO for these reasons:
 ### Test Results
 - Cannot run tests (no dotnet SDK)
 
+
+---
+
+## TASK-019 — Comprehensive Code Review & Bug Sweep
+**Status**: COMPLETE
+**Date**: 2026-03-22
+**Branch**: claude/execute-task-019-build-EoELI
+
+### What Was Done
+- Installed .NET 8 SDK and performed initial build verification (0 errors, 327 tests passing)
+- Methodically reviewed all 111 source files across 5 projects
+- Fixed 2 bugs found during review
+- Documented 3 architectural gaps as [UNRESOLVED] (not bugs, require new feature work)
+
+### Bugs Fixed
+1. **CorrelationView.xaml**: Added MergedDictionaries (LightTheme + GlobalStyles) — the view uses StaticResource for styles but had no resource dictionaries in scope for standalone instantiation
+2. **SimulationEngine.cs**: Fixed race condition on `lastProgressReport` in Parallel.For block — replaced TimeSpan with long ticks + Interlocked.Read/Exchange for thread-safe access
+
+### Verified Correct (No Bugs)
+- sys:Double namespace (System.Runtime, not mscorlib)
+- All main views have proper MergedDictionaries
+- All sub-controls correctly inherit resources from XAML parents
+- DynamicResource vs StaticResource usage correct throughout
+- GlobalUsings.cs covers all type ambiguities in Addin project
+- Dependency boundaries clean (Engine is pure, no UI/Excel leaks)
+- All MathNet, SkiaSharp, LiveCharts2, ExcelDna, CommunityToolkit.Mvvm API calls correct
+- SimulationResult.GetOutputValues/GetInputSamples always called with string IDs
+- ObservableProperty/RelayCommand naming matches XAML bindings
+- All converters exist and implement interfaces correctly
+- COM interop null-checked, thread safety with Interlocked
+
+### Files Created/Modified
+- `src/MonteCarlo.UI/Views/CorrelationView.xaml` — added MergedDictionaries
+- `src/MonteCarlo.Engine/Simulation/SimulationEngine.cs` — thread-safe progress reporting
+- `tasks/completed/TASK-019.md` — detailed bug summary
+
+### Key Decisions Made During Implementation
+- Classified the missing orchestrator-to-UI wiring as an architectural gap, not a bug — fixing it would add new feature code, violating the "bug-fix only" constraint
+- The DiscreteDistribution sorting of values (lines 45-47) was reviewed and found correct — sorting is needed for CDF/Percentile to work properly, and tests pass
+
+### Issues / Notes for Architect
+- [UNRESOLVED] Addin layer never subscribes to MainViewModel.RunSimulationRequested — simulation pipeline not wired end-to-end
+- [UNRESOLVED] CorrelationEditorRequested event has no subscribers — correlation view not connected
+- [UNRESOLVED] MonteCarloRibbon.OnStopSimulation is a TODO stub
+- These 3 items should be addressed in a future integration task
+
+### Test Results
+- Build: 0 errors, 1 warning (CS0067 ConvergenceUpdated — expected per task spec)
+- Tests: 327 passed, 0 failed, 0 skipped
+
