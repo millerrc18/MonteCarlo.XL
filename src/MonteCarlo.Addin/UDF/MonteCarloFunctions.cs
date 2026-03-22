@@ -32,7 +32,7 @@ public static class MonteCarloFunctions
         [ExcelArgument(Name = "mode", Description = "Most likely value")] double mode,
         [ExcelArgument(Name = "max", Description = "Maximum value")] double max)
     {
-        if (min >= mode || mode >= max)
+        if (min >= max || mode < min || mode > max)
             return ExcelError.ExcelErrorValue;
 
         return mode;
@@ -47,7 +47,7 @@ public static class MonteCarloFunctions
         [ExcelArgument(Name = "mode", Description = "Most likely value")] double mode,
         [ExcelArgument(Name = "max", Description = "Maximum value")] double max)
     {
-        if (min >= mode || mode >= max)
+        if (min >= max || mode < min || mode > max)
             return ExcelError.ExcelErrorValue;
 
         return mode;
