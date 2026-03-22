@@ -6,7 +6,13 @@
              MinWidth="320">
 
     <UserControl.Resources>
-        <conv:StringMatchConverter x:Key="StringMatchConverter"/>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/MonteCarlo.UI;component/Styles/LightTheme.xaml"/>
+                <ResourceDictionary Source="/MonteCarlo.UI;component/Styles/GlobalStyles.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+            <conv:StringMatchConverter x:Key="StringMatchConverter"/>
+        </ResourceDictionary>
     </UserControl.Resources>
 
     <UserControl.DataContext>

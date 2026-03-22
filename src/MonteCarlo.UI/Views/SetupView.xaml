@@ -5,9 +5,15 @@
              xmlns:views="clr-namespace:MonteCarlo.UI.Views"
              xmlns:conv="clr-namespace:MonteCarlo.UI.Converters">
     <UserControl.Resources>
-        <conv:BoolToVisibilityConverter x:Key="BoolVis"/>
-        <conv:NullToCollapsedConverter x:Key="NullToCollapsed"/>
-        <conv:CountToVisibilityConverter x:Key="CountToVisibility"/>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/MonteCarlo.UI;component/Styles/LightTheme.xaml"/>
+                <ResourceDictionary Source="/MonteCarlo.UI;component/Styles/GlobalStyles.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+            <conv:BoolToVisibilityConverter x:Key="BoolVis"/>
+            <conv:NullToCollapsedConverter x:Key="NullToCollapsed"/>
+            <conv:CountToVisibilityConverter x:Key="CountToVisibility"/>
+        </ResourceDictionary>
     </UserControl.Resources>
 
     <UserControl.DataContext>

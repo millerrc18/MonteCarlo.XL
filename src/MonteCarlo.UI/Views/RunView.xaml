@@ -4,8 +4,14 @@
              xmlns:vm="clr-namespace:MonteCarlo.UI.ViewModels"
              xmlns:conv="clr-namespace:MonteCarlo.UI.Converters">
     <UserControl.Resources>
-        <conv:PercentToWidthConverter x:Key="PercentToWidth"/>
-        <conv:BoolToVisibilityConverter x:Key="BoolVis"/>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/MonteCarlo.UI;component/Styles/LightTheme.xaml"/>
+                <ResourceDictionary Source="/MonteCarlo.UI;component/Styles/GlobalStyles.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+            <conv:PercentToWidthConverter x:Key="PercentToWidth"/>
+            <conv:BoolToVisibilityConverter x:Key="BoolVis"/>
+        </ResourceDictionary>
     </UserControl.Resources>
 
     <UserControl.DataContext>

@@ -6,7 +6,13 @@
              xmlns:charts="clr-namespace:MonteCarlo.Charts.Controls;assembly=MonteCarlo.Charts"
              xmlns:conv="clr-namespace:MonteCarlo.UI.Converters">
     <UserControl.Resources>
-        <conv:BoolToVisibilityConverter x:Key="BoolVis"/>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/MonteCarlo.UI;component/Styles/LightTheme.xaml"/>
+                <ResourceDictionary Source="/MonteCarlo.UI;component/Styles/GlobalStyles.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+            <conv:BoolToVisibilityConverter x:Key="BoolVis"/>
+        </ResourceDictionary>
     </UserControl.Resources>
 
     <UserControl.DataContext>
