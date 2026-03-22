@@ -85,7 +85,7 @@ public class SimulationEngine
         if (config.ParallelExecution)
         {
             int completedCount = 0;
-            var lastProgressReport = sw.Elapsed;
+            long lastProgressReportTicks = sw.ElapsedTicks;
 
             Parallel.For(0, iterations, new ParallelOptions { CancellationToken = cancellationToken }, i =>
             {
@@ -104,10 +104,11 @@ public class SimulationEngine
                 if (current % ProgressReportInterval == 0 || current == iterations)
                 {
                     var elapsed = sw.Elapsed;
+                    long prevTicks = Interlocked.Read(ref lastProgressReportTicks);
                     // Avoid firing too frequently from multiple threads
-                    if ((elapsed - lastProgressReport).TotalMilliseconds >= 50 || current == iterations)
+                    if ((elapsed.Ticks - prevTicks) >= TimeSpan.TicksPerMillisecond * 50 || current == iterations)
                     {
-                        lastProgressReport = elapsed;
+                        Interlocked.Exchange(ref lastProgressReportTicks, elapsed.Ticks);
                         var rate = current / elapsed.TotalSeconds;
                         var remaining = rate > 0
                             ? TimeSpan.FromSeconds((iterations - current) / rate)
