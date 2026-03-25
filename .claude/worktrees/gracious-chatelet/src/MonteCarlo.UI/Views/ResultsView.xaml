@@ -1,0 +1,166 @@
+<UserControl x:Class="MonteCarlo.UI.Views.ResultsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:MonteCarlo.UI.ViewModels"
+             xmlns:views="clr-namespace:MonteCarlo.UI.Views"
+             xmlns:charts="clr-namespace:MonteCarlo.Charts.Controls;assembly=MonteCarlo.Charts"
+             xmlns:conv="clr-namespace:MonteCarlo.UI.Converters">
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/MonteCarlo.UI;component/Styles/LightTheme.xaml"/>
+                <ResourceDictionary Source="/MonteCarlo.UI;component/Styles/GlobalStyles.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+            <conv:BoolToVisibilityConverter x:Key="BoolVis"/>
+        </ResourceDictionary>
+    </UserControl.Resources>
+
+    <UserControl.DataContext>
+        <vm:ResultsViewModel/>
+    </UserControl.DataContext>
+
+    <Grid Background="{DynamicResource BackgroundBrush}">
+
+        <!-- Empty state (no results yet) -->
+        <StackPanel VerticalAlignment="Center"
+                    HorizontalAlignment="Center"
+                    Margin="32"
+                    Visibility="{Binding HasResults, Converter={StaticResource BoolVis}, ConverterParameter=invert}">
+            <TextBlock Text="&#x1F4C8;"
+                       FontSize="40"
+                       HorizontalAlignment="Center"
+                       Margin="0,0,0,12"/>
+            <TextBlock Text="No results yet"
+                       Style="{StaticResource HeadlineMedium}"
+                       HorizontalAlignment="Center"
+                       Margin="0,0,0,4"/>
+            <TextBlock Text="Run a simulation to see results here"
+                       Style="{StaticResource BodyText}"
+                       HorizontalAlignment="Center"/>
+        </StackPanel>
+
+        <!-- Results content (visible when HasResults = true) -->
+        <ScrollViewer VerticalScrollBarVisibility="Auto"
+                      HorizontalScrollBarVisibility="Disabled"
+                      Visibility="{Binding HasResults, Converter={StaticResource BoolVis}}">
+            <StackPanel Margin="16">
+
+                <!-- Header with output selector -->
+                <Grid Margin="0,0,0,12">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Grid.Column="0" Text="RESULTS"
+                               Style="{StaticResource HeadlineSmall}"
+                               Foreground="{DynamicResource TextTertiaryBrush}"
+                               FontSize="11"
+                               VerticalAlignment="Center"
+                               Margin="0,0,12,0"/>
+                    <ComboBox Grid.Column="1"
+                              ItemsSource="{Binding AvailableOutputs}"
+                              SelectedValue="{Binding SelectedOutputId}"
+                              SelectedValuePath="Id"
+                              DisplayMemberPath="Label"
+                              Padding="8,6"
+                              FontFamily="{StaticResource DefaultFont}"
+                              FontSize="13"/>
+                </Grid>
+
+                <!-- Headline stat card -->
+                <views:HeadlineStatCard DataContext="{Binding}"
+                                        Margin="0,0,0,12"/>
+
+                <!-- Chart area -->
+                <Border Style="{StaticResource Card}" Margin="0,0,0,12" Padding="8">
+                    <StackPanel>
+                        <!-- Histogram (visible when ShowCDF = false) -->
+                        <charts:HistogramChart HistogramData="{Binding HistogramData}"
+                                               P10="{Binding P10Value}"
+                                               P50="{Binding P50Value}"
+                                               P90="{Binding P90Value}"
+                                               TargetValue="{Binding TargetValueNumeric}"
+                                               TargetLabel="{Binding TargetAnnotation}"
+                                               Height="200"
+                                               Visibility="{Binding ShowCDF, Converter={StaticResource BoolVis}, ConverterParameter=invert}"/>
+
+                        <!-- CDF (visible when ShowCDF = true) -->
+                        <charts:CDFChart Stats="{Binding CurrentStats}"
+                                         Height="200"
+                                         Visibility="{Binding ShowCDF, Converter={StaticResource BoolVis}}"/>
+
+                        <!-- PDF/CDF Toggle -->
+                        <StackPanel Orientation="Horizontal"
+                                    HorizontalAlignment="Left"
+                                    Margin="0,8,0,0">
+                            <RadioButton Content="PDF"
+                                         Style="{StaticResource TabBarButton}"
+                                         IsChecked="{Binding ShowCDF, Converter={StaticResource BoolVis}, ConverterParameter=invert, Mode=OneWay}"
+                                         Command="{Binding ToggleChartModeCommand}"
+                                         Padding="12,6"/>
+                            <RadioButton Content="CDF"
+                                         Style="{StaticResource TabBarButton}"
+                                         IsChecked="{Binding ShowCDF, Mode=OneWay}"
+                                         Command="{Binding ToggleChartModeCommand}"
+                                         Padding="12,6"/>
+                        </StackPanel>
+
+                        <!-- Iteration count -->
+                        <TextBlock Style="{StaticResource CaptionText}"
+                                   Margin="0,4,0,0">
+                            <Run Text="Iterations:"/>
+                            <Run Text="{Binding IterationCountFormatted, Mode=OneWay}" FontWeight="SemiBold"/>
+                        </TextBlock>
+                    </StackPanel>
+                </Border>
+
+                <!-- Tornado Chart (Sensitivity) -->
+                <Border Style="{StaticResource Card}" Margin="0,0,0,12" Padding="8">
+                    <StackPanel>
+                        <TextBlock Text="SENSITIVITY"
+                                   Style="{StaticResource HeadlineSmall}"
+                                   Foreground="{DynamicResource TextTertiaryBrush}"
+                                   FontSize="11"
+                                   Margin="4,4,0,8"/>
+                        <charts:TornadoChart Results="{Binding SensitivityResults}"
+                                              BaseOutputValue="{Binding BaseOutputValue}"
+                                              MaxInputsToShow="10"
+                                              Height="250"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- Stats panel -->
+                <views:StatsPanelControl DataContext="{Binding}"
+                                         Margin="0,0,0,12"/>
+
+                <!-- Target analysis -->
+                <views:TargetLineControl DataContext="{Binding}"
+                                         Margin="0,0,0,12"/>
+
+                <!-- Action buttons -->
+                <Grid Margin="0,0,0,16">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="8"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <Button Grid.Column="0"
+                            Content="Export to Sheet"
+                            Style="{StaticResource SecondaryButton}"
+                            Command="{Binding ExportToSheetCommand}"
+                            Padding="12,8"/>
+                    <Button Grid.Column="2"
+                            Style="{StaticResource SecondaryButton}"
+                            Command="{Binding CopyStatsToClipboardCommand}"
+                            Padding="12,8">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="&#x1F4CB;" Margin="0,0,4,0"/>
+                            <TextBlock Text="Copy Stats"/>
+                        </StackPanel>
+                    </Button>
+                </Grid>
+
+            </StackPanel>
+        </ScrollViewer>
+    </Grid>
+</UserControl>
