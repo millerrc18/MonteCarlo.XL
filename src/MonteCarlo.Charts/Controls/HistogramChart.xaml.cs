@@ -4,6 +4,7 @@ using System.Windows.Controls;
 using LiveChartsCore;
 using LiveChartsCore.SkiaSharpView;
 using LiveChartsCore.SkiaSharpView.Painting;
+using LiveChartsCore.SkiaSharpView.WPF;
 using MonteCarlo.Charts.Themes;
 using MonteCarlo.Engine.Analysis;
 
@@ -71,6 +72,7 @@ public partial class HistogramChart : UserControl
 
     public HistogramChart()
     {
+        _ = typeof(CartesianChart).Assembly;
         InitializeComponent();
     }
 
@@ -117,6 +119,31 @@ public partial class HistogramChart : UserControl
                 return formatter(binCenters[idx]);
             return "";
         }));
+
+        // KDE probability density overlay
+        var (kdeX, kdeY) = data.ComputeKDE();
+        if (kdeX.Length > 0)
+        {
+            var binEdges = data.BinEdges;
+            double binWidth = binEdges[1] - binEdges[0];
+
+            var pdfPoints = new List<LiveChartsCore.Defaults.ObservablePoint>();
+            for (int i = 0; i < kdeX.Length; i++)
+            {
+                // Convert real x value to bin index space (matching ColumnSeries indexing)
+                double idx = (kdeX[i] - binEdges[0]) / binWidth - 0.5;
+                pdfPoints.Add(new LiveChartsCore.Defaults.ObservablePoint(idx, kdeY[i]));
+            }
+
+            Series.Add(new LineSeries<LiveChartsCore.Defaults.ObservablePoint>
+            {
+                Values = pdfPoints,
+                Stroke = new SolidColorPaint(ChartTheme.Violet500) { StrokeThickness = 2 },
+                Fill = null,
+                GeometrySize = 0,
+                LineSmoothness = 0.7
+            });
+        }
 
         // Y axis — relative frequency
         YAxes.Add(ChartTheme.CreateYAxis(labeler: v => v.ToString("P1")));
