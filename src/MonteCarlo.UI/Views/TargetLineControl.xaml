@@ -3,7 +3,13 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:conv="clr-namespace:MonteCarlo.UI.Converters">
     <UserControl.Resources>
-        <conv:NullToCollapsedConverter x:Key="NullToCollapsed"/>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/MonteCarlo.UI;component/Styles/LightTheme.xaml"/>
+                <ResourceDictionary Source="/MonteCarlo.UI;component/Styles/GlobalStyles.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+            <conv:NullToCollapsedConverter x:Key="NullToCollapsed"/>
+        </ResourceDictionary>
     </UserControl.Resources>
 
     <Border Style="{StaticResource Card}">
