@@ -57,6 +57,17 @@ public class SimulationConfig
     public CorrelationMatrix? Correlation { get; set; }
 
     /// <summary>
+    /// If true, the simulation stops early when all tracked statistics converge.
+    /// Only applies to sequential execution mode.
+    /// </summary>
+    public bool AutoStopOnConvergence { get; set; } = false;
+
+    /// <summary>
+    /// Minimum number of iterations before convergence checking begins.
+    /// </summary>
+    public int ConvergenceMinIterations { get; set; } = 500;
+
+    /// <summary>
     /// Validates the configuration and throws <see cref="ArgumentException"/> if invalid.
     /// </summary>
     public void Validate()

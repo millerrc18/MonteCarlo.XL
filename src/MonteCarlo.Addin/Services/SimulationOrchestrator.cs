@@ -1,4 +1,5 @@
 using System.Windows;
+using System.Runtime.ExceptionServices;
 using ExcelDna.Integration;
 using MonteCarlo.Addin.Excel;
 using MonteCarlo.Addin.UDF;
@@ -148,23 +149,27 @@ public class SimulationOrchestrator
         }
 
         // 4. Build evaluator (fast mode — Excel recalc)
-        var evaluator = BuildEvaluator(taggedInputs, taggedOutputs, app);
+        var evaluator = BuildEvaluator(taggedInputs, taggedOutputs, app, _cts.Token);
 
         // 5. Run simulation
         var engine = new SimulationEngine();
-        int checkpointInterval = 500;
-        int lastCheckpoint = 0;
 
         engine.ProgressChanged += (sender, e) =>
         {
             ProgressChanged?.Invoke(this, e);
+        };
 
-            // Convergence check at intervals
-            if (e.CompletedIterations - lastCheckpoint >= checkpointInterval &&
-                _lastResult == null) // Only during run, not after
+        engine.ConvergenceChecked += (sender, e) =>
+        {
+            ConvergenceUpdated?.Invoke(this, new ConvergenceUpdateEventArgs
             {
-                lastCheckpoint = e.CompletedIterations;
-                // Note: convergence is checked on partial results in the completion handler
+                Indicators = e.Indicators
+            });
+
+            if (e.AllConverged)
+            {
+                System.Diagnostics.Debug.WriteLine(
+                    $"[MonteCarlo] Auto-stop: all statistics converged at iteration {e.Iteration}");
             }
         };
 
@@ -329,7 +334,8 @@ public class SimulationOrchestrator
     private Func<Dictionary<string, double>, Dictionary<string, double>> BuildEvaluator(
         IReadOnlyList<TaggedInput> taggedInputs,
         IReadOnlyList<TaggedOutput> taggedOutputs,
-        Application app)
+        Application app,
+        CancellationToken cancellationToken)
     {
         // Build lookup for fast cell writing, grouped by sheet for batch COM calls
         var inputCells = taggedInputs.ToDictionary(
@@ -354,32 +360,66 @@ public class SimulationOrchestrator
 
         return inputs =>
         {
-            // Write input values to Excel — batch by sheet to minimize COM round-trips
-            foreach (var (sheetName, cells) in inputsBySheet)
+            return RunOnExcelThread(() =>
             {
-                foreach (var cell in cells)
+                // Write input values to Excel — batch by sheet to minimize COM round-trips
+                foreach (var (sheetName, cells) in inputsBySheet)
                 {
-                    if (inputs.TryGetValue(cell.FullReference, out var value))
-                        _workbook.WriteCellValue(sheetName, cell.CellAddress, value);
+                    foreach (var cell in cells)
+                    {
+                        if (inputs.TryGetValue(cell.FullReference, out var value))
+                            _workbook.WriteCellValue(sheetName, cell.CellAddress, value);
+                    }
                 }
-            }
 
-            // Recalculate
-            app.Calculate();
+                // Recalculate
+                app.Calculate();
 
-            // Read all output values — batch by sheet
-            var outputs = new Dictionary<string, double>(taggedOutputs.Count);
-            foreach (var (sheetName, sheetOutputs) in outputsBySheet)
-            {
-                foreach (var output in sheetOutputs)
+                // Read all output values — batch by sheet
+                var outputs = new Dictionary<string, double>(taggedOutputs.Count);
+                foreach (var (sheetName, sheetOutputs) in outputsBySheet)
                 {
-                    double val = _workbook.ReadCellValue(sheetName, output.Cell.CellAddress);
-                    outputs[output.Cell.FullReference] = val;
+                    foreach (var output in sheetOutputs)
+                    {
+                        double val = _workbook.ReadCellValue(sheetName, output.Cell.CellAddress);
+                        outputs[output.Cell.FullReference] = val;
+                    }
                 }
-            }
 
-            return outputs;
+                return outputs;
+            }, cancellationToken);
         };
+    }
+
+    private static T RunOnExcelThread<T>(Func<T> action, CancellationToken cancellationToken)
+    {
+        T? result = default;
+        Exception? error = null;
+        using var done = new ManualResetEventSlim(false);
+
+        ExcelAsyncUtil.QueueAsMacro(() =>
+        {
+            try
+            {
+                if (!cancellationToken.IsCancellationRequested)
+                    result = action();
+            }
+            catch (Exception ex)
+            {
+                error = ex;
+            }
+            finally
+            {
+                done.Set();
+            }
+        });
+
+        done.Wait(cancellationToken);
+
+        if (error != null)
+            ExceptionDispatchInfo.Capture(error).Throw();
+
+        return result ?? throw new OperationCanceledException(cancellationToken);
     }
 }
 

@@ -19,6 +19,11 @@ public class SimulationEngine
     public event EventHandler<SimulationProgressEventArgs>? ProgressChanged;
 
     /// <summary>
+    /// Fires when convergence is checked during the simulation (sequential mode only).
+    /// </summary>
+    public event EventHandler<ConvergenceEventArgs>? ConvergenceChecked;
+
+    /// <summary>
     /// Runs a Monte Carlo simulation asynchronously.
     /// </summary>
     /// <param name="config">Simulation configuration defining inputs, outputs, and iteration count.</param>
@@ -148,6 +153,10 @@ public class SimulationEngine
         else
         {
             // Sequential execution (for recalc mode / single-threaded evaluators)
+            var convergenceChecker = config.AutoStopOnConvergence ? new ConvergenceChecker() : null;
+            int actualIterations = iterations;
+            bool stoppedEarly = false;
+
             for (int i = 0; i < iterations; i++)
             {
                 cancellationToken.ThrowIfCancellationRequested();
@@ -194,6 +203,52 @@ public class SimulationEngine
                         InterimSortedValues = interimSortedValues
                     });
                 }
+
+                // Convergence checking every 500 iterations after the minimum threshold
+                if (convergenceChecker != null
+                    && (i + 1) >= config.ConvergenceMinIterations
+                    && (i + 1) % 500 == 0
+                    && outputCount >= 1)
+                {
+                    // Extract output values for the first output up to current iteration
+                    var outputSlice = new double[i + 1];
+                    for (int s = 0; s <= i; s++)
+                        outputSlice[s] = outputMatrix[s, 0];
+
+                    convergenceChecker.RecordCheckpoint(i + 1, outputSlice);
+                    var indicators = convergenceChecker.CheckAll();
+                    bool allConverged = indicators.All(ind => ind.Status == ConvergenceStatus.Stable);
+
+                    ConvergenceChecked?.Invoke(this, new ConvergenceEventArgs
+                    {
+                        Indicators = indicators,
+                        AllConverged = allConverged,
+                        Iteration = i + 1
+                    });
+
+                    if (allConverged)
+                    {
+                        actualIterations = i + 1;
+                        stoppedEarly = true;
+                        break;
+                    }
+                }
+            }
+
+            // Trim matrices if stopped early
+            if (stoppedEarly)
+            {
+                var trimmedInput = new double[actualIterations, inputCount];
+                var trimmedOutput = new double[actualIterations, outputCount];
+                for (int i = 0; i < actualIterations; i++)
+                {
+                    for (int j = 0; j < inputCount; j++)
+                        trimmedInput[i, j] = inputMatrix[i, j];
+                    for (int k = 0; k < outputCount; k++)
+                        trimmedOutput[i, k] = outputMatrix[i, k];
+                }
+                inputMatrix = trimmedInput;
+                outputMatrix = trimmedOutput;
             }
         }
 
