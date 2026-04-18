@@ -49,6 +49,14 @@ public partial class ResultsViewModel : ObservableObject
     /// <summary>Number of iterations in the simulation.</summary>
     [ObservableProperty] private string _iterationCountFormatted = "—";
 
+    // Scatter plot properties
+    [ObservableProperty] private string? _selectedScatterInputId;
+    [ObservableProperty] private double[]? _scatterInputValues;
+    [ObservableProperty] private double[]? _scatterOutputValues;
+    [ObservableProperty] private string? _scatterInputLabel;
+    [ObservableProperty] private bool _hasScatterData;
+    [ObservableProperty] private ObservableCollection<string> _availableInputs = new();
+
     /// <summary>Sensitivity analysis results keyed by output ID.</summary>
     public Dictionary<string, IReadOnlyList<SensitivityResult>>? SensitivityResults { get; private set; }
 
@@ -74,14 +82,58 @@ public partial class ResultsViewModel : ObservableObject
 
         IterationCountFormatted = result.IterationCount.ToString("N0");
 
+        // Populate available inputs for scatter plot
+        AvailableInputs.Clear();
+        foreach (var input in result.Config.Inputs)
+            AvailableInputs.Add(input.Id);
+
         if (AvailableOutputs.Count > 0)
             SelectedOutputId = AvailableOutputs[0].Id;
+
+        if (AvailableInputs.Count > 0)
+            SelectedScatterInputId = AvailableInputs[0];
     }
 
     partial void OnSelectedOutputIdChanged(string? value)
     {
         if (value == null || SimulationResult == null) return;
         RecomputeStats();
+        UpdateScatterData();
+    }
+
+    partial void OnSelectedScatterInputIdChanged(string? value)
+    {
+        UpdateScatterData();
+    }
+
+    private void UpdateScatterData()
+    {
+        if (SimulationResult == null || SelectedScatterInputId == null || SelectedOutputId == null)
+        {
+            ScatterInputValues = null;
+            ScatterOutputValues = null;
+            ScatterInputLabel = null;
+            HasScatterData = false;
+            return;
+        }
+
+        try
+        {
+            ScatterInputValues = SimulationResult.GetInputSamples(SelectedScatterInputId);
+            ScatterOutputValues = SimulationResult.GetOutputValues(SelectedOutputId);
+
+            // Find the label for the selected input
+            var input = SimulationResult.Config.Inputs.FirstOrDefault(i => i.Id == SelectedScatterInputId);
+            ScatterInputLabel = input?.Label ?? SelectedScatterInputId;
+            HasScatterData = true;
+        }
+        catch
+        {
+            ScatterInputValues = null;
+            ScatterOutputValues = null;
+            ScatterInputLabel = null;
+            HasScatterData = false;
+        }
     }
 
     partial void OnTargetValueTextChanged(string value)

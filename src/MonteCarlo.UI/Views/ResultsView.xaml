@@ -114,6 +114,35 @@
                     </StackPanel>
                 </Border>
 
+                <!-- Sensitivity scatter plot -->
+                <Border Style="{StaticResource Card}" Margin="0,0,0,12" Padding="8"
+                        Visibility="{Binding HasScatterData, Converter={StaticResource BoolVis}}">
+                    <StackPanel>
+                        <Grid Margin="0,0,0,8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" Text="SENSITIVITY"
+                                       Style="{StaticResource HeadlineSmall}"
+                                       Foreground="{DynamicResource TextTertiaryBrush}"
+                                       FontSize="11"
+                                       VerticalAlignment="Center"
+                                       Margin="0,0,12,0"/>
+                            <ComboBox Grid.Column="1"
+                                      ItemsSource="{Binding AvailableInputs}"
+                                      SelectedItem="{Binding SelectedScatterInputId}"
+                                      Padding="8,6"
+                                      FontFamily="{StaticResource DefaultFont}"
+                                      FontSize="13"/>
+                        </Grid>
+                        <charts:ScatterChart InputValues="{Binding ScatterInputValues}"
+                                              OutputValues="{Binding ScatterOutputValues}"
+                                              InputLabel="{Binding ScatterInputLabel}"
+                                              Height="200"/>
+                    </StackPanel>
+                </Border>
+
                 <!-- Stats panel -->
                 <views:StatsPanelControl DataContext="{Binding}"
                                          Margin="0,0,0,12"/>

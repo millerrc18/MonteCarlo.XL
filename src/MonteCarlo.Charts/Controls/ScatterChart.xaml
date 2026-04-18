@@ -1,0 +1,14 @@
+<UserControl x:Class="MonteCarlo.Charts.Controls.ScatterChart"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:lvc="clr-namespace:LiveChartsCore.SkiaSharpView.WPF;assembly=LiveChartsCore.SkiaSharpView.WPF">
+    <Grid Background="Transparent">
+        <lvc:CartesianChart x:Name="Chart"
+                            Series="{Binding Series, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                            XAxes="{Binding XAxes, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                            YAxes="{Binding YAxes, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                            Background="Transparent"
+                            DrawMarginFrame="{x:Null}"
+                            TooltipPosition="Hidden"/>
+    </Grid>
+</UserControl>
