@@ -49,6 +49,9 @@ public partial class ResultsViewModel : ObservableObject
     /// <summary>Number of iterations in the simulation.</summary>
     [ObservableProperty] private string _iterationCountFormatted = "—";
 
+    /// <summary>Sensitivity analysis results keyed by output ID.</summary>
+    public Dictionary<string, IReadOnlyList<SensitivityResult>>? SensitivityResults { get; private set; }
+
     /// <summary>Whether results are available for display.</summary>
     public bool HasResults => SimulationResult != null;
 
@@ -60,9 +63,10 @@ public partial class ResultsViewModel : ObservableObject
     /// <summary>
     /// Load results from a completed simulation.
     /// </summary>
-    public void LoadResults(SimulationResult result)
+    public void LoadResults(SimulationResult result, Dictionary<string, IReadOnlyList<SensitivityResult>>? sensitivityResults = null)
     {
         SimulationResult = result;
+        SensitivityResults = sensitivityResults;
         AvailableOutputs.Clear();
 
         foreach (var output in result.Config.Outputs)

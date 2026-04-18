@@ -21,14 +21,18 @@ public partial class MainViewModel : ObservableObject
     [ObservableProperty]
     private string _currentViewName = "Setup";
 
+    private SetupView? _setupView;
+    private RunView? _runView;
+    private ResultsView? _resultsView;
+
     /// <summary>The persistent SetupView instance.</summary>
-    public SetupView SetupView { get; } = new();
+    public SetupView SetupView => _setupView ??= new SetupView();
 
     /// <summary>The persistent RunView instance.</summary>
-    public RunView RunView { get; } = new();
+    public RunView RunView => _runView ??= new RunView();
 
     /// <summary>The persistent ResultsView instance.</summary>
-    public ResultsView ResultsView { get; } = new();
+    public ResultsView ResultsView => _resultsView ??= new ResultsView();
 
     /// <summary>Convenience accessor for the SetupViewModel.</summary>
     public SetupViewModel SetupViewModel => SetupView.ViewModel;
@@ -54,11 +58,7 @@ public partial class MainViewModel : ObservableObject
     {
         // Wire SetupViewModel's run event to navigate to RunView
         SetupViewModel.RunSimulationRequested += (_, _) =>
-        {
-            NavigateToRun();
-            RunViewModel.Reset(SetupViewModel.IterationCount);
-            RunSimulationRequested?.Invoke(this, EventArgs.Empty);
-        };
+            RequestSimulationRun();
 
         // Wire RunViewModel's stop event
         RunViewModel.StopRequested += (_, _) =>
@@ -68,13 +68,35 @@ public partial class MainViewModel : ObservableObject
 
         // Wire RunViewModel's retry event
         RunViewModel.RetryRequested += (_, _) =>
-        {
-            RunViewModel.Reset(SetupViewModel.IterationCount);
-            RunSimulationRequested?.Invoke(this, EventArgs.Empty);
-        };
+            RequestSimulationRun();
 
         NavigateToSetup();
     }
+
+    /// <summary>
+    /// Starts the UI side of a simulation run and notifies the host add-in.
+    /// </summary>
+    public void RequestSimulationRun()
+    {
+        NavigateToRun();
+        RunViewModel.Reset(SetupViewModel.IterationCount);
+        RunSimulationRequested?.Invoke(this, EventArgs.Empty);
+    }
+
+    /// <summary>
+    /// Public navigation entry point for host integrations such as the Excel ribbon.
+    /// </summary>
+    public void ShowSetupView() => NavigateToSetup();
+
+    /// <summary>
+    /// Public navigation entry point for host integrations such as the Excel ribbon.
+    /// </summary>
+    public void ShowResultsView() => NavigateToResults();
+
+    /// <summary>
+    /// Public navigation entry point for host integrations such as the Excel ribbon.
+    /// </summary>
+    public void ShowSettingsView() => NavigateToSettings();
 
     /// <summary>
     /// Called by the Addin layer when simulation progress is reported.
@@ -103,10 +125,10 @@ public partial class MainViewModel : ObservableObject
     /// <summary>
     /// Called by the Addin layer when simulation completes successfully.
     /// </summary>
-    public void OnSimulationComplete(SimulationResult result)
+    public void OnSimulationComplete(SimulationResult result, Dictionary<string, IReadOnlyList<SensitivityResult>>? sensitivityResults = null)
     {
         RunViewModel.IsRunning = false;
-        ResultsViewModel.LoadResults(result);
+        ResultsViewModel.LoadResults(result, sensitivityResults);
         NavigateToResults();
     }
 
