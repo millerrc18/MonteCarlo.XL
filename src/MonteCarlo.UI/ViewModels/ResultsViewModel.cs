@@ -112,29 +112,29 @@ public partial class ResultsViewModel : ObservableObject
     [RelayCommand]
     private void CopyStatsToClipboard()
     {
-        if (CurrentStats == null || SimulationResult == null) return;
+        if (CurrentStats == null) return;
 
-        var outputLabel = AvailableOutputs.FirstOrDefault(o => o.Id == SelectedOutputId)?.Label ?? SelectedOutputId;
-        var stats = CurrentStats;
+        var s = CurrentStats;
+        var sb = new System.Text.StringBuilder();
+        sb.AppendLine($"Output\t{SelectedOutputId}");
+        sb.AppendLine($"Mean\t{s.Mean:G6}");
+        sb.AppendLine($"Median\t{s.Median:G6}");
+        sb.AppendLine($"Std Dev\t{s.StdDev:G6}");
+        sb.AppendLine($"Variance\t{s.Variance:G6}");
+        sb.AppendLine($"Skewness\t{s.Skewness:G6}");
+        sb.AppendLine($"Kurtosis\t{s.Kurtosis:G6}");
+        sb.AppendLine($"Min\t{s.Min:G6}");
+        sb.AppendLine($"Max\t{s.Max:G6}");
+        sb.AppendLine($"P5\t{s.P5:G6}");
+        sb.AppendLine($"P10\t{s.P10:G6}");
+        sb.AppendLine($"P25\t{s.P25:G6}");
+        sb.AppendLine($"P50\t{s.P50:G6}");
+        sb.AppendLine($"P75\t{s.P75:G6}");
+        sb.AppendLine($"P90\t{s.P90:G6}");
+        sb.AppendLine($"P95\t{s.P95:G6}");
+        sb.AppendLine($"Iterations\t{s.Count}");
 
-        var text = $"""
-            MonteCarlo.XL Simulation Results — {outputLabel}
-            Iterations: {SimulationResult.IterationCount:N0}
-            ──────────────────────────
-            Mean:        {NumberFormatter.Format(stats.Mean)}
-            Median:      {NumberFormatter.Format(stats.Median)}
-            Std Dev:     {NumberFormatter.Format(stats.StdDev)}
-            P5:          {NumberFormatter.Format(stats.P5)}
-            P10:         {NumberFormatter.Format(stats.P10)}
-            P90:         {NumberFormatter.Format(stats.P90)}
-            P95:         {NumberFormatter.Format(stats.P95)}
-            Min:         {NumberFormatter.Format(stats.Min)}
-            Max:         {NumberFormatter.Format(stats.Max)}
-            Skewness:    {stats.Skewness:F3}
-            Kurtosis:    {stats.Kurtosis:F3}
-            """;
-
-        System.Windows.Clipboard.SetText(text);
+        System.Windows.Clipboard.SetText(sb.ToString());
     }
 
     private void RecomputeStats()
