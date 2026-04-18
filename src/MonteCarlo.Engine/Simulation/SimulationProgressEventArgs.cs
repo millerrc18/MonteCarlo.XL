@@ -1,3 +1,5 @@
+using MonteCarlo.Engine.Analysis;
+
 namespace MonteCarlo.Engine.Simulation;
 
 /// <summary>
@@ -31,4 +33,14 @@ public class SimulationProgressEventArgs : EventArgs
     /// Estimated time remaining based on current pace.
     /// </summary>
     public TimeSpan EstimatedRemaining { get; init; }
+
+    /// <summary>
+    /// Interim histogram data computed periodically during the simulation.
+    /// </summary>
+    public HistogramData? InterimHistogram { get; init; }
+
+    /// <summary>
+    /// Interim sorted output values used to build the histogram.
+    /// </summary>
+    public double[]? InterimSortedValues { get; init; }
 }

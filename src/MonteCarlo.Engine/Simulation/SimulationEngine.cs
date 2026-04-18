@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using MonteCarlo.Engine.Analysis;
 using MonteCarlo.Engine.Correlation;
 
 namespace MonteCarlo.Engine.Simulation;
@@ -150,12 +151,28 @@ public class SimulationEngine
                         ? TimeSpan.FromSeconds((iterations - i - 1) / rate)
                         : TimeSpan.Zero;
 
+                    // Compute interim histogram every 500 iterations when we have enough data
+                    HistogramData? interimHistogram = null;
+                    double[]? interimSortedValues = null;
+                    if ((i + 1) % 500 == 0 && (i + 1) >= 200 && outputCount >= 1)
+                    {
+                        var slice = new double[i + 1];
+                        for (int s = 0; s <= i; s++)
+                            slice[s] = outputMatrix[s, 0];
+                        Array.Sort(slice);
+                        interimSortedValues = slice;
+                        int binCount = Math.Min(50, (int)Math.Sqrt(i + 1));
+                        interimHistogram = new HistogramData(slice, binCount);
+                    }
+
                     ProgressChanged?.Invoke(this, new SimulationProgressEventArgs
                     {
                         CompletedIterations = i + 1,
                         TotalIterations = iterations,
                         Elapsed = elapsed,
-                        EstimatedRemaining = remaining
+                        EstimatedRemaining = remaining,
+                        InterimHistogram = interimHistogram,
+                        InterimSortedValues = interimSortedValues
                     });
                 }
             }

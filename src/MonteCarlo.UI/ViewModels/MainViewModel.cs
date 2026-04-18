@@ -104,6 +104,7 @@ public partial class MainViewModel : ObservableObject
     public void OnSimulationProgress(SimulationProgressEventArgs e)
     {
         RunViewModel.UpdateProgress(e.CompletedIterations, e.TotalIterations, e.Elapsed, e.EstimatedRemaining);
+        RunViewModel.UpdateLiveChart(e.InterimHistogram);
     }
 
     /// <summary>

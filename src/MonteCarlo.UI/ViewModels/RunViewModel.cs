@@ -24,6 +24,9 @@ public partial class RunViewModel : ObservableObject
     [ObservableProperty] private string _liveP5 = "—";
     [ObservableProperty] private string _liveP95 = "—";
 
+    // Live histogram
+    [ObservableProperty] private HistogramData? _liveHistogramData;
+
     // Convergence
     [ObservableProperty]
     private ObservableCollection<ConvergenceIndicatorViewModel> _convergenceIndicators = new();
@@ -100,6 +103,14 @@ public partial class RunViewModel : ObservableObject
         }
     }
 
+    /// <summary>
+    /// Update the live histogram chart from interim data.
+    /// </summary>
+    public void UpdateLiveChart(HistogramData? histogram)
+    {
+        LiveHistogramData = histogram;
+    }
+
     [RelayCommand]
     private void StopSimulation()
     {
@@ -151,6 +162,7 @@ public partial class RunViewModel : ObservableObject
         LiveP5 = "—";
         LiveP95 = "—";
         ConvergenceIndicators.Clear();
+        LiveHistogramData = null;
         IsRunning = true;
         HasError = false;
     }
