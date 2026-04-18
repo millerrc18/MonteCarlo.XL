@@ -429,6 +429,7 @@ public class SimulationEngineTests
                 new() { Id = "Out", Label = "Out" }
             },
             IterationCount = 100,
+            RandomSeed = seed,
             ParallelExecution = false
         };
     }

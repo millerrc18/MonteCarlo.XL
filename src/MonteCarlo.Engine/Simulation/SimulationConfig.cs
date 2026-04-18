@@ -3,6 +3,18 @@ using MonteCarlo.Engine.Correlation;
 namespace MonteCarlo.Engine.Simulation;
 
 /// <summary>
+/// Specifies the sampling method used to generate input samples.
+/// </summary>
+public enum SamplingMethod
+{
+    /// <summary>Simple random (Monte Carlo) sampling.</summary>
+    MonteCarlo,
+
+    /// <summary>Latin Hypercube Sampling — stratified for better coverage.</summary>
+    LatinHypercube
+}
+
+/// <summary>
 /// Configuration for a Monte Carlo simulation run.
 /// </summary>
 public class SimulationConfig
@@ -32,6 +44,11 @@ public class SimulationConfig
     /// Should be false for Excel recalc mode (COM is single-threaded).
     /// </summary>
     public bool ParallelExecution { get; set; } = true;
+
+    /// <summary>
+    /// The sampling method to use. Default is Latin Hypercube for better coverage.
+    /// </summary>
+    public SamplingMethod Sampling { get; set; } = SamplingMethod.LatinHypercube;
 
     /// <summary>
     /// Optional Spearman rank correlation matrix between inputs.

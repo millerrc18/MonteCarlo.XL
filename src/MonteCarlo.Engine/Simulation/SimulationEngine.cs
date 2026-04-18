@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using MonteCarlo.Engine.Analysis;
 using MonteCarlo.Engine.Correlation;
+using MonteCarlo.Engine.Sampling;
 
 namespace MonteCarlo.Engine.Simulation;
 
@@ -55,20 +56,38 @@ public class SimulationEngine
         var inputMatrix = new double[iterations, inputCount];
         var outputMatrix = new double[iterations, outputCount];
 
-        // Step 2: Pre-generate all input samples (batch sampling is faster
-        // and required for future Iman-Conover correlation)
-        var allSamples = new double[inputCount][];
-        for (int j = 0; j < inputCount; j++)
+        // Step 2: Pre-generate all input samples
+        if (config.Sampling == SamplingMethod.LatinHypercube)
         {
-            allSamples[j] = config.Inputs[j].Distribution.Sample(iterations);
-        }
+            // Latin Hypercube Sampling: generate stratified [0,1] samples,
+            // then transform through each distribution's inverse CDF (Percentile)
+            var lhs = new LatinHypercubeSampler(config.RandomSeed);
+            var unitSamples = lhs.Generate(iterations, inputCount);
 
-        // Copy samples into the input matrix
-        for (int j = 0; j < inputCount; j++)
-        {
-            for (int i = 0; i < iterations; i++)
+            for (int j = 0; j < inputCount; j++)
             {
-                inputMatrix[i, j] = allSamples[j][i];
+                var dist = config.Inputs[j].Distribution;
+                for (int i = 0; i < iterations; i++)
+                {
+                    inputMatrix[i, j] = dist.Percentile(unitSamples[i, j]);
+                }
+            }
+        }
+        else
+        {
+            // Simple Monte Carlo sampling
+            var allSamples = new double[inputCount][];
+            for (int j = 0; j < inputCount; j++)
+            {
+                allSamples[j] = config.Inputs[j].Distribution.Sample(iterations);
+            }
+
+            for (int j = 0; j < inputCount; j++)
+            {
+                for (int i = 0; i < iterations; i++)
+                {
+                    inputMatrix[i, j] = allSamples[j][i];
+                }
             }
         }
 

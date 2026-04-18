@@ -61,6 +61,13 @@ public interface IDistribution
     double Percentile(double p);
 
     /// <summary>
+    /// Evaluates the inverse cumulative distribution function (quantile function).
+    /// Returns the value x such that CDF(x) = probability.
+    /// Default implementation delegates to <see cref="Percentile"/>.
+    /// </summary>
+    double InverseCDF(double probability) => Percentile(probability);
+
+    /// <summary>
     /// Returns a human-readable summary of the distribution's parameters.
     /// </summary>
     string ParameterSummary();
