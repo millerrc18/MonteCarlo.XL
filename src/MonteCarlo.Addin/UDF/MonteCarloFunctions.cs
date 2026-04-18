@@ -137,6 +137,82 @@ public static class MonteCarloFunctions
         return lambda;
     }
 
+    [ExcelFunction(
+        Name = "MC.Gamma",
+        Description = "Gamma distribution. Returns shape/rate in normal mode.",
+        Category = "MonteCarlo.XL")]
+    public static object MCGamma(
+        [ExcelArgument(Name = "shape", Description = "Shape parameter (α), must be > 0")] double shape,
+        [ExcelArgument(Name = "rate", Description = "Rate parameter (β), must be > 0")] double rate)
+    {
+        if (shape <= 0 || rate <= 0)
+            return ExcelError.ExcelErrorValue;
+
+        return shape / rate;
+    }
+
+    [ExcelFunction(
+        Name = "MC.Logistic",
+        Description = "Logistic distribution. Returns μ in normal mode.",
+        Category = "MonteCarlo.XL")]
+    public static object MCLogistic(
+        [ExcelArgument(Name = "mu", Description = "Location parameter (μ)")] double mu,
+        [ExcelArgument(Name = "s", Description = "Scale parameter (s), must be > 0")] double s)
+    {
+        if (s <= 0)
+            return ExcelError.ExcelErrorValue;
+
+        return mu;
+    }
+
+    [ExcelFunction(
+        Name = "MC.GEV",
+        Description = "Generalized Extreme Value distribution. Returns expected value in normal mode.",
+        Category = "MonteCarlo.XL")]
+    public static object MCGEV(
+        [ExcelArgument(Name = "mu", Description = "Location parameter (μ)")] double mu,
+        [ExcelArgument(Name = "sigma", Description = "Scale parameter (σ), must be > 0")] double sigma,
+        [ExcelArgument(Name = "xi", Description = "Shape parameter (ξ)")] double xi)
+    {
+        if (sigma <= 0)
+            return ExcelError.ExcelErrorValue;
+
+        if (Math.Abs(xi) < 1e-10)
+            return mu + sigma * 0.5772156649;
+
+        if (xi < 1.0)
+            return mu + sigma * (SpecialFunctions.Gamma(1.0 - xi) - 1.0) / xi;
+
+        return double.PositiveInfinity;
+    }
+
+    [ExcelFunction(
+        Name = "MC.Binomial",
+        Description = "Binomial distribution. Returns n×p in normal mode.",
+        Category = "MonteCarlo.XL")]
+    public static object MCBinomial(
+        [ExcelArgument(Name = "n", Description = "Number of trials, must be > 0")] int n,
+        [ExcelArgument(Name = "p", Description = "Probability of success, must be in [0,1]")] double p)
+    {
+        if (n <= 0 || p < 0 || p > 1)
+            return ExcelError.ExcelErrorValue;
+
+        return (double)(n * p);
+    }
+
+    [ExcelFunction(
+        Name = "MC.Geometric",
+        Description = "Geometric distribution. Returns 1/p in normal mode.",
+        Category = "MonteCarlo.XL")]
+    public static object MCGeometric(
+        [ExcelArgument(Name = "p", Description = "Probability of success, must be in (0,1]")] double p)
+    {
+        if (p <= 0 || p > 1)
+            return ExcelError.ExcelErrorValue;
+
+        return 1.0 / p;
+    }
+
     /// <summary>
     /// Simple gamma function implementation for Weibull expected value.
     /// </summary>

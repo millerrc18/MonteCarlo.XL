@@ -12,7 +12,7 @@ public class DistributionFactoryTests
     public void AvailableDistributions_ContainsAllTen()
     {
         var available = DistributionFactory.AvailableDistributions;
-        available.Should().HaveCount(10);
+        available.Should().HaveCount(15);
         available.Should().Contain("Normal");
         available.Should().Contain("Triangular");
         available.Should().Contain("PERT");
@@ -23,6 +23,11 @@ public class DistributionFactoryTests
         available.Should().Contain("Weibull");
         available.Should().Contain("Exponential");
         available.Should().Contain("Poisson");
+        available.Should().Contain("Gamma");
+        available.Should().Contain("Logistic");
+        available.Should().Contain("GEV");
+        available.Should().Contain("Binomial");
+        available.Should().Contain("Geometric");
     }
 
     // --- Creates Each Type ---
@@ -185,8 +190,8 @@ public class DistributionFactoryTests
     [Fact]
     public void Create_UnknownName_Throws()
     {
-        var act = () => DistributionFactory.Create("Gamma", new Dictionary<string, double>());
-        act.Should().Throw<ArgumentException>().WithMessage("*Unknown distribution*Gamma*");
+        var act = () => DistributionFactory.Create("FictionalDist", new Dictionary<string, double>());
+        act.Should().Throw<ArgumentException>().WithMessage("*Unknown distribution*FictionalDist*");
     }
 
     // --- Missing Parameters Throws ---

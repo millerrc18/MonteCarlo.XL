@@ -9,7 +9,8 @@ public static class DistributionFactory
     private static readonly IReadOnlyList<string> _available = new[]
     {
         "Normal", "Triangular", "PERT", "Lognormal", "Uniform", "Discrete",
-        "Beta", "Weibull", "Exponential", "Poisson"
+        "Beta", "Weibull", "Exponential", "Poisson", "Gamma", "Logistic",
+        "GEV", "Binomial", "Geometric"
     };
 
     /// <summary>
@@ -42,6 +43,11 @@ public static class DistributionFactory
             "weibull" => CreateWeibull(parameters, seed),
             "exponential" => CreateExponential(parameters, seed),
             "poisson" => CreatePoisson(parameters, seed),
+            "gamma" => CreateGamma(parameters, seed),
+            "logistic" => CreateLogistic(parameters, seed),
+            "gev" => CreateGEV(parameters, seed),
+            "binomial" => CreateBinomial(parameters, seed),
+            "geometric" => CreateGeometric(parameters, seed),
             _ => throw new ArgumentException($"Unknown distribution: '{name}'. Available: {string.Join(", ", _available)}.", nameof(name))
         };
     }
@@ -107,4 +113,19 @@ public static class DistributionFactory
 
     private static PoissonDistribution CreatePoisson(Dictionary<string, double> p, int? seed) =>
         new(GetRequired(p, "lambda"), seed);
+
+    private static GammaDistribution CreateGamma(Dictionary<string, double> p, int? seed) =>
+        new(GetRequired(p, "shape"), GetRequired(p, "rate"), seed);
+
+    private static LogisticDistribution CreateLogistic(Dictionary<string, double> p, int? seed) =>
+        new(GetRequired(p, "mu"), GetRequired(p, "s"), seed);
+
+    private static GEVDistribution CreateGEV(Dictionary<string, double> p, int? seed) =>
+        new(GetRequired(p, "mu"), GetRequired(p, "sigma"), GetRequired(p, "xi"), seed);
+
+    private static BinomialDistribution CreateBinomial(Dictionary<string, double> p, int? seed) =>
+        new((int)GetRequired(p, "n"), GetRequired(p, "p"), seed);
+
+    private static GeometricDistribution CreateGeometric(Dictionary<string, double> p, int? seed) =>
+        new(GetRequired(p, "p"), seed);
 }
