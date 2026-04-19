@@ -60,6 +60,91 @@
                     </StackPanel>
                 </Border>
 
+                <!-- Simulation defaults section -->
+                <Border Style="{StaticResource Card}" Margin="0,0,0,16">
+                    <StackPanel>
+                        <TextBlock Text="Simulation defaults"
+                                   Style="{StaticResource HeadlineSmall}"
+                                   Margin="0,0,0,12"/>
+
+                        <TextBlock Text="Default iterations" Style="{StaticResource CaptionText}" Margin="0,0,0,4"/>
+                        <TextBox x:Name="DefaultIterationsTextBox"
+                                 Margin="0,0,0,10"
+                                 Padding="8,6"
+                                 FontFamily="{StaticResource MonoFont}"
+                                 FontSize="13"
+                                 BorderBrush="{DynamicResource BorderBrush}"
+                                 BorderThickness="1"/>
+
+                        <TextBlock Text="Seed mode" Style="{StaticResource CaptionText}" Margin="0,0,0,8"/>
+                        <RadioButton x:Name="RandomSeedRadio"
+                                     Content="Random seed for each run"
+                                     GroupName="SeedMode"
+                                     Margin="0,0,0,6"
+                                     Foreground="{DynamicResource TextPrimaryBrush}"
+                                     FontFamily="{StaticResource DefaultFont}"
+                                     FontSize="13"/>
+                        <RadioButton x:Name="FixedSeedRadio"
+                                     Content="Fixed seed by default"
+                                     GroupName="SeedMode"
+                                     Margin="0,0,0,6"
+                                     Foreground="{DynamicResource TextPrimaryBrush}"
+                                     FontFamily="{StaticResource DefaultFont}"
+                                     FontSize="13"/>
+                        <TextBox x:Name="FixedSeedTextBox"
+                                 Margin="18,0,0,10"
+                                 Padding="8,6"
+                                 FontFamily="{StaticResource MonoFont}"
+                                 FontSize="13"
+                                 BorderBrush="{DynamicResource BorderBrush}"
+                                 BorderThickness="1"/>
+
+                        <TextBlock Text="Sampling method" Style="{StaticResource CaptionText}" Margin="0,0,0,4"/>
+                        <ComboBox x:Name="SamplingMethodComboBox"
+                                  Margin="0,0,0,10"
+                                  Padding="8,6"
+                                  FontFamily="{StaticResource DefaultFont}"
+                                  FontSize="13"/>
+
+                        <CheckBox x:Name="AutoStopOnConvergenceCheckBox"
+                                  Content="Auto-stop when convergence is detected"
+                                  Margin="0,0,0,10"
+                                  Foreground="{DynamicResource TextPrimaryBrush}"
+                                  FontFamily="{StaticResource DefaultFont}"
+                                  FontSize="13"/>
+
+                        <TextBlock Text="Default percentiles" Style="{StaticResource CaptionText}" Margin="0,0,0,4"/>
+                        <TextBox x:Name="DefaultPercentilesTextBox"
+                                 Margin="0,0,0,8"
+                                 Padding="8,6"
+                                 FontFamily="{StaticResource MonoFont}"
+                                 FontSize="13"
+                                 BorderBrush="{DynamicResource BorderBrush}"
+                                 BorderThickness="1"/>
+                        <TextBlock Text="Comma-separated values used as the report-builder default list."
+                                   Style="{StaticResource CaptionText}"
+                                   TextWrapping="Wrap"
+                                   Margin="0,0,0,12"/>
+
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock x:Name="SettingsSavedText"
+                                       Grid.Column="0"
+                                       Style="{StaticResource CaptionText}"
+                                       Foreground="{StaticResource Emerald500Brush}"
+                                       VerticalAlignment="Center"/>
+                            <Button Grid.Column="1"
+                                    Content="Save Defaults"
+                                    Style="{StaticResource PrimaryButton}"
+                                    Click="OnSaveDefaultsClicked"
+                                    Padding="12,6"/>
+                        </Grid>
+                    </StackPanel>
+                </Border>
+
                 <!-- Export section -->
                 <Border Style="{StaticResource Card}" Margin="0,0,0,16">
                     <StackPanel>

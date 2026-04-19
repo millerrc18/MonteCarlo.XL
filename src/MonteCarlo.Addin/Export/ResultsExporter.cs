@@ -30,7 +30,8 @@ public class ResultsExporter
         int outputIndex,
         byte[]? histogramImage = null,
         byte[]? tornadoImage = null,
-        bool createNewSheet = true)
+        bool createNewSheet = true,
+        IReadOnlyList<double>? percentiles = null)
     {
         var app = (Application)ExcelDnaUtil.Application;
         var workbook = app.ActiveWorkbook;
@@ -57,7 +58,7 @@ public class ResultsExporter
             row++;
 
             // Percentiles
-            row = WritePercentiles(sheet, row, stats);
+            row = WritePercentiles(sheet, row, stats, percentiles);
             row++;
 
             // Sensitivity
@@ -217,7 +218,11 @@ public class ResultsExporter
         return row;
     }
 
-    private static int WritePercentiles(Worksheet sheet, int row, SummaryStatistics stats)
+    private static int WritePercentiles(
+        Worksheet sheet,
+        int row,
+        SummaryStatistics stats,
+        IReadOnlyList<double>? configuredPercentiles)
     {
         WriteSectionHeader(sheet, row, "PERCENTILES");
         row++;
@@ -225,15 +230,14 @@ public class ResultsExporter
         WriteTableHeader(sheet, row, "Percentile", "Value");
         row++;
 
-        var percentiles = new (string Label, double Value)[]
-        {
-            ("P1", stats.P1), ("P5", stats.P5), ("P10", stats.P10),
-            ("P25", stats.P25), ("P50", stats.Median),
-            ("P75", stats.P75), ("P90", stats.P90), ("P95", stats.P95), ("P99", stats.P99)
-        };
+        var percentiles = configuredPercentiles is { Count: > 0 }
+            ? configuredPercentiles
+            : new[] { 0.01, 0.05, 0.10, 0.25, 0.50, 0.75, 0.90, 0.95, 0.99 };
 
-        foreach (var (label, value) in percentiles)
+        foreach (var percentile in percentiles)
         {
+            var label = $"P{percentile * 100:G4}";
+            var value = stats.Percentile(percentile);
             sheet.Cells[row, 1].Value2 = label;
             sheet.Cells[row, 2].Value2 = value;
             sheet.Cells[row, 2].NumberFormat = GetNumberFormat(value);

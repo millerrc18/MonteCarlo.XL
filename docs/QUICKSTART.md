@@ -57,6 +57,8 @@ After a simulation finishes:
 
 By default, each export creates a new worksheet so prior summaries are preserved. To change that behavior, open `Settings` and turn off `Create a new worksheet for each export`.
 
+Settings also lets you choose defaults for new workbook setups: iteration count, random versus fixed seed, sampling method, convergence auto-stop, and the percentile list used in summary exports.
+
 ## 5. Add Monte Carlo Formulas To Your Own Workbook
 
 Use `MC.*` formulas where your deterministic model has uncertain assumptions. For example:

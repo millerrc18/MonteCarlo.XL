@@ -1,5 +1,6 @@
 using System.Windows;
 using System.Windows.Controls;
+using MonteCarlo.Engine.Simulation;
 using MonteCarlo.UI.Services;
 
 namespace MonteCarlo.UI.Views;
@@ -16,6 +17,7 @@ public partial class SettingsView : UserControl
     public SettingsView()
     {
         InitializeComponent();
+        SamplingMethodComboBox.ItemsSource = Enum.GetValues<SamplingMethod>();
         Loaded += OnLoaded;
     }
 
@@ -40,6 +42,14 @@ public partial class SettingsView : UserControl
         }
 
         CreateNewExportSheetCheckBox.IsChecked = settings.CreateNewWorksheetForExports;
+        DefaultIterationsTextBox.Text = settings.DefaultIterationCount.ToString();
+        RandomSeedRadio.IsChecked = settings.SeedMode == SeedMode.Random;
+        FixedSeedRadio.IsChecked = settings.SeedMode == SeedMode.Fixed;
+        FixedSeedTextBox.Text = settings.FixedRandomSeed.ToString();
+        SamplingMethodComboBox.SelectedItem = settings.SamplingMethod;
+        AutoStopOnConvergenceCheckBox.IsChecked = settings.AutoStopOnConvergence;
+        DefaultPercentilesTextBox.Text = settings.DefaultPercentiles;
+        SettingsSavedText.Text = string.Empty;
 
         _isInitializing = false;
     }
@@ -70,10 +80,84 @@ public partial class SettingsView : UserControl
     {
         if (_isInitializing) return;
 
-        _settingsService.Save(new UserSettings
+        if (TryReadSettingsFromControls(out var settings, out _))
+            _settingsService.Save(settings);
+    }
+
+    private void OnSaveDefaultsClicked(object sender, RoutedEventArgs e)
+    {
+        if (!TryReadSettingsFromControls(out var settings, out var error))
         {
-            CreateNewWorksheetForExports = CreateNewExportSheetCheckBox.IsChecked == true
-        });
+            SettingsSavedText.Foreground = FindResource("Red500Brush") as System.Windows.Media.Brush;
+            SettingsSavedText.Text = error;
+            return;
+        }
+
+        _settingsService.Save(settings);
+        SettingsSavedText.Foreground = FindResource("Emerald500Brush") as System.Windows.Media.Brush;
+        SettingsSavedText.Text = "Defaults saved.";
+    }
+
+    private bool TryReadSettingsFromControls(out UserSettings settings, out string error)
+    {
+        settings = UserSettings.Default;
+        error = string.Empty;
+
+        if (!int.TryParse(DefaultIterationsTextBox.Text, out var defaultIterations) || defaultIterations <= 0)
+        {
+            error = "Iterations must be a positive whole number.";
+            return false;
+        }
+
+        if (!int.TryParse(FixedSeedTextBox.Text, out var fixedSeed) || fixedSeed < 0)
+        {
+            error = "Fixed seed must be zero or greater.";
+            return false;
+        }
+
+        var percentiles = DefaultPercentilesTextBox.Text.Trim();
+        if (!IsValidPercentileList(percentiles))
+        {
+            error = "Percentiles must be comma-separated values from 0 to 100.";
+            return false;
+        }
+
+        settings = new UserSettings
+        {
+            CreateNewWorksheetForExports = CreateNewExportSheetCheckBox.IsChecked == true,
+            DefaultIterationCount = defaultIterations,
+            SeedMode = FixedSeedRadio.IsChecked == true ? SeedMode.Fixed : SeedMode.Random,
+            FixedRandomSeed = fixedSeed,
+            SamplingMethod = SamplingMethodComboBox.SelectedItem is SamplingMethod method
+                ? method
+                : UserSettings.Default.SamplingMethod,
+            AutoStopOnConvergence = AutoStopOnConvergenceCheckBox.IsChecked == true,
+            DefaultPercentiles = percentiles
+        };
+
+        return true;
+    }
+
+    private static bool IsValidPercentileList(string text)
+    {
+        if (string.IsNullOrWhiteSpace(text))
+            return false;
+
+        foreach (var part in text.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+        {
+            if (!double.TryParse(
+                    part,
+                    System.Globalization.NumberStyles.Float,
+                    System.Globalization.CultureInfo.InvariantCulture,
+                    out var percentile)
+                || percentile < 0
+                || percentile > 100)
+            {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     private FrameworkElement? FindTopLevelControl()

@@ -225,11 +225,20 @@ internal sealed class TaskPaneIntegration : IDisposable
 
         try
         {
+            var userSettings = new UserSettingsService().Load();
+            var runSeed = viewModel.SetupViewModel.IsSeedLocked
+                ? viewModel.SetupViewModel.RandomSeed
+                : userSettings.SeedMode == SeedMode.Fixed
+                    ? userSettings.FixedRandomSeed
+                    : null;
+
             SyncManagersFromSetup(viewModel.SetupViewModel, clearExistingHighlights: true);
             SaveCurrentProfile();
             await _orchestrator.RunSimulationAsync(
                 viewModel.SetupViewModel.IterationCount,
-                viewModel.SetupViewModel.RandomSeed);
+                runSeed,
+                userSettings.SamplingMethod,
+                userSettings.AutoStopOnConvergence);
         }
         catch (OperationCanceledException)
         {
@@ -488,10 +497,13 @@ internal sealed class TaskPaneIntegration : IDisposable
         try
         {
             var profile = _orchestrator.LoadConfig();
-            if (profile == null)
-                return;
-
             var setup = viewModel.SetupViewModel;
+            if (profile == null)
+            {
+                ApplyUserDefaults(setup);
+                return;
+            }
+
             setup.Inputs.Clear();
             setup.Outputs.Clear();
             setup.IterationCount = profile.IterationCount;
@@ -525,6 +537,23 @@ internal sealed class TaskPaneIntegration : IDisposable
         catch (Exception ex)
         {
             StartupDiagnostics.LogException("Failed to load saved workbook profile.", ex);
+        }
+    }
+
+    private static void ApplyUserDefaults(SetupViewModel setup)
+    {
+        var settings = new UserSettingsService().Load();
+        setup.IterationCount = settings.DefaultIterationCount;
+
+        if (settings.SeedMode == SeedMode.Fixed)
+        {
+            setup.RandomSeed = settings.FixedRandomSeed;
+            setup.IsSeedLocked = true;
+        }
+        else
+        {
+            setup.RandomSeed = null;
+            setup.IsSeedLocked = false;
         }
     }
 
@@ -637,7 +666,8 @@ internal sealed class TaskPaneIntegration : IDisposable
                     sensitivity,
                     profile,
                     outputIndex,
-                    createNewSheet: userSettings.CreateNewWorksheetForExports);
+                    createNewSheet: userSettings.CreateNewWorksheetForExports,
+                    percentiles: userSettings.GetDefaultPercentileFractions());
 
                 StartupDiagnostics.Log($"Export summary completed for output '{selectedOutputId}'.");
             }

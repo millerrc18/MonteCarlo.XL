@@ -39,6 +39,7 @@ This roadmap tracks the 12 robustness and @RISK-like initiatives identified afte
 - Core Excel add-in workflow is implemented with Excel-DNA, WPF task pane, ribbon, packed 64-bit XLL deployment, and startup diagnostics.
 - Summary export now includes charts and can create unique worksheets by default.
 - Light/dark/system theme switching is implemented and persisted.
+- Settings now persist export worksheet behavior, default iterations, random vs fixed seed defaults, sampling method, convergence auto-stop, and default percentile lists used by summary exports.
 - The task pane supports 15 distributions; worksheet UDFs exist for all except Discrete.
 - Rank correlation engine and matrix editor exist. This roadmap pass wires the existing correlation editor into Setup navigation and adds a ribbon entry. Import/export and stronger warnings remain unfinished.
 - Model Check now validates the setup profile before run, blocks missing/invalid inputs and outputs, detects duplicate/conflicting cells, validates distribution parameters, checks correlation matrix shape/validity, and warns about very small/large runs.
@@ -69,11 +70,10 @@ Open work:
 
 Open work:
 
-- Persist default iteration count globally.
-- Persist seed mode: random, fixed, or prompt.
-- Expose convergence auto-stop and recalc mode.
-- Add default percentile configuration.
-- Decide which settings are global versus workbook-specific.
+- Add prompt-at-run seed mode; current modes are random and fixed.
+- Expose Excel recalc/state behavior once state-safety work is centralized.
+- Add workbook-specific settings overrides; current settings are global Windows-user preferences.
+- Surface current effective run settings in the Run view and exported metadata.
 
 ### 4. Distribution Palette / Wizard
 

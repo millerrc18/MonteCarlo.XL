@@ -55,7 +55,11 @@ public class SimulationOrchestrator
     /// <summary>
     /// Run the full simulation workflow.
     /// </summary>
-    public async Task RunSimulationAsync(int iterationCount, int? randomSeed)
+    public async Task RunSimulationAsync(
+        int iterationCount,
+        int? randomSeed,
+        SamplingMethod samplingMethod = SamplingMethod.LatinHypercube,
+        bool autoStopOnConvergence = false)
     {
         _cts = new CancellationTokenSource();
         _convergenceChecker.Reset();
@@ -124,7 +128,9 @@ public class SimulationOrchestrator
         {
             IterationCount = iterationCount,
             RandomSeed = randomSeed,
-            ParallelExecution = false // COM is single-threaded
+            ParallelExecution = false, // COM is single-threaded
+            Sampling = samplingMethod,
+            AutoStopOnConvergence = autoStopOnConvergence
         };
 
         foreach (var input in taggedInputs)
