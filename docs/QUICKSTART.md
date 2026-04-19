@@ -75,7 +75,17 @@ Use `MC.*` formulas where your deterministic model has uncertain assumptions. Fo
 
 When Excel is not simulating, these formulas return an expected or representative value so the workbook still calculates normally. During a simulation, MonteCarlo.XL samples those cells and recalculates the selected output cells repeatedly.
 
-## 6. Troubleshooting
+## 6. Share A Workbook Without The Add-In
+
+If someone needs to open the workbook without MonteCarlo.XL:
+
+1. Save a normal backup copy first.
+2. Open the `MonteCarlo.XL` ribbon tab.
+3. Click `Replace MC Formulas` to replace `MC.*` formulas with their current values.
+4. Send the value-only workbook.
+5. Click `Restore MC Formulas` later to restore the formulas from the workbook restore map.
+
+## 7. Troubleshooting
 
 If the ribbon does not appear, the task pane does not open, or a simulation/export fails, check:
 

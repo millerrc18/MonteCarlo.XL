@@ -106,6 +106,18 @@ public class MonteCarloRibbon : ExcelRibbon
                           screentip='View Results'
                           supertip='Open the results dashboard.' />
                 </group>
+                <group id='SharingGroup' label='Sharing'>
+                  <button id='ReplaceMcFormulasButton' label='Replace MC Formulas'
+                          imageMso='PasteValues'
+                          onAction='OnReplaceMcFormulas'
+                          screentip='Replace MC Formulas'
+                          supertip='Replace MC.* formulas in the active workbook with their current values and save a restore map in the workbook.' />
+                  <button id='RestoreMcFormulasButton' label='Restore MC Formulas'
+                          imageMso='Undo'
+                          onAction='OnRestoreMcFormulas'
+                          screentip='Restore MC Formulas'
+                          supertip='Restore MC.* formulas from the workbook restore map.' />
+                </group>
                 <group id='SupportGroup' label='Support'>
                   <button id='OpenLogButton' label='Startup Log'
                           imageMso='FileFind' onAction='OnOpenDiagnosticsLog'
@@ -306,6 +318,58 @@ public class MonteCarloRibbon : ExcelRibbon
         {
             ShowTaskPaneAndWire();
             AddIn.Integration?.ExportCurrentRawData();
+        });
+    }
+
+    /// <summary>
+    /// Callback: Replace MC.* formulas with current values for workbook sharing.
+    /// </summary>
+    public void OnReplaceMcFormulas(IRibbonControl control)
+    {
+        RunRibbonAction("Replace MC formulas", () =>
+        {
+            var confirm = MessageBox.Show(
+                "Replace all MC.* formulas in the active workbook with their current values?\r\n\r\n" +
+                "A restore map will be saved inside the workbook so you can restore the formulas later.",
+                "Replace MC Formulas",
+                MessageBoxButtons.YesNo,
+                MessageBoxIcon.Warning);
+
+            if (confirm != DialogResult.Yes)
+                return;
+
+            var result = new FunctionSwapService().ReplaceMcFormulasWithCurrentValues();
+            MessageBox.Show(
+                result.Message,
+                "Replace MC Formulas",
+                MessageBoxButtons.OK,
+                MessageBoxIcon.Information);
+        });
+    }
+
+    /// <summary>
+    /// Callback: Restore MC.* formulas from the workbook restore map.
+    /// </summary>
+    public void OnRestoreMcFormulas(IRibbonControl control)
+    {
+        RunRibbonAction("Restore MC formulas", () =>
+        {
+            var confirm = MessageBox.Show(
+                "Restore MC.* formulas from the workbook restore map?\r\n\r\n" +
+                "This will overwrite the current values in those cells.",
+                "Restore MC Formulas",
+                MessageBoxButtons.YesNo,
+                MessageBoxIcon.Question);
+
+            if (confirm != DialogResult.Yes)
+                return;
+
+            var result = new FunctionSwapService().RestoreMcFormulas();
+            MessageBox.Show(
+                result.Message,
+                "Restore MC Formulas",
+                MessageBoxButtons.OK,
+                MessageBoxIcon.Information);
         });
     }
 

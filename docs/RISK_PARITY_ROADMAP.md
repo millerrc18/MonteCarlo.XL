@@ -31,7 +31,7 @@ This roadmap tracks the 12 robustness and @RISK-like initiatives identified afte
 | 8 | Scenario / stress analysis | Foundation | Users need to understand not just the distribution, but why good or bad cases happen. | Results support target probabilities, conditional analysis for best/worst/target-hit cases, stress ranges, and baseline-vs-stressed comparisons. |
 | 9 | Goal seek under uncertainty | Foundation | Many decisions ask for the input level needed to reach a probability target. | User selects a decision cell, target output condition, desired probability/statistic, bounds, and simulation settings. The add-in iterates simulations and reports the required decision value. |
 | 10 | Excel state safety | Foundation | An Excel add-in must leave workbooks stable after success, failure, and cancel. | All simulation/export paths reliably restore calculation mode, screen updating, events, status bar, selection, active sheet, and input cell values. Failures log phase-specific diagnostics. |
-| 11 | Function swap / model sharing | Planned | Workbooks should be shareable with people who do not have the add-in. | User can replace `MC.*` formulas with static expected values, preserve a restore map, restore formulas later, and export a non-add-in workbook copy. |
+| 11 | Function swap / model sharing | Foundation | Workbooks should be shareable with people who do not have the add-in. | User can replace `MC.*` formulas with static expected values, preserve a restore map, restore formulas later, and export a non-add-in workbook copy. |
 | 12 | Performance modes | Foundation | Users need predictable speed/accuracy tradeoffs. | UI exposes preview/full/deep run presets, Monte Carlo vs Latin Hypercube where supported, Excel recalc vs engine modes, iteration/sec, ETA, raw-data memory warnings, and benchmark diagnostics. |
 
 ## Current Implementation Notes
@@ -48,6 +48,7 @@ This roadmap tracks the 12 robustness and @RISK-like initiatives identified afte
 - Summary export now includes a scenario-analysis section comparing worst and best tail input means against all runs.
 - The engine now has a reusable uncertainty goal-seek solver for monotonic decision variables. It can target mean, percentile, P(output > target), or P(output <= target), and returns convergence/bracketing diagnostics for future Excel UI wiring.
 - Excel state capture/restore is centralized for simulation runs, summary/raw exports, workbook writes, highlight refresh, hidden-sheet cleanup, and cell-selection status messages. Restore failures are logged with phase-specific diagnostics.
+- The ribbon now includes workbook-sharing commands to replace `MC.*` formulas with current values and later restore them from a workbook custom-XML map.
 - Model Check now validates the setup profile before run, blocks missing/invalid inputs and outputs, detects duplicate/conflicting cells, validates distribution parameters, checks correlation matrix shape/validity, and warns about very small/large runs.
 - The Setup view now includes a Model Manager section for reviewing inputs and outputs, editing through the existing add/edit forms, copying entries, jumping to cells, refreshing highlights, and bulk-clearing inputs or outputs.
 - Stop/cancel is available through task pane, keyboard shortcut, and ribbon callback.
@@ -150,10 +151,10 @@ Open work:
 
 Open work:
 
-- Detect and catalog `MC.*` formulas.
-- Replace with deterministic values.
-- Store restore metadata safely in workbook custom XML.
-- Restore formulas and validate workbook compatibility.
+- Add a one-click "Save shareable copy" workflow so the user's working model remains formula-backed.
+- Add a catalog preview before replacement so users can review affected sheets and cells.
+- Add conflict handling when cells have changed after replacement but before restore.
+- Manually verify replace/restore across multiple worksheets, protected sheets, and workbooks without the add-in installed.
 
 ### 12. Performance Modes
 
