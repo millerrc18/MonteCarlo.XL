@@ -121,6 +121,14 @@ public class CorrelationMatrixTests
     }
 
     [Fact]
+    public void MinimumEigenvalue_ForIdentity_IsOne()
+    {
+        var matrix = CorrelationMatrix.Identity(3);
+
+        matrix.MinimumEigenvalue().Should().BeApproximately(1.0, 1e-10);
+    }
+
+    [Fact]
     public void ToArray_ReturnsCopy()
     {
         var matrix = CorrelationMatrix.Identity(2);

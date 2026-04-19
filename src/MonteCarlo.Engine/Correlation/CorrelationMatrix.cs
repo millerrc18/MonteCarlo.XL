@@ -117,6 +117,16 @@ public class CorrelationMatrix
     }
 
     /// <summary>
+    /// Returns the smallest eigenvalue of the matrix.
+    /// </summary>
+    public double MinimumEigenvalue()
+    {
+        var m = ToMathNetMatrix();
+        var evd = m.Evd();
+        return evd.EigenValues.Min(value => value.Real);
+    }
+
+    /// <summary>
     /// If the matrix is not positive semi-definite, computes and returns the
     /// nearest PSD correlation matrix. If already PSD, returns this.
     /// </summary>

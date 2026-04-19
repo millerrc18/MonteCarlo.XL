@@ -4,6 +4,7 @@ using ExcelDna.Integration;
 using MonteCarlo.Addin.Excel;
 using MonteCarlo.Addin.UDF;
 using MonteCarlo.Engine.Analysis;
+using MonteCarlo.Engine.Correlation;
 using MonteCarlo.Engine.Distributions;
 using MonteCarlo.Engine.Simulation;
 using Microsoft.Office.Interop.Excel;
@@ -59,7 +60,8 @@ public class SimulationOrchestrator
         int iterationCount,
         int? randomSeed,
         SamplingMethod samplingMethod = SamplingMethod.LatinHypercube,
-        bool autoStopOnConvergence = false)
+        bool autoStopOnConvergence = false,
+        double[,]? correlationMatrix = null)
     {
         _cts = new CancellationTokenSource();
         _convergenceChecker.Reset();
@@ -152,6 +154,19 @@ public class SimulationOrchestrator
                 Id = output.Cell.FullReference,
                 Label = output.Label
             });
+        }
+
+        if (correlationMatrix != null)
+        {
+            if (correlationMatrix.GetLength(0) != taggedInputs.Count || correlationMatrix.GetLength(1) != taggedInputs.Count)
+            {
+                throw new InvalidOperationException(
+                    $"Correlation matrix is {correlationMatrix.GetLength(0)}×{correlationMatrix.GetLength(1)} but the run has {taggedInputs.Count} inputs. Reopen the correlation editor to rebuild it.");
+            }
+
+            var correlation = new CorrelationMatrix(correlationMatrix);
+            correlation.Validate();
+            config.Correlation = correlation;
         }
 
         // 4. Build evaluator (fast mode — Excel recalc)
@@ -287,12 +302,13 @@ public class SimulationOrchestrator
     /// <summary>
     /// Build a profile from the current setup for persistence.
     /// </summary>
-    public SimulationProfile BuildProfile(int iterationCount, int? randomSeed)
+    public SimulationProfile BuildProfile(int iterationCount, int? randomSeed, double[,]? correlationMatrix = null)
     {
         var profile = new SimulationProfile
         {
             IterationCount = iterationCount,
-            RandomSeed = randomSeed
+            RandomSeed = randomSeed,
+            CorrelationMatrix = correlationMatrix
         };
 
         foreach (var input in _inputManager.GetAllInputs())
@@ -323,9 +339,9 @@ public class SimulationOrchestrator
     /// <summary>
     /// Save the current config to the workbook.
     /// </summary>
-    public void SaveConfig(int iterationCount, int? randomSeed)
+    public void SaveConfig(int iterationCount, int? randomSeed, double[,]? correlationMatrix = null)
     {
-        var profile = BuildProfile(iterationCount, randomSeed);
+        var profile = BuildProfile(iterationCount, randomSeed, correlationMatrix);
         _configPersistence.Save(profile);
     }
 

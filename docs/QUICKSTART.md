@@ -41,9 +41,10 @@ Open the workbook in Excel. It contains a simple model with uncertain inputs usi
 2. Click `Task Pane`.
 3. Add output cell `B9` on the `Smoke Model` sheet.
 4. Confirm the detected input formulas or add inputs manually. If you are adding an input from scratch, use the distribution helper for a plain-English starting point, or select historical data in Excel and use `Fit Range`.
-5. Click `Model Check` to validate the setup.
-6. Set iterations to `1,000` for a quick run.
-7. Click `Run Simulation`.
+5. For correlated inputs, click `Correlations`, enter pairwise Spearman correlations, or select the top-left cell of an n by n numeric matrix and use `Import Range`.
+6. Click `Model Check` to validate the setup.
+7. Set iterations to `1,000` for a quick run.
+8. Click `Run Simulation`.
 
 The results view should show summary statistics and charts for the selected output.
 

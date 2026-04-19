@@ -43,7 +43,7 @@ This roadmap tracks the 12 robustness and @RISK-like initiatives identified afte
 - The task pane supports 15 distributions; worksheet UDFs exist for all except Discrete.
 - The add-input flow includes a distribution helper with plain-English starting points for all supported distributions.
 - The add-input helper can fit candidate distributions from the currently selected numeric Excel range and apply the selected fit to the parameter editor.
-- Rank correlation engine and matrix editor exist. This roadmap pass wires the existing correlation editor into Setup navigation and adds a ribbon entry. Import/export and stronger warnings remain unfinished.
+- Rank correlation engine and matrix editor exist. The editor is reachable from Setup and ribbon, imports/exports n by n Excel ranges, warns about high/fragile matrices, clearly shows the independent-input state, persists workbook correlation config, and passes correlations into simulation runs.
 - Model Check now validates the setup profile before run, blocks missing/invalid inputs and outputs, detects duplicate/conflicting cells, validates distribution parameters, checks correlation matrix shape/validity, and warns about very small/large runs.
 - The Setup view now includes a Model Manager section for reviewing inputs and outputs, editing through the existing add/edit forms, copying entries, jumping to cells, refreshing highlights, and bulk-clearing inputs or outputs.
 - Stop/cancel is available through task pane, keyboard shortcut, and ribbon callback.
@@ -99,10 +99,10 @@ Open work:
 
 Open work:
 
-- Import/export a matrix from/to an Excel range.
-- Add better warnings for near-singular matrices and very high absolute correlations.
-- Add a clear "no correlations configured" state.
 - Include correlation assumptions in exported reports.
+- Add labels to matrix export/import templates so users can round-trip named rows and columns, not only numeric n by n ranges.
+- Add richer PSD diagnostics, such as exact conflicting pairs and recommended lower correlations.
+- Add manual Excel verification for import/export, persistence after reopening, and a correlated sample smoke test.
 
 ### 7. Report Builder
 

@@ -68,6 +68,9 @@ internal sealed class TaskPaneIntegration : IDisposable
         _viewModel = viewModel;
         viewModel.RunSimulationRequested += OnRunSimulationRequested;
         viewModel.CancelSimulationRequested += OnCancelSimulationRequested;
+        viewModel.CorrelationImportRequested += OnCorrelationImportRequested;
+        viewModel.CorrelationExportRequested += OnCorrelationExportRequested;
+        viewModel.CorrelationMatrixChanged += OnCorrelationMatrixChanged;
         viewModel.SetupViewModel.CellSelectionRequested += OnCellSelectionRequested;
         viewModel.SetupViewModel.InputAdded += OnInputAdded;
         viewModel.SetupViewModel.OutputAdded += OnOutputAdded;
@@ -239,7 +242,8 @@ internal sealed class TaskPaneIntegration : IDisposable
                 viewModel.SetupViewModel.IterationCount,
                 runSeed,
                 userSettings.SamplingMethod,
-                userSettings.AutoStopOnConvergence);
+                userSettings.AutoStopOnConvergence,
+                viewModel.SetupViewModel.CorrelationMatrixValues);
         }
         catch (OperationCanceledException)
         {
@@ -261,6 +265,11 @@ internal sealed class TaskPaneIntegration : IDisposable
     private void OnCancelSimulationRequested(object? sender, EventArgs e)
     {
         _orchestrator.CancelSimulation();
+    }
+
+    private void OnCorrelationMatrixChanged(object? sender, EventArgs e)
+    {
+        SaveCurrentProfile();
     }
 
     private void OnProgressChanged(object? sender, MonteCarlo.Engine.Simulation.SimulationProgressEventArgs e)
@@ -393,6 +402,55 @@ internal sealed class TaskPaneIntegration : IDisposable
         }
     }
 
+    private void OnCorrelationImportRequested(CorrelationViewModel editor)
+    {
+        try
+        {
+            var app = (Application)ExcelDnaUtil.Application;
+            if (app.Selection is not Range selection)
+                throw new InvalidOperationException("Select the top-left cell of a numeric correlation matrix in Excel.");
+
+            var inputCount = editor.InputLabels.Count;
+            if (inputCount < 2)
+                throw new InvalidOperationException("At least two inputs are required before importing correlations.");
+
+            var source = GetTopLeftRange(selection).Resize[inputCount, inputCount];
+            var matrix = ReadCorrelationMatrix(source, inputCount);
+            var address = GetRangeAddress(source);
+
+            Dispatch(() => editor.LoadImportedMatrix(matrix, address));
+        }
+        catch (Exception ex)
+        {
+            StartupDiagnostics.LogException("Correlation matrix import failed.", ex);
+            Dispatch(() => editor.ShowRangeError(ex.Message));
+        }
+    }
+
+    private void OnCorrelationExportRequested(CorrelationViewModel editor)
+    {
+        try
+        {
+            if (editor.MatrixValues == null)
+                throw new InvalidOperationException("No correlation matrix is available to export.");
+
+            var app = (Application)ExcelDnaUtil.Application;
+            if (app.Selection is not Range selection)
+                throw new InvalidOperationException("Select the top-left destination cell for the correlation matrix.");
+
+            var target = GetTopLeftRange(selection).Resize[editor.MatrixValues.GetLength(0), editor.MatrixValues.GetLength(1)];
+            WriteCorrelationMatrix(target, editor.MatrixValues);
+            var address = GetRangeAddress(target);
+
+            Dispatch(() => editor.MarkExported(address));
+        }
+        catch (Exception ex)
+        {
+            StartupDiagnostics.LogException("Correlation matrix export failed.", ex);
+            Dispatch(() => editor.ShowRangeError(ex.Message));
+        }
+    }
+
     private static double[] ReadNumericValues(Range range)
     {
         var values = new List<double>();
@@ -404,6 +462,49 @@ internal sealed class TaskPaneIntegration : IDisposable
         }
 
         return values.ToArray();
+    }
+
+    private static double[,] ReadCorrelationMatrix(Range range, int size)
+    {
+        var matrix = new double[size, size];
+        for (var row = 0; row < size; row++)
+        {
+            for (var col = 0; col < size; col++)
+            {
+                var cell = (Range)range.Cells[row + 1, col + 1];
+                object? rawValue = cell.Value2;
+                if (!TryConvertToDouble(rawValue, out double value) || !double.IsFinite(value))
+                {
+                    var address = cell.Address[RowAbsolute: false, ColumnAbsolute: false];
+                    throw new InvalidOperationException($"Cell {address} does not contain a numeric correlation value.");
+                }
+
+                if (value < -1 || value > 1)
+                {
+                    var address = cell.Address[RowAbsolute: false, ColumnAbsolute: false];
+                    throw new InvalidOperationException($"Cell {address} is outside the valid correlation range of -1 to 1.");
+                }
+
+                matrix[row, col] = value;
+            }
+        }
+
+        return matrix;
+    }
+
+    private static void WriteCorrelationMatrix(Range target, double[,] matrix)
+    {
+        target.Value2 = matrix;
+        target.NumberFormat = "0.00";
+        target.Columns.AutoFit();
+    }
+
+    private static Range GetTopLeftRange(Range range) => (Range)range.Cells[1, 1];
+
+    private static string GetRangeAddress(Range range)
+    {
+        var worksheet = (Worksheet)range.Worksheet;
+        return $"{worksheet.Name}!{range.Address[RowAbsolute: false, ColumnAbsolute: false]}";
     }
 
     private static bool TryConvertToDouble(object? rawValue, out double value)
@@ -658,7 +759,7 @@ internal sealed class TaskPaneIntegration : IDisposable
             if (setup == null)
                 return;
 
-            _orchestrator.SaveConfig(setup.IterationCount, setup.RandomSeed);
+            _orchestrator.SaveConfig(setup.IterationCount, setup.RandomSeed, setup.CorrelationMatrixValues);
         }
         catch (Exception ex)
         {
@@ -717,7 +818,8 @@ internal sealed class TaskPaneIntegration : IDisposable
                 var profile = _orchestrator.LoadConfig() ??
                               _orchestrator.BuildProfile(
                                   viewModel.SetupViewModel.IterationCount,
-                                  viewModel.SetupViewModel.RandomSeed);
+                                  viewModel.SetupViewModel.RandomSeed,
+                                  viewModel.SetupViewModel.CorrelationMatrixValues);
 
                 // Look up sensitivity data for the selected output
                 IReadOnlyList<SensitivityResult>? sensitivity = null;
@@ -814,6 +916,9 @@ internal sealed class TaskPaneIntegration : IDisposable
         {
             _viewModel.RunSimulationRequested -= OnRunSimulationRequested;
             _viewModel.CancelSimulationRequested -= OnCancelSimulationRequested;
+            _viewModel.CorrelationImportRequested -= OnCorrelationImportRequested;
+            _viewModel.CorrelationExportRequested -= OnCorrelationExportRequested;
+            _viewModel.CorrelationMatrixChanged -= OnCorrelationMatrixChanged;
             _viewModel.SetupViewModel.CellSelectionRequested -= OnCellSelectionRequested;
             _viewModel.SetupViewModel.InputAdded -= OnInputAdded;
             _viewModel.SetupViewModel.OutputAdded -= OnOutputAdded;

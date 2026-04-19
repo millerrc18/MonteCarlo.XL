@@ -10,6 +10,7 @@
                 <ResourceDictionary Source="/MonteCarlo.UI;component/Styles/GlobalStyles.xaml"/>
             </ResourceDictionary.MergedDictionaries>
             <conv:BoolToVisibilityConverter x:Key="BoolToVis"/>
+            <conv:NullToCollapsedConverter x:Key="NullToCollapsed"/>
         </ResourceDictionary>
     </UserControl.Resources>
 
@@ -42,10 +43,22 @@
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
-                <Button Grid.Column="0" Content="Clear All"
-                        Style="{StaticResource GhostButton}"
-                        Command="{Binding ClearAllCommand}"
-                        Padding="12,6"/>
+                <StackPanel Grid.Column="0" Orientation="Horizontal">
+                    <Button Content="Clear All"
+                            Style="{StaticResource GhostButton}"
+                            Command="{Binding ClearAllCommand}"
+                            Padding="12,6"
+                            Margin="0,0,6,0"/>
+                    <Button Content="Import Range"
+                            Style="{StaticResource GhostButton}"
+                            Command="{Binding RequestImportCommand}"
+                            Padding="12,6"
+                            Margin="0,0,6,0"/>
+                    <Button Content="Export Range"
+                            Style="{StaticResource GhostButton}"
+                            Command="{Binding RequestExportCommand}"
+                            Padding="12,6"/>
+                </StackPanel>
                 <Button Grid.Column="2" Content="Apply &amp; Close"
                         Style="{StaticResource PrimaryButton}"
                         Command="{Binding ApplyCommand}"
@@ -63,8 +76,21 @@
                                Style="{StaticResource CaptionText}"
                                Foreground="{DynamicResource TextSecondaryBrush}">
                         <Run Text="Tip:"/> Enter Spearman rank correlations (-1 to +1).
-                        Leave as 0 for independent inputs.
+                        Leave as 0 for independent inputs. To import or export, select the top-left cell of an n by n numeric matrix in Excel.
                     </TextBlock>
+                </Border>
+
+                <Border Background="{DynamicResource SurfaceBrush}"
+                        BorderBrush="{DynamicResource BorderBrush}"
+                        BorderThickness="1"
+                        CornerRadius="6"
+                        Padding="12,8"
+                        Margin="0,0,0,12"
+                        Visibility="{Binding IsIndependent, Converter={StaticResource BoolToVis}}">
+                    <TextBlock Text="No correlations are configured. Inputs will be sampled independently until you enter non-zero pairwise correlations."
+                               Style="{StaticResource CaptionText}"
+                               TextWrapping="Wrap"
+                               Foreground="{DynamicResource TextSecondaryBrush}"/>
                 </Border>
 
                 <!-- Matrix Grid -->
@@ -110,6 +136,24 @@
                                 Padding="8,4" FontSize="11"/>
                     </Grid>
                 </Border>
+
+                <Border Background="#FEF3C7"
+                        CornerRadius="6"
+                        Padding="12,8"
+                        Margin="0,0,0,8"
+                        Visibility="{Binding WarningMessage, Converter={StaticResource NullToCollapsed}}">
+                    <TextBlock Text="{Binding WarningMessage}"
+                               Style="{StaticResource CaptionText}"
+                               TextWrapping="Wrap"
+                               Foreground="#92400E"/>
+                </Border>
+
+                <TextBlock Text="{Binding RangeStatusMessage}"
+                           Style="{StaticResource CaptionText}"
+                           Foreground="{DynamicResource TextTertiaryBrush}"
+                           TextWrapping="Wrap"
+                           Margin="0,2,0,8"
+                           Visibility="{Binding RangeStatusMessage, Converter={StaticResource NullToCollapsed}}"/>
 
                 <!-- Scroll hint for many inputs -->
                 <TextBlock Text="Scroll horizontally to see all inputs."

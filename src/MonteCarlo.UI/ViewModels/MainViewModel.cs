@@ -59,6 +59,21 @@ public partial class MainViewModel : ObservableObject
     /// </summary>
     public event EventHandler? CancelSimulationRequested;
 
+    /// <summary>
+    /// Event raised when the correlation editor requests an Excel range import.
+    /// </summary>
+    public event Action<CorrelationViewModel>? CorrelationImportRequested;
+
+    /// <summary>
+    /// Event raised when the correlation editor requests an Excel range export.
+    /// </summary>
+    public event Action<CorrelationViewModel>? CorrelationExportRequested;
+
+    /// <summary>
+    /// Event raised when a correlation matrix is applied to the setup.
+    /// </summary>
+    public event EventHandler? CorrelationMatrixChanged;
+
     public MainViewModel()
     {
         // Wire SetupViewModel's run event to navigate to RunView
@@ -225,7 +240,13 @@ public partial class MainViewModel : ObservableObject
         viewModel.Initialize(
             SetupViewModel.Inputs.Select(input => input.Label).ToList(),
             SetupViewModel.CorrelationMatrixValues);
-        viewModel.Applied += matrix => SetupViewModel.CorrelationMatrixValues = matrix;
+        viewModel.Applied += matrix =>
+        {
+            SetupViewModel.CorrelationMatrixValues = matrix;
+            CorrelationMatrixChanged?.Invoke(this, EventArgs.Empty);
+        };
+        viewModel.ImportRequested += () => CorrelationImportRequested?.Invoke(viewModel);
+        viewModel.ExportRequested += () => CorrelationExportRequested?.Invoke(viewModel);
         viewModel.CloseRequested += NavigateToSetup;
 
         CurrentView = new CorrelationView { DataContext = viewModel };
