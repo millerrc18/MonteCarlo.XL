@@ -68,6 +68,10 @@ public class ResultsExporter
                 row++;
             }
 
+            // Scenario analysis
+            row = WriteScenarioAnalysis(sheet, row, result, outputIndex);
+            row++;
+
             // Input assumptions
             row = WriteInputAssumptions(sheet, row, profile);
             row++;
@@ -281,6 +285,45 @@ public class ResultsExporter
             if (row % 2 == 0)
                 ApplyAltRowShading(sheet, row, 4);
             row++;
+        }
+
+        return row;
+    }
+
+    private static int WriteScenarioAnalysis(Worksheet sheet, int row, SimulationResult result, int outputIndex)
+    {
+        WriteSectionHeader(sheet, row, "SCENARIO ANALYSIS");
+        row++;
+
+        sheet.Cells[row, 1].Value2 = "Tail cases compare input means inside the scenario against all simulation runs.";
+        row++;
+
+        WriteTableHeader(sheet, row, "Scenario", "Input", "Scenario Mean", "Delta vs All");
+        row++;
+
+        var scenarios = new[]
+        {
+            ScenarioAnalysis.Analyze(result, outputIndex, ScenarioFilterMode.WorstPercent, 0.10),
+            ScenarioAnalysis.Analyze(result, outputIndex, ScenarioFilterMode.BestPercent, 0.10)
+        };
+
+        foreach (var scenario in scenarios)
+        {
+            foreach (var input in scenario.InputSummaries.Take(5))
+            {
+                sheet.Cells[row, 1].Value2 =
+                    $"{scenario.Description} ({scenario.MatchedFraction:0.0%})";
+                sheet.Cells[row, 2].Value2 = input.InputLabel;
+                sheet.Cells[row, 3].Value2 = input.ScenarioMean;
+                sheet.Cells[row, 3].NumberFormat = GetNumberFormat(input.ScenarioMean);
+                sheet.Cells[row, 4].Value2 = input.Delta;
+                sheet.Cells[row, 4].NumberFormat = GetNumberFormat(input.Delta);
+
+                if (row % 2 == 0)
+                    ApplyAltRowShading(sheet, row, 4);
+
+                row++;
+            }
         }
 
         return row;

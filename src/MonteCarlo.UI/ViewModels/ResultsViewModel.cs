@@ -12,6 +12,8 @@ namespace MonteCarlo.UI.ViewModels;
 /// </summary>
 public partial class ResultsViewModel : ObservableObject
 {
+    private const int MaxScenarioInputs = 6;
+
     [ObservableProperty] private SimulationResult? _simulationResult;
     [ObservableProperty] private string? _selectedOutputId;
     [ObservableProperty] private SummaryStatistics? _currentStats;
@@ -57,11 +59,31 @@ public partial class ResultsViewModel : ObservableObject
     [ObservableProperty] private bool _hasScatterData;
     [ObservableProperty] private ObservableCollection<string> _availableInputs = new();
 
+    // Scenario analysis properties
+    [ObservableProperty] private ObservableCollection<ScenarioFilterOption> _scenarioOptions = new(new ScenarioFilterOption[]
+    {
+        new(ScenarioFilterMode.WorstPercent.ToString(), "Worst tail"),
+        new(ScenarioFilterMode.BestPercent.ToString(), "Best tail"),
+        new(ScenarioFilterMode.AtOrBelowTarget.ToString(), "At or below target"),
+        new(ScenarioFilterMode.AboveTarget.ToString(), "Above target")
+    });
+    [ObservableProperty] private string _selectedScenarioMode = ScenarioFilterMode.WorstPercent.ToString();
+    [ObservableProperty] private string _scenarioTailPercentText = "10";
+    [ObservableProperty] private ObservableCollection<ScenarioInputSummaryItem> _scenarioInputSummaries = new();
+    [ObservableProperty] private string _scenarioStatusText = "Run a simulation to compare tail cases.";
+    [ObservableProperty] private string _scenarioThresholdText = string.Empty;
+    [ObservableProperty] private bool _hasScenarioSummaries;
+
     /// <summary>Sensitivity analysis results keyed by output ID.</summary>
     public Dictionary<string, IReadOnlyList<SensitivityResult>>? SensitivityResults { get; private set; }
 
     /// <summary>Whether results are available for display.</summary>
     public bool HasResults => SimulationResult != null;
+
+    /// <summary>Whether the selected scenario mode uses the target value.</summary>
+    public bool ScenarioUsesTarget =>
+        SelectedScenarioMode == ScenarioFilterMode.AtOrBelowTarget.ToString()
+        || SelectedScenarioMode == ScenarioFilterMode.AboveTarget.ToString();
 
     partial void OnSimulationResultChanged(SimulationResult? value)
     {
@@ -99,11 +121,23 @@ public partial class ResultsViewModel : ObservableObject
         if (value == null || SimulationResult == null) return;
         RecomputeStats();
         UpdateScatterData();
+        UpdateScenarioAnalysis();
     }
 
     partial void OnSelectedScatterInputIdChanged(string? value)
     {
         UpdateScatterData();
+    }
+
+    partial void OnSelectedScenarioModeChanged(string value)
+    {
+        OnPropertyChanged(nameof(ScenarioUsesTarget));
+        UpdateScenarioAnalysis();
+    }
+
+    partial void OnScenarioTailPercentTextChanged(string value)
+    {
+        UpdateScenarioAnalysis();
     }
 
     private void UpdateScatterData()
@@ -153,6 +187,8 @@ public partial class ResultsViewModel : ObservableObject
             ProbabilityBelowTarget = null;
             TargetAnnotation = null;
         }
+
+        UpdateScenarioAnalysis();
     }
 
     [RelayCommand]
@@ -235,6 +271,106 @@ public partial class ResultsViewModel : ObservableObject
         // Recompute target if set
         OnTargetValueTextChanged(TargetValueText);
     }
+
+    private void UpdateScenarioAnalysis()
+    {
+        ScenarioInputSummaries.Clear();
+        HasScenarioSummaries = false;
+        ScenarioThresholdText = string.Empty;
+
+        if (SimulationResult == null || SelectedOutputId == null)
+        {
+            ScenarioStatusText = "Run a simulation to compare tail cases.";
+            return;
+        }
+
+        var outputIndex = FindSelectedOutputIndex();
+        if (outputIndex < 0)
+        {
+            ScenarioStatusText = "Select an output to analyze scenarios.";
+            return;
+        }
+
+        if (!Enum.TryParse<ScenarioFilterMode>(SelectedScenarioMode, out var mode))
+        {
+            ScenarioStatusText = "Choose a scenario filter.";
+            return;
+        }
+
+        double thresholdOrFraction;
+        if (mode is ScenarioFilterMode.WorstPercent or ScenarioFilterMode.BestPercent)
+        {
+            if (!TryParseScenarioTailFraction(ScenarioTailPercentText, out thresholdOrFraction))
+            {
+                ScenarioStatusText = "Enter a tail size between 0 and 100.";
+                return;
+            }
+        }
+        else
+        {
+            if (TargetValueNumeric is not double target)
+            {
+                ScenarioStatusText = "Enter a target value above to analyze target-hit cases.";
+                return;
+            }
+
+            thresholdOrFraction = target;
+        }
+
+        try
+        {
+            var analysis = ScenarioAnalysis.Analyze(SimulationResult, outputIndex, mode, thresholdOrFraction);
+            ScenarioStatusText =
+                $"{analysis.Description}: {analysis.MatchedIterations:N0} of {analysis.TotalIterations:N0} runs ({analysis.MatchedFraction:P1}).";
+            ScenarioThresholdText = $"Cutoff: {NumberFormatter.Format(analysis.Threshold)}";
+
+            foreach (var summary in analysis.InputSummaries.Take(MaxScenarioInputs))
+                ScenarioInputSummaries.Add(ScenarioInputSummaryItem.From(summary));
+
+            HasScenarioSummaries = ScenarioInputSummaries.Count > 0;
+            if (!HasScenarioSummaries)
+                ScenarioStatusText += " No runs matched this filter.";
+        }
+        catch (Exception ex) when (ex is ArgumentException or ArgumentOutOfRangeException)
+        {
+            ScenarioStatusText = ex.Message;
+        }
+    }
+
+    private int FindSelectedOutputIndex()
+    {
+        if (SimulationResult == null || SelectedOutputId == null)
+            return -1;
+
+        for (var i = 0; i < SimulationResult.Config.Outputs.Count; i++)
+        {
+            if (SimulationResult.Config.Outputs[i].Id == SelectedOutputId)
+                return i;
+        }
+
+        return -1;
+    }
+
+    private static bool TryParseScenarioTailFraction(string text, out double fraction)
+    {
+        fraction = 0;
+        if (string.IsNullOrWhiteSpace(text))
+            return false;
+
+        var trimmed = text.Trim();
+        if (trimmed.EndsWith("%", StringComparison.Ordinal))
+            trimmed = trimmed[..^1];
+
+        if (!double.TryParse(
+                trimmed,
+                System.Globalization.NumberStyles.Float,
+                System.Globalization.CultureInfo.InvariantCulture,
+                out var value))
+            return false;
+
+        fraction = value > 1 ? value / 100.0 : value;
+        return fraction > 0 && fraction < 1;
+    }
 }
 
 /// <summary>
@@ -243,4 +379,40 @@ public partial class ResultsViewModel : ObservableObject
 public record OutputItem(string Id, string Label)
 {
     public override string ToString() => Label;
+}
+
+/// <summary>
+/// Scenario filter option for the results view.
+/// </summary>
+public record ScenarioFilterOption(string Mode, string Label);
+
+/// <summary>
+/// Formatted conditional input summary for scenario analysis.
+/// </summary>
+public record ScenarioInputSummaryItem(
+    string InputLabel,
+    string ScenarioMean,
+    string OverallMean,
+    string Delta,
+    string DeltaPercent,
+    string ScenarioRange,
+    string OverallRange)
+{
+    public static ScenarioInputSummaryItem From(ScenarioInputSummary summary)
+    {
+        return new ScenarioInputSummaryItem(
+            summary.InputLabel,
+            NumberFormatter.Format(summary.ScenarioMean),
+            NumberFormatter.Format(summary.OverallMean),
+            FormatSigned(summary.Delta),
+            summary.DeltaPercent is double pct ? pct.ToString("+0.0%;-0.0%;0.0%") : "n/a",
+            NumberFormatter.FormatRange(summary.ScenarioP10, summary.ScenarioP90),
+            NumberFormatter.FormatRange(summary.OverallP10, summary.OverallP90));
+    }
+
+    private static string FormatSigned(double value)
+    {
+        var formatted = NumberFormatter.Format(value);
+        return value > 0 ? $"+{formatted}" : formatted;
+    }
 }

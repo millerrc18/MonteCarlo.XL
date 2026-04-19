@@ -151,6 +151,10 @@
                 <views:TargetLineControl DataContext="{Binding}"
                                          Margin="0,0,0,12"/>
 
+                <!-- Scenario analysis -->
+                <views:ScenarioAnalysisControl DataContext="{Binding}"
+                                               Margin="0,0,0,12"/>
+
                 <!-- Action buttons -->
                 <Grid Margin="0,0,0,16">
                     <Grid.ColumnDefinitions>

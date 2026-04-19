@@ -1,0 +1,139 @@
+<UserControl x:Class="MonteCarlo.UI.Views.ScenarioAnalysisControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:conv="clr-namespace:MonteCarlo.UI.Converters">
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/MonteCarlo.UI;component/Styles/LightTheme.xaml"/>
+                <ResourceDictionary Source="/MonteCarlo.UI;component/Styles/GlobalStyles.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+            <conv:BoolToVisibilityConverter x:Key="BoolVis"/>
+        </ResourceDictionary>
+    </UserControl.Resources>
+
+    <Border Style="{StaticResource Card}">
+        <StackPanel>
+            <TextBlock Text="SCENARIO ANALYSIS"
+                       Style="{StaticResource HeadlineSmall}"
+                       Foreground="{DynamicResource TextTertiaryBrush}"
+                       FontSize="11"
+                       Margin="0,0,0,8"/>
+
+            <TextBlock Text="Find which inputs change most in tail outcomes."
+                       Style="{StaticResource BodyText}"
+                       TextWrapping="Wrap"
+                       Margin="0,0,0,10"/>
+
+            <Grid Margin="0,0,0,8">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="8"/>
+                    <ColumnDefinition Width="92"/>
+                </Grid.ColumnDefinitions>
+                <StackPanel Grid.Column="0">
+                    <TextBlock Text="Scenario" Style="{StaticResource CaptionText}" Margin="0,0,0,2"/>
+                    <ComboBox ItemsSource="{Binding ScenarioOptions}"
+                              SelectedValue="{Binding SelectedScenarioMode, Mode=TwoWay}"
+                              SelectedValuePath="Mode"
+                              DisplayMemberPath="Label"
+                              Padding="8,6"
+                              FontFamily="{StaticResource DefaultFont}"
+                              FontSize="13"/>
+                </StackPanel>
+                <StackPanel Grid.Column="2"
+                            Visibility="{Binding ScenarioUsesTarget, Converter={StaticResource BoolVis}, ConverterParameter=invert}">
+                    <TextBlock Text="Tail size" Style="{StaticResource CaptionText}" Margin="0,0,0,2"/>
+                    <TextBox Text="{Binding ScenarioTailPercentText, UpdateSourceTrigger=PropertyChanged}"
+                             Padding="8,6"
+                             FontFamily="{StaticResource MonoFont}"
+                             FontSize="13"
+                             BorderBrush="{DynamicResource BorderBrush}"
+                             BorderThickness="1"/>
+                </StackPanel>
+            </Grid>
+
+            <TextBlock Text="Target scenarios use the Target Value above."
+                       Style="{StaticResource CaptionText}"
+                       TextWrapping="Wrap"
+                       Margin="0,0,0,8"
+                       Visibility="{Binding ScenarioUsesTarget, Converter={StaticResource BoolVis}}"/>
+
+            <TextBlock Text="{Binding ScenarioStatusText}"
+                       Style="{StaticResource BodyText}"
+                       TextWrapping="Wrap"/>
+            <TextBlock Text="{Binding ScenarioThresholdText}"
+                       Style="{StaticResource CaptionText}"
+                       FontFamily="{StaticResource MonoFont}"
+                       Margin="0,2,0,0"/>
+
+            <ItemsControl ItemsSource="{Binding ScenarioInputSummaries}"
+                          Margin="0,8,0,0"
+                          Visibility="{Binding HasScenarioSummaries, Converter={StaticResource BoolVis}}">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <Border BorderBrush="{DynamicResource BorderBrush}"
+                                BorderThickness="0,0,0,1"
+                                Padding="0,8">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+
+                                <TextBlock Grid.Row="0"
+                                           Text="{Binding InputLabel}"
+                                           Style="{StaticResource BodyText}"
+                                           Foreground="{DynamicResource TextPrimaryBrush}"
+                                           FontWeight="SemiBold"
+                                           TextWrapping="Wrap"/>
+
+                                <Grid Grid.Row="1" Margin="0,5,0,0">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0" Margin="0,0,8,0">
+                                        <TextBlock Text="Scenario mean" Style="{StaticResource CaptionText}"/>
+                                        <TextBlock Text="{Binding ScenarioMean}"
+                                                   Style="{StaticResource BodyText}"
+                                                   FontFamily="{StaticResource MonoFont}"
+                                                   Foreground="{DynamicResource TextPrimaryBrush}"/>
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="1">
+                                        <TextBlock Text="Delta" Style="{StaticResource CaptionText}"/>
+                                        <TextBlock Text="{Binding Delta}"
+                                                   Style="{StaticResource BodyText}"
+                                                   FontFamily="{StaticResource MonoFont}"
+                                                   Foreground="{DynamicResource TextPrimaryBrush}"/>
+                                    </StackPanel>
+                                </Grid>
+
+                                <Grid Grid.Row="2" Margin="0,5,0,0">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0" Margin="0,0,8,0">
+                                        <TextBlock Text="Delta %" Style="{StaticResource CaptionText}"/>
+                                        <TextBlock Text="{Binding DeltaPercent}"
+                                                   Style="{StaticResource BodyText}"
+                                                   FontFamily="{StaticResource MonoFont}"/>
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="1">
+                                        <TextBlock Text="Scenario P10-P90" Style="{StaticResource CaptionText}"/>
+                                        <TextBlock Text="{Binding ScenarioRange}"
+                                                   Style="{StaticResource BodyText}"
+                                                   FontFamily="{StaticResource MonoFont}"
+                                                   TextWrapping="Wrap"/>
+                                    </StackPanel>
+                                </Grid>
+                            </Grid>
+                        </Border>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </StackPanel>
+    </Border>
+</UserControl>

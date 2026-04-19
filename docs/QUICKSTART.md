@@ -48,12 +48,14 @@ Open the workbook in Excel. It contains a simple model with uncertain inputs usi
 
 The results view should show summary statistics and charts for the selected output.
 
+Use `Target Analysis` to enter a threshold and see the probability above or below it. Use `Scenario Analysis` to compare the input assumptions behind worst-tail, best-tail, and target-hit outcomes.
+
 ## 4. Export Results
 
 After a simulation finishes:
 
 1. Select the output you want to export in the results view.
-2. Use `Export Summary` for statistics, percentiles, input assumptions, correlation assumptions, and summary charts.
+2. Use `Export Summary` for statistics, percentiles, scenario analysis, input assumptions, correlation assumptions, and summary charts.
 3. Use `Export Raw Data` for iteration-level input and output samples.
 
 By default, each export creates a new worksheet so prior summaries are preserved. To change that behavior, open `Settings` and turn off `Create a new worksheet for each export`.

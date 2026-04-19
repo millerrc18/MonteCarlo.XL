@@ -44,6 +44,8 @@ This roadmap tracks the 12 robustness and @RISK-like initiatives identified afte
 - The add-input flow includes a distribution helper with plain-English starting points for all supported distributions.
 - The add-input helper can fit candidate distributions from the currently selected numeric Excel range and apply the selected fit to the parameter editor.
 - Rank correlation engine and matrix editor exist. The editor is reachable from Setup and ribbon, imports/exports n by n Excel ranges, warns about high/fragile matrices, clearly shows the independent-input state, persists workbook correlation config, and passes correlations into simulation runs.
+- Results now include a Scenario Analysis card for worst-tail, best-tail, at-or-below-target, and above-target filters. It shows conditional input summaries so users can see which assumptions changed most in the selected cases.
+- Summary export now includes a scenario-analysis section comparing worst and best tail input means against all runs.
 - Model Check now validates the setup profile before run, blocks missing/invalid inputs and outputs, detects duplicate/conflicting cells, validates distribution parameters, checks correlation matrix shape/validity, and warns about very small/large runs.
 - The Setup view now includes a Model Manager section for reviewing inputs and outputs, editing through the existing add/edit forms, copying entries, jumping to cells, refreshing highlights, and bulk-clearing inputs or outputs.
 - Stop/cancel is available through task pane, keyboard shortcut, and ribbon callback.
@@ -117,10 +119,11 @@ Open work:
 
 Open work:
 
-- Add best/worst/target-hit filtering.
-- Compute conditional input summaries.
-- Add stressed-run configuration.
-- Compare baseline and stressed output distributions.
+- Add a dedicated stress-run setup where selected inputs can be fixed, shifted, or range-scaled for a second simulation.
+- Compare baseline and stressed output distributions side by side.
+- Export target-hit scenario summaries, not only worst/best tail summaries.
+- Add richer conditional summaries such as median/range shifts, top changed outputs, and optional full scenario data export.
+- Manually verify worst/best/target-hit filtering in Excel against a known workbook.
 
 ### 9. Goal Seek Under Uncertainty
 
