@@ -37,7 +37,7 @@ This roadmap tracks the 12 robustness and @RISK-like initiatives identified afte
 ## Current Implementation Notes
 
 - Core Excel add-in workflow is implemented with Excel-DNA, WPF task pane, ribbon, packed 64-bit XLL deployment, and startup diagnostics.
-- Summary export now includes charts and can create unique worksheets by default.
+- Summary export now includes charts, input assumptions, correlation assumptions, and can create unique worksheets by default.
 - Light/dark/system theme switching is implemented and persisted.
 - Settings now persist export worksheet behavior, default iterations, random vs fixed seed defaults, sampling method, convergence auto-stop, and default percentile lists used by summary exports.
 - The task pane supports 15 distributions; worksheet UDFs exist for all except Discrete.
@@ -99,7 +99,6 @@ Open work:
 
 Open work:
 
-- Include correlation assumptions in exported reports.
 - Add labels to matrix export/import templates so users can round-trip named rows and columns, not only numeric n by n ranges.
 - Add richer PSD diagnostics, such as exact conflicting pairs and recommended lower correlations.
 - Add manual Excel verification for import/export, persistence after reopening, and a correlated sample smoke test.
@@ -112,6 +111,7 @@ Open work:
 - Support multiple outputs in one report.
 - Add workbook/report metadata.
 - Offer PDF-friendly formatting after Excel report creation.
+- Add a dedicated report builder UI; current summary export is the foundation report with stats, charts, sensitivity, assumptions, and correlations for one selected output.
 
 ### 8. Scenario / Stress Analysis
 

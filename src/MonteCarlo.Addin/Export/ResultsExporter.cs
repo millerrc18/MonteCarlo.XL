@@ -72,6 +72,10 @@ public class ResultsExporter
             row = WriteInputAssumptions(sheet, row, profile);
             row++;
 
+            // Correlation assumptions
+            row = WriteCorrelationAssumptions(sheet, row, profile);
+            row++;
+
             // Auto-fit columns
             sheet.Columns["A:D"].AutoFit();
 
@@ -301,6 +305,59 @@ public class ResultsExporter
 
             if (row % 2 == 0)
                 ApplyAltRowShading(sheet, row, 3);
+            row++;
+        }
+
+        return row;
+    }
+
+    private static int WriteCorrelationAssumptions(Worksheet sheet, int row, SimulationProfile profile)
+    {
+        WriteSectionHeader(sheet, row, "CORRELATION ASSUMPTIONS");
+        row++;
+
+        var matrix = profile.CorrelationMatrix;
+        if (matrix == null)
+        {
+            sheet.Cells[row, 1].Value2 = "Inputs are sampled independently.";
+            return row + 1;
+        }
+
+        var inputCount = profile.Inputs.Count;
+        if (matrix.GetLength(0) != inputCount || matrix.GetLength(1) != inputCount)
+        {
+            sheet.Cells[row, 1].Value2 = "Correlation matrix size does not match the saved input list.";
+            return row + 1;
+        }
+
+        WriteTableHeader(sheet, row, "Input A", "Input B", "Spearman Rank Corr");
+        row++;
+
+        var wroteAny = false;
+        for (var i = 0; i < inputCount; i++)
+        {
+            for (var j = i + 1; j < inputCount; j++)
+            {
+                var correlation = matrix[i, j];
+                if (Math.Abs(correlation) < 1e-12)
+                    continue;
+
+                sheet.Cells[row, 1].Value2 = profile.Inputs[i].Label;
+                sheet.Cells[row, 2].Value2 = profile.Inputs[j].Label;
+                sheet.Cells[row, 3].Value2 = correlation;
+                sheet.Cells[row, 3].NumberFormat = "0.000";
+
+                if (row % 2 == 0)
+                    ApplyAltRowShading(sheet, row, 3);
+
+                wroteAny = true;
+                row++;
+            }
+        }
+
+        if (!wroteAny)
+        {
+            sheet.Cells[row, 1].Value2 = "No non-zero correlations are configured.";
             row++;
         }
 
