@@ -96,6 +96,38 @@
                 </Grid>
 
                 <!-- Input editor (inline, shown when adding) -->
+                <Border Style="{StaticResource Card}"
+                        Margin="0,0,0,8"
+                        Visibility="{Binding IsAddingInput, Converter={StaticResource BoolVis}}">
+                    <StackPanel>
+                        <TextBlock Text="DISTRIBUTION HELPER"
+                                   Style="{StaticResource HeadlineSmall}"
+                                   Foreground="{DynamicResource TextTertiaryBrush}"
+                                   FontSize="11"
+                                   Margin="0,0,0,8"/>
+                        <ComboBox ItemsSource="{Binding DistributionSuggestions}"
+                                  SelectedItem="{Binding SelectedDistributionSuggestion}"
+                                  DisplayMemberPath="DisplayName"
+                                  Margin="0,0,0,8"
+                                  Padding="8,6"
+                                  FontFamily="{StaticResource DefaultFont}"
+                                  FontSize="13"/>
+                        <TextBlock Text="{Binding SelectedDistributionSuggestion.UseCase}"
+                                   Style="{StaticResource BodyText}"
+                                   TextWrapping="Wrap"
+                                   Margin="0,0,0,4"/>
+                        <TextBlock Text="{Binding SelectedDistributionSuggestion.ParameterHint}"
+                                   Style="{StaticResource CaptionText}"
+                                   TextWrapping="Wrap"
+                                   Margin="0,0,0,10"/>
+                        <Button Content="Use This Starting Point"
+                                Style="{StaticResource SecondaryButton}"
+                                Command="{Binding ApplyDistributionSuggestionCommand}"
+                                HorizontalAlignment="Left"
+                                Padding="10,6"/>
+                    </StackPanel>
+                </Border>
+
                 <views:InputEditorControl DataContext="{Binding}"
                                           Visibility="{Binding IsAddingInput, Converter={StaticResource BoolVis}}"/>
 

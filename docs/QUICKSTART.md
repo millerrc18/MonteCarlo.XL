@@ -40,7 +40,7 @@ Open the workbook in Excel. It contains a simple model with uncertain inputs usi
 1. Open the `MonteCarlo.XL` ribbon tab.
 2. Click `Task Pane`.
 3. Add output cell `B9` on the `Smoke Model` sheet.
-4. Confirm the detected input formulas or add inputs manually.
+4. Confirm the detected input formulas or add inputs manually. If you are adding an input from scratch, use the distribution helper for a plain-English starting point.
 5. Click `Model Check` to validate the setup.
 6. Set iterations to `1,000` for a quick run.
 7. Click `Run Simulation`.

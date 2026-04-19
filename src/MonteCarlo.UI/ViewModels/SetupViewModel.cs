@@ -138,8 +138,16 @@ public partial class SetupViewModel : ObservableObject
     [ObservableProperty]
     private IReadOnlyList<(double X, double Y)>? _editorPreviewPoints;
 
+    /// <summary>Selected plain-English distribution suggestion.</summary>
+    [ObservableProperty]
+    private DistributionSuggestionViewModel? _selectedDistributionSuggestion;
+
     /// <summary>Available distribution names.</summary>
     public IReadOnlyList<string> AvailableDistributions { get; } = DistributionFactory.AvailableDistributions;
+
+    /// <summary>Plain-English distribution suggestions for the input wizard.</summary>
+    public IReadOnlyList<DistributionSuggestionViewModel> DistributionSuggestions { get; } =
+        DistributionSuggestionViewModel.Defaults;
 
     /// <summary>Common iteration count presets.</summary>
     public IReadOnlyList<int> IterationPresets { get; } = new[] { 1000, 5000, 10000, 25000, 50000 };
@@ -206,6 +214,7 @@ public partial class SetupViewModel : ObservableObject
 
     public SetupViewModel()
     {
+        SelectedDistributionSuggestion = DistributionSuggestions.FirstOrDefault();
         Inputs.CollectionChanged += (_, _) =>
         {
             OnPropertyChanged(nameof(CanRun));
@@ -224,6 +233,19 @@ public partial class SetupViewModel : ObservableObject
     private void RunPreflight()
     {
         PreflightRequested?.Invoke();
+    }
+
+    [RelayCommand]
+    private void ApplyDistributionSuggestion()
+    {
+        var suggestion = SelectedDistributionSuggestion;
+        if (suggestion == null)
+            return;
+
+        NewInputLabel = string.IsNullOrWhiteSpace(NewInputLabel)
+            ? suggestion.LabelExample
+            : NewInputLabel;
+        ApplyDetectedDistribution(suggestion.DistributionName, new Dictionary<string, double>(suggestion.Parameters));
     }
 
     [RelayCommand]
@@ -822,6 +844,142 @@ public partial class DiscretePairViewModel : ObservableObject
 {
     [ObservableProperty] private string _value = "0";
     [ObservableProperty] private string _probability = "0";
+}
+
+public sealed class DistributionSuggestionViewModel
+{
+    public DistributionSuggestionViewModel(
+        string title,
+        string distributionName,
+        string useCase,
+        string parameterHint,
+        string labelExample,
+        Dictionary<string, double> parameters)
+    {
+        Title = title;
+        DistributionName = distributionName;
+        UseCase = useCase;
+        ParameterHint = parameterHint;
+        LabelExample = labelExample;
+        Parameters = parameters;
+    }
+
+    public string Title { get; }
+    public string DistributionName { get; }
+    public string UseCase { get; }
+    public string ParameterHint { get; }
+    public string LabelExample { get; }
+    public Dictionary<string, double> Parameters { get; }
+    public string DisplayName => $"{Title} ({DistributionName})";
+
+    public static IReadOnlyList<DistributionSuggestionViewModel> Defaults { get; } = new[]
+    {
+        new DistributionSuggestionViewModel(
+            "Three-point estimate",
+            "PERT",
+            "Use when you know low, most likely, and high estimates and want a smooth expert-judgment curve.",
+            "Starts with min 80, mode 100, max 140.",
+            "Estimate",
+            new Dictionary<string, double> { ["min"] = 80, ["mode"] = 100, ["max"] = 140 }),
+        new DistributionSuggestionViewModel(
+            "Simple low-likely-high",
+            "Triangular",
+            "Use when the three-point estimate should be direct and transparent.",
+            "Starts with min 80, mode 100, max 140.",
+            "Three point input",
+            new Dictionary<string, double> { ["min"] = 80, ["mode"] = 100, ["max"] = 140 }),
+        new DistributionSuggestionViewModel(
+            "Symmetric forecast error",
+            "Normal",
+            "Use when values vary around a center and upside/downside misses are roughly balanced.",
+            "Starts with mean 0 and standard deviation 1.",
+            "Forecast error",
+            new Dictionary<string, double> { ["mean"] = 0, ["stdDev"] = 1 }),
+        new DistributionSuggestionViewModel(
+            "Heavier-tail forecast error",
+            "Logistic",
+            "Use when errors are centered but large misses happen more often than a Normal curve implies.",
+            "Starts with location 0 and scale 1.",
+            "Heavy-tail error",
+            new Dictionary<string, double> { ["mu"] = 0, ["s"] = 1 }),
+        new DistributionSuggestionViewModel(
+            "Positive skewed amount",
+            "Lognormal",
+            "Use for positive values with plausible large upside outcomes, such as deal size or repair cost.",
+            "Starts with mu 0 and sigma 0.35.",
+            "Positive amount",
+            new Dictionary<string, double> { ["mu"] = 0, ["sigma"] = 0.35 }),
+        new DistributionSuggestionViewModel(
+            "Positive total or duration",
+            "Gamma",
+            "Use for positive continuous totals built from multiple waiting-time-like effects.",
+            "Starts with shape 3 and rate 0.4.",
+            "Processing time",
+            new Dictionary<string, double> { ["shape"] = 3, ["rate"] = 0.4 }),
+        new DistributionSuggestionViewModel(
+            "Percentage or rate",
+            "Beta",
+            "Use for values constrained between 0 and 1, such as conversion, churn, or defect rates.",
+            "Starts with alpha 8 and beta 32.",
+            "Conversion rate",
+            new Dictionary<string, double> { ["alpha"] = 8, ["beta"] = 32 }),
+        new DistributionSuggestionViewModel(
+            "No better view than a range",
+            "Uniform",
+            "Use when every value in a known range is equally plausible.",
+            "Starts with min 0 and max 1.",
+            "Bounded range",
+            new Dictionary<string, double> { ["min"] = 0, ["max"] = 1 }),
+        new DistributionSuggestionViewModel(
+            "Exact scenarios",
+            "Discrete",
+            "Use for a small set of known outcomes with assigned probabilities.",
+            "Starts with two outcomes: 0 at 50% and 1 at 50%.",
+            "Scenario outcome",
+            new Dictionary<string, double> { ["value_0"] = 0, ["prob_0"] = 0.5, ["value_1"] = 1, ["prob_1"] = 0.5 }),
+        new DistributionSuggestionViewModel(
+            "Count in a fixed period",
+            "Poisson",
+            "Use for independent event counts over a defined period.",
+            "Starts with lambda 4.5.",
+            "Event count",
+            new Dictionary<string, double> { ["lambda"] = 4.5 }),
+        new DistributionSuggestionViewModel(
+            "Successes out of trials",
+            "Binomial",
+            "Use when there are a fixed number of independent yes/no attempts.",
+            "Starts with 20 trials and 35% probability.",
+            "Prospect wins",
+            new Dictionary<string, double> { ["n"] = 20, ["p"] = 0.35 }),
+        new DistributionSuggestionViewModel(
+            "Attempts until first success",
+            "Geometric",
+            "Use for the number of tries until the first win or event.",
+            "Starts with 25% success probability.",
+            "Calls until win",
+            new Dictionary<string, double> { ["p"] = 0.25 }),
+        new DistributionSuggestionViewModel(
+            "Time to failure",
+            "Weibull",
+            "Use for component life or reliability where failure risk changes over time.",
+            "Starts with shape 1.6 and scale 1200.",
+            "Failure time",
+            new Dictionary<string, double> { ["shape"] = 1.6, ["scale"] = 1200 }),
+        new DistributionSuggestionViewModel(
+            "Waiting time to event",
+            "Exponential",
+            "Use for waiting time until an event with a constant hazard rate.",
+            "Starts with rate 0.2.",
+            "Wait time",
+            new Dictionary<string, double> { ["rate"] = 0.2 }),
+        new DistributionSuggestionViewModel(
+            "Extreme maximum or minimum",
+            "GEV",
+            "Use for block maxima or minima such as annual peak demand or worst annual loss.",
+            "Starts with location 100, scale 12, shape 0.1.",
+            "Annual maximum",
+            new Dictionary<string, double> { ["mu"] = 100, ["sigma"] = 12, ["xi"] = 0.1 })
+    };
 }
 
 /// <summary>Event args for cell selection requests.</summary>
