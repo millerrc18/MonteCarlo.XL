@@ -25,7 +25,7 @@ This roadmap tracks the 12 robustness and @RISK-like initiatives identified afte
 | 2 | Input / output manager | Foundation | Large workbooks need a single command center for assumptions and forecast cells. | A table view lists all inputs and outputs with cell, label, distribution, parameters, mean/representative value, jump-to-cell, edit, duplicate, remove, and highlight controls. |
 | 3 | Better simulation settings | Foundation | @RISK-like tools expose simulation defaults clearly instead of hiding behavior in code. | Settings include default iterations, random seed behavior, sampling method, convergence auto-stop, recalc mode, export defaults, default percentiles, and global vs workbook-specific persistence. |
 | 4 | Distribution palette / wizard | Foundation | Analysts should not need distribution theory to choose a reasonable assumption. | A guided picker suggests distributions from plain-English prompts such as percentage, count, positive skew, min/mode/max, waiting time, and extreme value. It shows parameters, previews, and examples inline. |
-| 5 | Distribution fitting | Planned | Historical data should be convertible into a simulation input without manual parameter hunting. | User selects an Excel range, fits candidate distributions, ranks by goodness-of-fit statistics, previews overlays, and applies the selected distribution to an input cell. |
+| 5 | Distribution fitting | Foundation | Historical data should be convertible into a simulation input without manual parameter hunting. | User selects an Excel range, fits candidate distributions, ranks by goodness-of-fit statistics, previews overlays, and applies the selected distribution to an input cell. |
 | 6 | Correlation workflow polish | Foundation | Correlation is critical for realistic risk models. | The matrix editor is reachable from Setup and ribbon, validates PSD matrices, can auto-fix, imports/exports Excel ranges, warns on risky values, and persists cleanly in workbook config. |
 | 7 | Report builder | Foundation | Simulation outputs need to be shared with stakeholders. | A report wizard lets users choose outputs and sections, then creates a formatted Excel report with histogram, CDF, tornado, summary stats, assumptions, target analysis, metadata, and optional raw-data appendix. |
 | 8 | Scenario / stress analysis | Foundation | Users need to understand not just the distribution, but why good or bad cases happen. | Results support target probabilities, conditional analysis for best/worst/target-hit cases, stress ranges, and baseline-vs-stressed comparisons. |
@@ -42,6 +42,7 @@ This roadmap tracks the 12 robustness and @RISK-like initiatives identified afte
 - Settings now persist export worksheet behavior, default iterations, random vs fixed seed defaults, sampling method, convergence auto-stop, and default percentile lists used by summary exports.
 - The task pane supports 15 distributions; worksheet UDFs exist for all except Discrete.
 - The add-input flow includes a distribution helper with plain-English starting points for all supported distributions.
+- The add-input helper can fit candidate distributions from the currently selected numeric Excel range and apply the selected fit to the parameter editor.
 - Rank correlation engine and matrix editor exist. This roadmap pass wires the existing correlation editor into Setup navigation and adds a ribbon entry. Import/export and stronger warnings remain unfinished.
 - Model Check now validates the setup profile before run, blocks missing/invalid inputs and outputs, detects duplicate/conflicting cells, validates distribution parameters, checks correlation matrix shape/validity, and warns about very small/large runs.
 - The Setup view now includes a Model Manager section for reviewing inputs and outputs, editing through the existing add/edit forms, copying entries, jumping to cells, refreshing highlights, and bulk-clearing inputs or outputs.
@@ -89,10 +90,10 @@ Open work:
 
 Open work:
 
-- Add range selection for historical data.
-- Implement fitting services for candidate distributions.
-- Add goodness-of-fit metrics and ranking.
-- Add overlay preview and apply-to-input flow.
+- Add a dedicated range-selection mode instead of relying on the currently selected Excel range.
+- Expand candidate fitting for GEV and other advanced distributions.
+- Add goodness-of-fit details beyond the current KS-style score.
+- Add histogram/fit overlay previews and confidence warnings before applying a fit.
 
 ### 6. Correlation Workflow Polish
 

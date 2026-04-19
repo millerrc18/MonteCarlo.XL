@@ -125,6 +125,57 @@
                                 Command="{Binding ApplyDistributionSuggestionCommand}"
                                 HorizontalAlignment="Left"
                                 Padding="10,6"/>
+                        <Border BorderBrush="{DynamicResource BorderBrush}"
+                                BorderThickness="0,1,0,0"
+                                Margin="0,12,0,0"
+                                Padding="0,12,0,0">
+                            <StackPanel>
+                                <TextBlock Text="Fit from selected Excel data"
+                                           Style="{StaticResource CaptionText}"
+                                           Margin="0,0,0,6"/>
+                                <Grid Margin="0,0,0,8">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="8"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <ComboBox Grid.Column="0"
+                                              ItemsSource="{Binding DistributionFitResults}"
+                                              SelectedItem="{Binding SelectedDistributionFitResult}"
+                                              DisplayMemberPath="DisplayName"
+                                              Padding="8,6"
+                                              FontFamily="{StaticResource DefaultFont}"
+                                              FontSize="13"/>
+                                    <Button Grid.Column="2"
+                                            Content="Fit Range"
+                                            Style="{StaticResource SecondaryButton}"
+                                            Command="{Binding RequestDistributionFitCommand}"
+                                            Padding="10,6"/>
+                                </Grid>
+                                <TextBlock Text="{Binding SelectedDistributionFitResult.ParameterSummary}"
+                                           Style="{StaticResource CaptionText}"
+                                           TextWrapping="Wrap"
+                                           Margin="0,0,0,6"
+                                           Visibility="{Binding SelectedDistributionFitResult, Converter={StaticResource NullToCollapsed}}"/>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0"
+                                               Text="{Binding DistributionFitStatus}"
+                                               Style="{StaticResource CaptionText}"
+                                               TextWrapping="Wrap"
+                                               VerticalAlignment="Center"
+                                               Visibility="{Binding DistributionFitStatus, Converter={StaticResource NullToCollapsed}}"/>
+                                    <Button Grid.Column="1"
+                                            Content="Use Fit"
+                                            Style="{StaticResource GhostButton}"
+                                            Command="{Binding ApplyDistributionFitCommand}"
+                                            Padding="8,4"/>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
                     </StackPanel>
                 </Border>
 

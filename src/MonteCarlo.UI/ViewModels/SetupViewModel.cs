@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using MonteCarlo.Engine.Analysis;
 using MonteCarlo.Engine.Distributions;
 using MonteCarlo.Engine.Simulation;
 
@@ -142,6 +143,18 @@ public partial class SetupViewModel : ObservableObject
     [ObservableProperty]
     private DistributionSuggestionViewModel? _selectedDistributionSuggestion;
 
+    /// <summary>Distribution fits computed from a selected Excel range.</summary>
+    [ObservableProperty]
+    private ObservableCollection<DistributionFitResultViewModel> _distributionFitResults = new();
+
+    /// <summary>Selected fit result to apply to the input editor.</summary>
+    [ObservableProperty]
+    private DistributionFitResultViewModel? _selectedDistributionFitResult;
+
+    /// <summary>Status text for distribution fitting.</summary>
+    [ObservableProperty]
+    private string? _distributionFitStatus;
+
     /// <summary>Available distribution names.</summary>
     public IReadOnlyList<string> AvailableDistributions { get; } = DistributionFactory.AvailableDistributions;
 
@@ -172,6 +185,9 @@ public partial class SetupViewModel : ObservableObject
 
     /// <summary>Event raised when the user wants to run model preflight checks.</summary>
     public event Action? PreflightRequested;
+
+    /// <summary>Event raised when the user asks to fit a distribution from the current Excel selection.</summary>
+    public event Action? DistributionFitRequested;
 
     /// <summary>Event raised when the user clicks Run Simulation.</summary>
     public event EventHandler? RunSimulationRequested;
@@ -246,6 +262,44 @@ public partial class SetupViewModel : ObservableObject
             ? suggestion.LabelExample
             : NewInputLabel;
         ApplyDetectedDistribution(suggestion.DistributionName, new Dictionary<string, double>(suggestion.Parameters));
+    }
+
+    [RelayCommand]
+    private void RequestDistributionFit()
+    {
+        DistributionFitStatus = "Reading selected Excel range...";
+        DistributionFitRequested?.Invoke();
+    }
+
+    [RelayCommand]
+    private void ApplyDistributionFit()
+    {
+        var fit = SelectedDistributionFitResult;
+        if (fit == null)
+            return;
+
+        NewInputLabel = string.IsNullOrWhiteSpace(NewInputLabel)
+            ? $"{fit.DistributionName} fit"
+            : NewInputLabel;
+        ApplyDetectedDistribution(fit.DistributionName, new Dictionary<string, double>(fit.Parameters));
+        DistributionFitStatus = $"Applied {fit.DistributionName} fit.";
+    }
+
+    public void LoadDistributionFitResults(IReadOnlyList<DistributionFitResult> results, string sourceAddress)
+    {
+        DistributionFitResults = new ObservableCollection<DistributionFitResultViewModel>(
+            results.Select(result => new DistributionFitResultViewModel(result)));
+        SelectedDistributionFitResult = DistributionFitResults.FirstOrDefault();
+        DistributionFitStatus = DistributionFitResults.Count == 0
+            ? $"No supported fits were found for {sourceAddress}."
+            : $"Fitted {DistributionFitResults.Count} candidates from {sourceAddress}.";
+    }
+
+    public void ShowDistributionFitError(string message)
+    {
+        DistributionFitResults.Clear();
+        SelectedDistributionFitResult = null;
+        DistributionFitStatus = message;
     }
 
     [RelayCommand]
@@ -980,6 +1034,23 @@ public sealed class DistributionSuggestionViewModel
             "Annual maximum",
             new Dictionary<string, double> { ["mu"] = 100, ["sigma"] = 12, ["xi"] = 0.1 })
     };
+}
+
+public sealed class DistributionFitResultViewModel
+{
+    public DistributionFitResultViewModel(DistributionFitResult result)
+    {
+        DistributionName = result.DistributionName;
+        Parameters = result.Parameters.ToDictionary(pair => pair.Key, pair => pair.Value);
+        Score = result.Score;
+        ParameterSummary = result.ParameterSummary;
+    }
+
+    public string DistributionName { get; }
+    public Dictionary<string, double> Parameters { get; }
+    public double Score { get; }
+    public string ParameterSummary { get; }
+    public string DisplayName => $"{DistributionName} fit (KS {Score:0.000})";
 }
 
 /// <summary>Event args for cell selection requests.</summary>

@@ -75,6 +75,7 @@ internal sealed class TaskPaneIntegration : IDisposable
         viewModel.SetupViewModel.OutputRemoved += OnOutputRemoved;
         viewModel.SetupViewModel.CellActionRequested += OnCellActionRequested;
         viewModel.SetupViewModel.RefreshHighlightsRequested += OnRefreshHighlightsRequested;
+        viewModel.SetupViewModel.DistributionFitRequested += OnDistributionFitRequested;
 
         LoadSavedProfile(viewModel);
     }
@@ -364,6 +365,69 @@ internal sealed class TaskPaneIntegration : IDisposable
         {
             StartupDiagnostics.LogException("Failed to refresh input/output highlights.", ex);
             Dispatch(() => _viewModel?.OnSimulationError(ex));
+        }
+    }
+
+    private void OnDistributionFitRequested()
+    {
+        try
+        {
+            var app = (Application)ExcelDnaUtil.Application;
+            if (app.Selection is not Range selection)
+                throw new InvalidOperationException("Select a numeric Excel range before fitting a distribution.");
+
+            var values = ReadNumericValues(selection);
+            if (values.Length < 3)
+                throw new InvalidOperationException("Select at least three numeric cells before fitting a distribution.");
+
+            var worksheet = (Worksheet)selection.Worksheet;
+            var address = $"{worksheet.Name}!{selection.Address[RowAbsolute: false, ColumnAbsolute: false]}";
+            var results = DistributionFitService.Fit(values);
+
+            Dispatch(() => _viewModel?.SetupViewModel.LoadDistributionFitResults(results, address));
+        }
+        catch (Exception ex)
+        {
+            StartupDiagnostics.LogException("Distribution fitting failed.", ex);
+            Dispatch(() => _viewModel?.SetupViewModel.ShowDistributionFitError(ex.Message));
+        }
+    }
+
+    private static double[] ReadNumericValues(Range range)
+    {
+        var values = new List<double>();
+        foreach (Range cell in range.Cells)
+        {
+            object? rawValue = cell.Value2;
+            if (TryConvertToDouble(rawValue, out double value) && double.IsFinite(value))
+                values.Add(value);
+        }
+
+        return values.ToArray();
+    }
+
+    private static bool TryConvertToDouble(object? rawValue, out double value)
+    {
+        switch (rawValue)
+        {
+            case double doubleValue:
+                value = doubleValue;
+                return true;
+            case int intValue:
+                value = intValue;
+                return true;
+            case decimal decimalValue:
+                value = (double)decimalValue;
+                return true;
+            case string stringValue:
+                return double.TryParse(
+                    stringValue,
+                    System.Globalization.NumberStyles.Float,
+                    System.Globalization.CultureInfo.InvariantCulture,
+                    out value);
+            default:
+                value = 0;
+                return false;
         }
     }
 
@@ -757,6 +821,7 @@ internal sealed class TaskPaneIntegration : IDisposable
             _viewModel.SetupViewModel.OutputRemoved -= OnOutputRemoved;
             _viewModel.SetupViewModel.CellActionRequested -= OnCellActionRequested;
             _viewModel.SetupViewModel.RefreshHighlightsRequested -= OnRefreshHighlightsRequested;
+            _viewModel.SetupViewModel.DistributionFitRequested -= OnDistributionFitRequested;
         }
 
         _viewModel = null;
