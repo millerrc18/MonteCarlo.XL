@@ -16,6 +16,9 @@ namespace MonteCarlo.Addin.TaskPane;
 /// </summary>
 internal sealed class TaskPaneIntegration : IDisposable
 {
+    private const int ExcelMaxRows = 1_048_576;
+    private const long RawDataExportWarningCellThreshold = 500_000;
+
     private readonly TaskPaneController _taskPane;
     private readonly InputTagManager _inputManager;
     private readonly OutputTagManager _outputManager;
@@ -807,6 +810,9 @@ internal sealed class TaskPaneIntegration : IDisposable
                 var userSettings = new UserSettingsService().Load();
                 if (exportRawData)
                 {
+                    if (!ConfirmRawDataExport(result))
+                        return;
+
                     exporter.ExportRawData(
                         result,
                         outputIndex,
@@ -846,6 +852,37 @@ internal sealed class TaskPaneIntegration : IDisposable
                 _viewModel?.OnSimulationError(ex);
             }
         });
+    }
+
+    private static bool ConfirmRawDataExport(MonteCarlo.Engine.Simulation.SimulationResult result)
+    {
+        var rowCount = (long)result.IterationCount + 1;
+        var columnCount = result.Config.Inputs.Count + 2; // iteration + inputs + selected output
+
+        if (rowCount > ExcelMaxRows)
+        {
+            System.Windows.Forms.MessageBox.Show(
+                $"Raw data export needs {rowCount:N0} rows, but Excel worksheets can hold only {ExcelMaxRows:N0} rows.\r\n\r\n" +
+                "Use fewer iterations or export a summary instead.",
+                "Raw Data Export Too Large",
+                System.Windows.Forms.MessageBoxButtons.OK,
+                System.Windows.Forms.MessageBoxIcon.Warning);
+            return false;
+        }
+
+        var exportedCells = rowCount * columnCount;
+        if (exportedCells < RawDataExportWarningCellThreshold)
+            return true;
+
+        var confirm = System.Windows.Forms.MessageBox.Show(
+            $"Raw data export will write about {exportedCells:N0} cells " +
+            $"({result.IterationCount:N0} iterations by {columnCount:N0} columns).\r\n\r\n" +
+            "This can take a while and make the workbook much larger. Continue?",
+            "Large Raw Data Export",
+            System.Windows.Forms.MessageBoxButtons.YesNo,
+            System.Windows.Forms.MessageBoxIcon.Warning);
+
+        return confirm == System.Windows.Forms.DialogResult.Yes;
     }
 
     private void Dispatch(System.Action action)

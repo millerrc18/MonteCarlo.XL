@@ -16,6 +16,8 @@ public partial class RunViewModel : ObservableObject
     [ObservableProperty] private int _totalIterations;
     [ObservableProperty] private string _elapsedTime = "0.0s";
     [ObservableProperty] private string _estimatedRemaining = "—";
+    [ObservableProperty] private string _iterationRate = "—";
+    [ObservableProperty] private string _runModeSummary = "—";
 
     // Live stats (updated periodically)
     [ObservableProperty] private string _liveMean = "—";
@@ -59,6 +61,7 @@ public partial class RunViewModel : ObservableObject
         ProgressPercent = total > 0 ? (double)completed / total * 100 : 0;
         ElapsedTime = FormatTimeSpan(elapsed);
         EstimatedRemaining = estimatedRemaining.HasValue ? $"~{FormatTimeSpan(estimatedRemaining.Value)}" : "—";
+        IterationRate = FormatIterationRate(completed, elapsed);
     }
 
     /// <summary>
@@ -157,6 +160,8 @@ public partial class RunViewModel : ObservableObject
         ProgressPercent = 0;
         ElapsedTime = "0.0s";
         EstimatedRemaining = "—";
+        IterationRate = "—";
+        RunModeSummary = GetRunModeSummary(totalIterations);
         LiveMean = "—";
         LiveMedian = "—";
         LiveStdDev = "—";
@@ -173,6 +178,28 @@ public partial class RunViewModel : ObservableObject
         if (ts.TotalMinutes >= 1)
             return $"{ts.Minutes}m {ts.Seconds}s";
         return $"{ts.TotalSeconds:F1}s";
+    }
+
+    private static string FormatIterationRate(int completed, TimeSpan elapsed)
+    {
+        if (completed <= 0 || elapsed.TotalSeconds <= 0.05)
+            return "—";
+
+        var rate = completed / elapsed.TotalSeconds;
+        return rate >= 1000
+            ? $"{rate:N0} iter/sec"
+            : $"{rate:N1} iter/sec";
+    }
+
+    private static string GetRunModeSummary(int totalIterations)
+    {
+        return totalIterations switch
+        {
+            <= 1_000 => "Preview",
+            <= 10_000 => "Standard",
+            <= 50_000 => "Full",
+            _ => "Deep"
+        };
     }
 }
 
