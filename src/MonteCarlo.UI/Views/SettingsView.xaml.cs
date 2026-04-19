@@ -2,6 +2,7 @@ using System.Windows;
 using System.Windows.Controls;
 using MonteCarlo.Engine.Simulation;
 using MonteCarlo.UI.Services;
+using MonteCarlo.UI.ViewModels;
 
 namespace MonteCarlo.UI.Views;
 
@@ -17,6 +18,7 @@ public partial class SettingsView : UserControl
     public SettingsView()
     {
         InitializeComponent();
+        DefaultRunPresetComboBox.ItemsSource = RunPresetOption.Defaults;
         SamplingMethodComboBox.ItemsSource = Enum.GetValues<SamplingMethod>();
         Loaded += OnLoaded;
     }
@@ -42,6 +44,7 @@ public partial class SettingsView : UserControl
         }
 
         CreateNewExportSheetCheckBox.IsChecked = settings.CreateNewWorksheetForExports;
+        DefaultRunPresetComboBox.SelectedItem = RunPresetOption.FindByIterations(settings.DefaultIterationCount);
         DefaultIterationsTextBox.Text = settings.DefaultIterationCount.ToString();
         RandomSeedRadio.IsChecked = settings.SeedMode == SeedMode.Random;
         FixedSeedRadio.IsChecked = settings.SeedMode == SeedMode.Fixed;
@@ -82,6 +85,24 @@ public partial class SettingsView : UserControl
 
         if (TryReadSettingsFromControls(out var settings, out _))
             _settingsService.Save(settings);
+    }
+
+    private void OnDefaultRunPresetChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (_isInitializing) return;
+
+        if (DefaultRunPresetComboBox.SelectedItem is RunPresetOption preset)
+            DefaultIterationsTextBox.Text = preset.Iterations.ToString();
+    }
+
+    private void OnDefaultIterationsChanged(object sender, TextChangedEventArgs e)
+    {
+        if (_isInitializing) return;
+
+        if (int.TryParse(DefaultIterationsTextBox.Text, out var iterations))
+            DefaultRunPresetComboBox.SelectedItem = RunPresetOption.FindByIterations(iterations);
+        else
+            DefaultRunPresetComboBox.SelectedItem = null;
     }
 
     private void OnSaveDefaultsClicked(object sender, RoutedEventArgs e)

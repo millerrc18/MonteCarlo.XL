@@ -67,6 +67,19 @@
                                    Style="{StaticResource HeadlineSmall}"
                                    Margin="0,0,0,12"/>
 
+                        <TextBlock Text="Default run preset" Style="{StaticResource CaptionText}" Margin="0,0,0,4"/>
+                        <ComboBox x:Name="DefaultRunPresetComboBox"
+                                  Margin="0,0,0,4"
+                                  Padding="8,6"
+                                  FontFamily="{StaticResource DefaultFont}"
+                                  FontSize="13"
+                                  DisplayMemberPath="DisplayName"
+                                  SelectionChanged="OnDefaultRunPresetChanged"/>
+                        <TextBlock Text="Choose a preset, or type a custom iteration count below."
+                                   Style="{StaticResource CaptionText}"
+                                   TextWrapping="Wrap"
+                                   Margin="0,0,0,10"/>
+
                         <TextBlock Text="Default iterations" Style="{StaticResource CaptionText}" Margin="0,0,0,4"/>
                         <TextBox x:Name="DefaultIterationsTextBox"
                                  Margin="0,0,0,10"
@@ -74,7 +87,8 @@
                                  FontFamily="{StaticResource MonoFont}"
                                  FontSize="13"
                                  BorderBrush="{DynamicResource BorderBrush}"
-                                 BorderThickness="1"/>
+                                 BorderThickness="1"
+                                 TextChanged="OnDefaultIterationsChanged"/>
 
                         <TextBlock Text="Seed mode" Style="{StaticResource CaptionText}" Margin="0,0,0,8"/>
                         <RadioButton x:Name="RandomSeedRadio"

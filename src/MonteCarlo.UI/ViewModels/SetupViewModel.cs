@@ -24,6 +24,10 @@ public partial class SetupViewModel : ObservableObject
     [ObservableProperty]
     private int _iterationCount = 5000;
 
+    /// <summary>Selected named run preset, when the iteration count matches one.</summary>
+    [ObservableProperty]
+    private RunPresetOption? _selectedRunPreset = RunPresetOption.FindByIterations(5000);
+
     /// <summary>Optional random seed for reproducibility. Null = auto.</summary>
     [ObservableProperty]
     private int? _randomSeed;
@@ -165,6 +169,9 @@ public partial class SetupViewModel : ObservableObject
     /// <summary>Common iteration count presets.</summary>
     public IReadOnlyList<int> IterationPresets { get; } = new[] { 1000, 5000, 10000, 25000, 50000 };
 
+    /// <summary>Named speed/accuracy presets for common simulation sizes.</summary>
+    public IReadOnlyList<RunPresetOption> RunPresets { get; } = RunPresetOption.Defaults;
+
     /// <summary>Whether the Run button should be enabled.</summary>
     public bool CanRun => Inputs.Count > 0 && Outputs.Count > 0;
 
@@ -179,6 +186,19 @@ public partial class SetupViewModel : ObservableObject
 
     private InputCardViewModel? _editingInput;
     private OutputCardViewModel? _editingOutput;
+
+    partial void OnIterationCountChanged(int value)
+    {
+        var matchingPreset = RunPresets.FirstOrDefault(p => p.Iterations == value);
+        if (!Equals(SelectedRunPreset, matchingPreset))
+            SelectedRunPreset = matchingPreset;
+    }
+
+    partial void OnSelectedRunPresetChanged(RunPresetOption? value)
+    {
+        if (value != null && IterationCount != value.Iterations)
+            IterationCount = value.Iterations;
+    }
 
     /// <summary>Event raised when the user wants to open the correlation editor.</summary>
     public event Action? CorrelationEditorRequested;
@@ -1051,6 +1071,34 @@ public sealed class DistributionFitResultViewModel
     public double Score { get; }
     public string ParameterSummary { get; }
     public string DisplayName => $"{DistributionName} fit (KS {Score:0.000})";
+}
+
+public sealed class RunPresetOption
+{
+    public RunPresetOption(string name, int iterations, string description)
+    {
+        Name = name;
+        Iterations = iterations;
+        Description = description;
+    }
+
+    public string Name { get; }
+    public int Iterations { get; }
+    public string Description { get; }
+    public string DisplayName => $"{Name} ({Iterations:N0})";
+
+    public static IReadOnlyList<RunPresetOption> Defaults { get; } = new[]
+    {
+        new RunPresetOption("Preview", 1_000, "Fast smoke checks while building a model."),
+        new RunPresetOption("Standard", 5_000, "Balanced speed and stability for everyday analysis."),
+        new RunPresetOption("Full", 25_000, "More stable percentiles for reports and decisions."),
+        new RunPresetOption("Deep", 50_000, "Higher precision for final checks on important models.")
+    };
+
+    public static RunPresetOption? FindByIterations(int iterations) =>
+        Defaults.FirstOrDefault(p => p.Iterations == iterations);
+
+    public override string ToString() => DisplayName;
 }
 
 /// <summary>Event args for cell selection requests.</summary>

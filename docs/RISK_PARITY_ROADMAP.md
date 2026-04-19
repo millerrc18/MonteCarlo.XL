@@ -49,7 +49,7 @@ This roadmap tracks the 12 robustness and @RISK-like initiatives identified afte
 - The engine now has a reusable uncertainty goal-seek solver for monotonic decision variables. It can target mean, percentile, P(output > target), or P(output <= target), and returns convergence/bracketing diagnostics for future Excel UI wiring.
 - Excel state capture/restore is centralized for simulation runs, summary/raw exports, workbook writes, highlight refresh, hidden-sheet cleanup, and cell-selection status messages. Restore failures are logged with phase-specific diagnostics.
 - The ribbon now includes workbook-sharing commands to replace `MC.*` formulas with current values and later restore them from a workbook custom-XML map.
-- The Run view now labels the current run scale, shows live iteration/sec throughput next to elapsed and remaining time, and raw-data export warns before writing large datasets or blocks exports that exceed Excel's row limit.
+- Setup, Settings, and the ribbon now expose named run presets for Preview, Standard, Full, and Deep runs. The Run view labels the current run scale, shows live iteration/sec throughput next to elapsed and remaining time, and raw-data export warns before writing large datasets or blocks exports that exceed Excel's row limit.
 - Model Check now validates the setup profile before run, blocks missing/invalid inputs and outputs, detects duplicate/conflicting cells, validates distribution parameters, checks correlation matrix shape/validity, and warns about very small/large runs.
 - The Setup view now includes a Model Manager section for reviewing inputs and outputs, editing through the existing add/edit forms, copying entries, jumping to cells, refreshing highlights, and bulk-clearing inputs or outputs.
 - Stop/cancel is available through task pane, keyboard shortcut, and ribbon callback.
@@ -161,9 +161,9 @@ Open work:
 
 Open work:
 
-- Add explicit named run presets beyond the current numeric iteration presets.
 - Benchmark recalc mode separately from engine mode.
-- Persist preferred preview/full/deep mode as a user setting once named presets are added.
+- Expose explicit Excel recalc-vs-engine execution modes when both are independently selectable.
+- Add benchmark diagnostics that report workbook recalc cost, engine sampling cost, and export cost separately.
 
 ## First Three Recommended Tickets
 

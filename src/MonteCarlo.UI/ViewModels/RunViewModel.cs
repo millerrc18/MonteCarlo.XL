@@ -196,8 +196,8 @@ public partial class RunViewModel : ObservableObject
         return totalIterations switch
         {
             <= 1_000 => "Preview",
-            <= 10_000 => "Standard",
-            <= 50_000 => "Full",
+            <= 5_000 => "Standard",
+            <= 25_000 => "Full",
             _ => "Deep"
         };
     }

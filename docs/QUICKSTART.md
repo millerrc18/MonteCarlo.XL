@@ -43,7 +43,7 @@ Open the workbook in Excel. It contains a simple model with uncertain inputs usi
 4. Confirm the detected input formulas or add inputs manually. If you are adding an input from scratch, use the distribution helper for a plain-English starting point, or select historical data in Excel and use `Fit Range`.
 5. For correlated inputs, click `Correlations`, enter pairwise Spearman correlations, or select the top-left cell of an n by n numeric matrix and use `Import Range`.
 6. Click `Model Check` to validate the setup.
-7. Set iterations to `1,000` for a quick run.
+7. Choose the `Preview` run preset for a quick 1,000-iteration run.
 8. Click `Run Simulation`.
 
 During the run, the task pane shows the run scale, completed iterations, iteration/sec speed, elapsed time, and estimated remaining time. The results view should show summary statistics and charts for the selected output.
@@ -62,7 +62,7 @@ By default, each export creates a new worksheet so prior summaries are preserved
 
 Raw-data export can create very large worksheets. MonteCarlo.XL warns before large exports and blocks exports that exceed Excel's worksheet row limit.
 
-Settings also lets you choose defaults for new workbook setups: iteration count, random versus fixed seed, sampling method, convergence auto-stop, and the percentile list used in summary exports.
+Settings also lets you choose defaults for new workbook setups: run preset or custom iteration count, random versus fixed seed, sampling method, convergence auto-stop, and the percentile list used in summary exports.
 
 ## 5. Add Monte Carlo Formulas To Your Own Workbook
 

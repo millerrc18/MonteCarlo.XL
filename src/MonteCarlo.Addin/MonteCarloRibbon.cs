@@ -78,11 +78,11 @@ public class MonteCarloRibbon : ExcelRibbon
                         imageMso='CalculateNow'
                         screentip='Iteration Presets'
                         supertip='Set a common simulation iteration count.'>
-                    <button id='Iterations1000Button' label='1,000' imageMso='CalculateNow' onAction='OnSetIterations1000' />
-                    <button id='Iterations5000Button' label='5,000' imageMso='CalculateNow' onAction='OnSetIterations5000' />
-                    <button id='Iterations10000Button' label='10,000' imageMso='CalculateNow' onAction='OnSetIterations10000' />
-                    <button id='Iterations25000Button' label='25,000' imageMso='CalculateNow' onAction='OnSetIterations25000' />
-                    <button id='Iterations50000Button' label='50,000' imageMso='CalculateNow' onAction='OnSetIterations50000' />
+                    <button id='Iterations1000Button' label='Preview - 1,000' imageMso='CalculateNow' onAction='OnSetIterations1000' />
+                    <button id='Iterations5000Button' label='Standard - 5,000' imageMso='CalculateNow' onAction='OnSetIterations5000' />
+                    <button id='Iterations10000Button' label='Standard+ - 10,000' imageMso='CalculateNow' onAction='OnSetIterations10000' />
+                    <button id='Iterations25000Button' label='Full - 25,000' imageMso='CalculateNow' onAction='OnSetIterations25000' />
+                    <button id='Iterations50000Button' label='Deep - 50,000' imageMso='CalculateNow' onAction='OnSetIterations50000' />
                   </menu>
                 </group>
                 <group id='ResultsGroup' label='Results'>

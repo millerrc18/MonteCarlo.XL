@@ -35,6 +35,19 @@
                 <!-- === ITERATION CONFIG === -->
                 <Border Style="{StaticResource Card}" Margin="0,0,0,16">
                     <StackPanel>
+                        <TextBlock Text="Run preset" Style="{StaticResource CaptionText}" Margin="0,0,0,4"/>
+                        <ComboBox ItemsSource="{Binding RunPresets}"
+                                  SelectedItem="{Binding SelectedRunPreset}"
+                                  DisplayMemberPath="DisplayName"
+                                  Padding="8,6"
+                                  FontFamily="{StaticResource DefaultFont}"
+                                  FontSize="13"
+                                  Margin="0,0,0,4"/>
+                        <TextBlock Text="{Binding SelectedRunPreset.Description}"
+                                   Style="{StaticResource CaptionText}"
+                                   TextWrapping="Wrap"
+                                   Margin="0,0,0,10"/>
+
                         <TextBlock Text="Iterations" Style="{StaticResource CaptionText}" Margin="0,0,0,4"/>
                         <ComboBox ItemsSource="{Binding IterationPresets}"
                                   SelectedItem="{Binding IterationCount}"
