@@ -4,6 +4,9 @@ using MonteCarlo.Engine.Analysis;
 using MonteCarlo.Engine.Simulation;
 using Microsoft.Office.Core;
 using Microsoft.Office.Interop.Excel;
+using ExcelAxisType = Microsoft.Office.Interop.Excel.XlAxisType;
+using ExcelChartType = Microsoft.Office.Interop.Excel.XlChartType;
+using ExcelSeriesCollection = Microsoft.Office.Interop.Excel.SeriesCollection;
 
 namespace MonteCarlo.Addin.Export;
 
@@ -75,14 +78,19 @@ public class ResultsExporter
             int imageRow = 1;
 
             if (histogramImage != null)
-            {
                 EmbedImage(sheet, histogramImage, imageRow, imageColumn, 500, 280);
-                imageRow += 18;
-            }
+            else
+                AddHistogramChart(sheet, stats, output.Label, imageRow, imageColumn, 500, 280);
+
+            imageRow += 18;
 
             if (tornadoImage != null)
             {
                 EmbedImage(sheet, tornadoImage, imageRow, imageColumn, 500, 300);
+            }
+            else if (sensitivity != null && sensitivity.Count > 0)
+            {
+                AddSensitivityChart(sheet, sensitivity, stats.Median, imageRow, imageColumn, 500, 300);
             }
 
             // Sheet tab color (blue)
@@ -353,6 +361,124 @@ public class ResultsExporter
         }
     }
 
+    private static void AddHistogramChart(Worksheet sheet, SummaryStatistics stats, string outputLabel,
+        int row, int col, int widthPx, int heightPx)
+    {
+        var histogram = stats.ToHistogram();
+        const int dataRow = 1;
+        const int dataCol = 27; // AA
+
+        sheet.Cells[dataRow, dataCol].Value2 = "Bin";
+        sheet.Cells[dataRow, dataCol + 1].Value2 = "Relative Frequency";
+
+        var data = new object[histogram.BinCenters.Length, 2];
+        for (var i = 0; i < histogram.BinCenters.Length; i++)
+        {
+            data[i, 0] = histogram.BinCenters[i];
+            data[i, 1] = histogram.RelativeFrequencies[i];
+        }
+
+        var firstDataRow = dataRow + 1;
+        var lastDataRow = firstDataRow + histogram.BinCenters.Length - 1;
+        var dataRange = sheet.Range[sheet.Cells[firstDataRow, dataCol], sheet.Cells[lastDataRow, dataCol + 1]];
+        dataRange.Value2 = data;
+
+        var chartObject = AddChartObject(sheet, row, col, widthPx, heightPx);
+        var chart = chartObject.Chart;
+        chart.ChartType = ExcelChartType.xlColumnClustered;
+        chart.HasTitle = true;
+        chart.ChartTitle.Text = $"{outputLabel} Distribution";
+        chart.HasLegend = false;
+
+        var series = (Series)((ExcelSeriesCollection)chart.SeriesCollection()).NewSeries();
+        series.Name = "Relative Frequency";
+        series.XValues = sheet.Range[sheet.Cells[firstDataRow, dataCol], sheet.Cells[lastDataRow, dataCol]];
+        series.Values = sheet.Range[sheet.Cells[firstDataRow, dataCol + 1], sheet.Cells[lastDataRow, dataCol + 1]];
+
+        var categoryAxis = (Axis)chart.Axes(ExcelAxisType.xlCategory);
+        categoryAxis.TickLabels.NumberFormat = GetNumberFormat(stats.Mean);
+        categoryAxis.HasTitle = true;
+        categoryAxis.AxisTitle.Text = "Output value";
+
+        var valueAxis = (Axis)chart.Axes(ExcelAxisType.xlValue);
+        valueAxis.TickLabels.NumberFormat = "0.0%";
+        valueAxis.HasTitle = true;
+        valueAxis.AxisTitle.Text = "Relative frequency";
+    }
+
+    private static void AddSensitivityChart(Worksheet sheet, IReadOnlyList<SensitivityResult> sensitivity,
+        double baseValue, int row, int col, int widthPx, int heightPx)
+    {
+        var items = sensitivity
+            .OrderByDescending(r => r.Swing)
+            .Take(10)
+            .Reverse()
+            .ToList();
+
+        if (items.Count == 0)
+            return;
+
+        const int dataRow = 1;
+        const int dataCol = 30; // AD
+
+        sheet.Cells[dataRow, dataCol].Value2 = "Input";
+        sheet.Cells[dataRow, dataCol + 1].Value2 = "P10 Impact";
+        sheet.Cells[dataRow, dataCol + 2].Value2 = "P90 Impact";
+
+        var data = new object[items.Count, 3];
+        for (var i = 0; i < items.Count; i++)
+        {
+            var item = items[i];
+            data[i, 0] = item.InputLabel;
+            data[i, 1] = item.OutputAtInputP10 - baseValue;
+            data[i, 2] = item.OutputAtInputP90 - baseValue;
+        }
+
+        var firstDataRow = dataRow + 1;
+        var lastDataRow = firstDataRow + items.Count - 1;
+        var dataRange = sheet.Range[sheet.Cells[firstDataRow, dataCol], sheet.Cells[lastDataRow, dataCol + 2]];
+        dataRange.Value2 = data;
+
+        var labels = sheet.Range[sheet.Cells[firstDataRow, dataCol], sheet.Cells[lastDataRow, dataCol]];
+        var chartObject = AddChartObject(sheet, row, col, widthPx, heightPx);
+        var chart = chartObject.Chart;
+        chart.ChartType = ExcelChartType.xlBarClustered;
+        chart.HasTitle = true;
+        chart.ChartTitle.Text = "Sensitivity";
+        chart.HasLegend = true;
+
+        var seriesCollection = (ExcelSeriesCollection)chart.SeriesCollection();
+
+        var p10Series = (Series)seriesCollection.NewSeries();
+        p10Series.Name = "Input P10";
+        p10Series.XValues = labels;
+        p10Series.Values = sheet.Range[sheet.Cells[firstDataRow, dataCol + 1], sheet.Cells[lastDataRow, dataCol + 1]];
+
+        var p90Series = (Series)seriesCollection.NewSeries();
+        p90Series.Name = "Input P90";
+        p90Series.XValues = labels;
+        p90Series.Values = sheet.Range[sheet.Cells[firstDataRow, dataCol + 2], sheet.Cells[lastDataRow, dataCol + 2]];
+
+        var categoryAxis = (Axis)chart.Axes(ExcelAxisType.xlCategory);
+        categoryAxis.ReversePlotOrder = true;
+
+        var valueAxis = (Axis)chart.Axes(ExcelAxisType.xlValue);
+        valueAxis.HasTitle = true;
+        valueAxis.AxisTitle.Text = "Change from median output";
+    }
+
+    private static ChartObject AddChartObject(Worksheet sheet, int row, int col, int widthPx, int heightPx)
+    {
+        var cell = (Range)sheet.Cells[row, col];
+
+        // Convert pixels to points (72 pts per inch, 96 px per inch)
+        double widthPts = widthPx * 72.0 / 96.0;
+        double heightPts = heightPx * 72.0 / 96.0;
+
+        var chartObjects = (ChartObjects)sheet.ChartObjects(Type.Missing);
+        return chartObjects.Add(cell.Left, cell.Top, widthPts, heightPts);
+    }
+
     private static Worksheet EnsureSheet(Workbook workbook, string name)
     {
         // Check if sheet exists
@@ -360,6 +486,7 @@ public class ResultsExporter
         {
             if (ws.Name == name)
             {
+                ClearShapes(ws);
                 ws.Cells.Clear();
                 return ws;
             }
@@ -370,6 +497,12 @@ public class ResultsExporter
         var newSheet = (Worksheet)workbook.Worksheets.Add(After: lastSheet);
         newSheet.Name = name;
         return newSheet;
+    }
+
+    private static void ClearShapes(Worksheet sheet)
+    {
+        for (var i = sheet.Shapes.Count; i >= 1; i--)
+            sheet.Shapes.Item(i).Delete();
     }
 
     private static string TruncateSheetName(string name)
