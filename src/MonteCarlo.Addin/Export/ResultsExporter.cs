@@ -29,17 +29,18 @@ public class ResultsExporter
         SimulationProfile profile,
         int outputIndex,
         byte[]? histogramImage = null,
-        byte[]? tornadoImage = null)
+        byte[]? tornadoImage = null,
+        bool createNewSheet = true)
     {
         var app = (Application)ExcelDnaUtil.Application;
         var workbook = app.ActiveWorkbook;
         if (workbook == null) return;
 
         var output = result.Config.Outputs[outputIndex];
-        string sheetName = TruncateSheetName($"{SheetPrefix}{output.Label}");
+        string sheetName = GetExportSheetName(workbook, $"{SheetPrefix}{output.Label}", createNewSheet);
 
         // Create or clear the sheet
-        var sheet = EnsureSheet(workbook, sheetName);
+        var sheet = EnsureSheet(workbook, sheetName, clearIfExists: !createNewSheet);
 
         try
         {
@@ -105,15 +106,15 @@ public class ResultsExporter
     /// <summary>
     /// Export raw simulation data to a data sheet.
     /// </summary>
-    public void ExportRawData(SimulationResult result, int outputIndex)
+    public void ExportRawData(SimulationResult result, int outputIndex, bool createNewSheet = true)
     {
         var app = (Application)ExcelDnaUtil.Application;
         var workbook = app.ActiveWorkbook;
         if (workbook == null) return;
 
         var output = result.Config.Outputs[outputIndex];
-        string sheetName = TruncateSheetName($"{RawDataSheetPrefix}{output.Label}");
-        var sheet = EnsureSheet(workbook, sheetName);
+        string sheetName = GetExportSheetName(workbook, $"{RawDataSheetPrefix}{output.Label}", createNewSheet);
+        var sheet = EnsureSheet(workbook, sheetName, clearIfExists: !createNewSheet);
 
         try
         {
@@ -479,15 +480,19 @@ public class ResultsExporter
         return chartObjects.Add(cell.Left, cell.Top, widthPts, heightPts);
     }
 
-    private static Worksheet EnsureSheet(Workbook workbook, string name)
+    private static Worksheet EnsureSheet(Workbook workbook, string name, bool clearIfExists = true)
     {
         // Check if sheet exists
         foreach (Worksheet ws in workbook.Worksheets)
         {
             if (ws.Name == name)
             {
-                ClearShapes(ws);
-                ws.Cells.Clear();
+                if (clearIfExists)
+                {
+                    ClearShapes(ws);
+                    ws.Cells.Clear();
+                }
+
                 return ws;
             }
         }
@@ -503,6 +508,51 @@ public class ResultsExporter
     {
         for (var i = sheet.Shapes.Count; i >= 1; i--)
             sheet.Shapes.Item(i).Delete();
+    }
+
+    private static string GetExportSheetName(Workbook workbook, string baseName, bool createNewSheet)
+    {
+        var cleanBaseName = TruncateSheetName(SanitizeSheetName(baseName));
+        return createNewSheet ? GetUniqueSheetName(workbook, cleanBaseName) : cleanBaseName;
+    }
+
+    private static string GetUniqueSheetName(Workbook workbook, string baseName)
+    {
+        if (!SheetExists(workbook, baseName))
+            return baseName;
+
+        for (var suffix = 2; suffix < 1000; suffix++)
+        {
+            var suffixText = $" ({suffix})";
+            var candidateBase = baseName.Length + suffixText.Length > 31
+                ? baseName[..(31 - suffixText.Length)]
+                : baseName;
+            var candidate = $"{candidateBase}{suffixText}";
+            if (!SheetExists(workbook, candidate))
+                return candidate;
+        }
+
+        return $"{baseName[..Math.Min(baseName.Length, 24)]} {DateTime.Now:HHmmss}";
+    }
+
+    private static bool SheetExists(Workbook workbook, string name)
+    {
+        foreach (Worksheet ws in workbook.Worksheets)
+        {
+            if (string.Equals(ws.Name, name, StringComparison.OrdinalIgnoreCase))
+                return true;
+        }
+
+        return false;
+    }
+
+    private static string SanitizeSheetName(string name)
+    {
+        var invalidChars = new[] { '\\', '/', '?', '*', '[', ']', ':' };
+        foreach (var invalidChar in invalidChars)
+            name = name.Replace(invalidChar, '-');
+
+        return string.IsNullOrWhiteSpace(name) ? "MonteCarlo Export" : name.Trim();
     }
 
     private static string TruncateSheetName(string name)

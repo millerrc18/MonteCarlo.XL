@@ -10,6 +10,7 @@ namespace MonteCarlo.UI.Views;
 public partial class SettingsView : UserControl
 {
     private readonly ThemeManager _themeManager = new();
+    private readonly UserSettingsService _settingsService = new();
     private bool _isInitializing = true;
 
     public SettingsView()
@@ -21,6 +22,7 @@ public partial class SettingsView : UserControl
     private void OnLoaded(object sender, RoutedEventArgs e)
     {
         var currentTheme = _themeManager.LoadPreference();
+        var settings = _settingsService.Load();
         _isInitializing = true;
 
         switch (currentTheme)
@@ -36,6 +38,8 @@ public partial class SettingsView : UserControl
                 SystemRadio.IsChecked = true;
                 break;
         }
+
+        CreateNewExportSheetCheckBox.IsChecked = settings.CreateNewWorksheetForExports;
 
         _isInitializing = false;
     }
@@ -56,10 +60,20 @@ public partial class SettingsView : UserControl
         var topControl = FindTopLevelControl();
         if (topControl != null)
         {
-            _themeManager.ApplyTheme(selectedTheme, topControl.Resources.MergedDictionaries);
+            _themeManager.ApplyTheme(selectedTheme, topControl);
         }
 
         _themeManager.SavePreference(selectedTheme);
+    }
+
+    private void OnExportSettingsChanged(object sender, RoutedEventArgs e)
+    {
+        if (_isInitializing) return;
+
+        _settingsService.Save(new UserSettings
+        {
+            CreateNewWorksheetForExports = CreateNewExportSheetCheckBox.IsChecked == true
+        });
     }
 
     private FrameworkElement? FindTopLevelControl()

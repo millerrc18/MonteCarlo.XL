@@ -60,6 +60,27 @@
                     </StackPanel>
                 </Border>
 
+                <!-- Export section -->
+                <Border Style="{StaticResource Card}" Margin="0,0,0,16">
+                    <StackPanel>
+                        <TextBlock Text="Results export"
+                                   Style="{StaticResource HeadlineSmall}"
+                                   Margin="0,0,0,12"/>
+
+                        <CheckBox x:Name="CreateNewExportSheetCheckBox"
+                                  Content="Create a new worksheet for each export"
+                                  Margin="0,0,0,6"
+                                  Foreground="{DynamicResource TextPrimaryBrush}"
+                                  FontFamily="{StaticResource DefaultFont}"
+                                  FontSize="13"
+                                  Checked="OnExportSettingsChanged"
+                                  Unchecked="OnExportSettingsChanged"/>
+                        <TextBlock Text="Keeps prior result summaries instead of replacing the existing export sheet."
+                                   Style="{StaticResource CaptionText}"
+                                   TextWrapping="Wrap"/>
+                    </StackPanel>
+                </Border>
+
                 <!-- About section -->
                 <Border Style="{StaticResource Card}" Margin="0,0,0,16">
                     <StackPanel>

@@ -6,6 +6,7 @@ using MonteCarlo.Addin.Services;
 using MonteCarlo.Engine.Analysis;
 using MonteCarlo.Engine.Distributions;
 using MonteCarlo.Addin.UDF;
+using MonteCarlo.UI.Services;
 using MonteCarlo.UI.ViewModels;
 
 namespace MonteCarlo.Addin.TaskPane;
@@ -532,9 +533,13 @@ internal sealed class TaskPaneIntegration : IDisposable
                     return;
 
                 var exporter = new ResultsExporter();
+                var userSettings = new UserSettingsService().Load();
                 if (exportRawData)
                 {
-                    exporter.ExportRawData(result, outputIndex);
+                    exporter.ExportRawData(
+                        result,
+                        outputIndex,
+                        userSettings.CreateNewWorksheetForExports);
                     return;
                 }
 
@@ -557,7 +562,8 @@ internal sealed class TaskPaneIntegration : IDisposable
                     stats,
                     sensitivity,
                     profile,
-                    outputIndex);
+                    outputIndex,
+                    createNewSheet: userSettings.CreateNewWorksheetForExports);
 
                 StartupDiagnostics.Log($"Export summary completed for output '{selectedOutputId}'.");
             }

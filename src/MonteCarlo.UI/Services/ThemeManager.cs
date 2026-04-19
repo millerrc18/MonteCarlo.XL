@@ -1,4 +1,6 @@
 using System.Windows;
+using System.Windows.Media;
+using System.Windows.Media.Media3D;
 using MonteCarlo.Charts.Themes;
 using Microsoft.Win32;
 
@@ -17,6 +19,8 @@ public class ThemeManager
 
     private const string ThemeRegistryKey = @"Software\MonteCarlo.XL";
     private const string ThemeRegistryValue = "Theme";
+    private const string LightThemePath = "/MonteCarlo.UI;component/Styles/LightTheme.xaml";
+    private const string DarkThemePath = "/MonteCarlo.UI;component/Styles/DarkTheme.xaml";
 
     private ResourceDictionary? _currentThemeDict;
 
@@ -36,27 +40,21 @@ public class ThemeManager
     {
         var resolvedTheme = theme == Theme.System ? DetectSystemTheme() : theme;
 
-        var uri = resolvedTheme switch
-        {
-            Theme.Dark => new Uri("pack://application:,,,/MonteCarlo.UI;component/Styles/DarkTheme.xaml"),
-            _ => new Uri("pack://application:,,,/MonteCarlo.UI;component/Styles/LightTheme.xaml")
-        };
-
-        var newDict = new ResourceDictionary { Source = uri };
-
-        // Remove old theme dictionary if present
-        if (_currentThemeDict != null)
-        {
-            mergedDictionaries.Remove(_currentThemeDict);
-        }
-
-        // Add new theme dictionary (should be first so GlobalStyles can override)
-        mergedDictionaries.Insert(0, newDict);
-        _currentThemeDict = newDict;
+        _currentThemeDict = ReplaceThemeDictionary(mergedDictionaries, resolvedTheme);
         CurrentTheme = theme;
 
         // Sync chart theme colors
         ChartTheme.SetDarkMode(resolvedTheme == Theme.Dark);
+    }
+
+    /// <summary>
+    /// Applies the specified theme to a root control and every loaded child control.
+    /// </summary>
+    public void ApplyTheme(Theme theme, FrameworkElement root)
+    {
+        var resolvedTheme = theme == Theme.System ? DetectSystemTheme() : theme;
+        ApplyTheme(theme, root.Resources.MergedDictionaries);
+        ApplyThemeToDescendants(root, resolvedTheme);
     }
 
     /// <summary>
@@ -108,5 +106,60 @@ public class ThemeManager
         catch { }
 
         return Theme.Light; // Fallback
+    }
+
+    private static void ApplyThemeToDescendants(DependencyObject root, Theme resolvedTheme)
+    {
+        var visited = new HashSet<DependencyObject>();
+        ApplyThemeToDescendants(root, resolvedTheme, visited);
+    }
+
+    private static void ApplyThemeToDescendants(
+        DependencyObject root,
+        Theme resolvedTheme,
+        HashSet<DependencyObject> visited)
+    {
+        if (!visited.Add(root))
+            return;
+
+        if (root is FrameworkElement element)
+            ReplaceThemeDictionary(element.Resources.MergedDictionaries, resolvedTheme);
+
+        foreach (var child in LogicalTreeHelper.GetChildren(root).OfType<DependencyObject>())
+            ApplyThemeToDescendants(child, resolvedTheme, visited);
+
+        var visualChildCount = root is Visual or Visual3D ? VisualTreeHelper.GetChildrenCount(root) : 0;
+        for (var i = 0; i < visualChildCount; i++)
+            ApplyThemeToDescendants(VisualTreeHelper.GetChild(root, i), resolvedTheme, visited);
+    }
+
+    private static ResourceDictionary ReplaceThemeDictionary(
+        System.Collections.ObjectModel.Collection<ResourceDictionary> mergedDictionaries,
+        Theme resolvedTheme)
+    {
+        for (var i = mergedDictionaries.Count - 1; i >= 0; i--)
+        {
+            if (IsThemeDictionary(mergedDictionaries[i]))
+                mergedDictionaries.RemoveAt(i);
+        }
+
+        var newDict = new ResourceDictionary { Source = GetThemeUri(resolvedTheme) };
+        mergedDictionaries.Insert(0, newDict);
+        return newDict;
+    }
+
+    private static bool IsThemeDictionary(ResourceDictionary dictionary)
+    {
+        var source = dictionary.Source?.OriginalString;
+        return source != null
+            && (source.Contains(LightThemePath, StringComparison.OrdinalIgnoreCase)
+                || source.Contains(DarkThemePath, StringComparison.OrdinalIgnoreCase));
+    }
+
+    private static Uri GetThemeUri(Theme resolvedTheme)
+    {
+        return resolvedTheme == Theme.Dark
+            ? new Uri($"pack://application:,,,{DarkThemePath}")
+            : new Uri($"pack://application:,,,{LightThemePath}");
     }
 }
