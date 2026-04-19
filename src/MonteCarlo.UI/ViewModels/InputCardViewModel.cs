@@ -58,6 +58,9 @@ public partial class InputCardViewModel : ObservableObject
     /// </summary>
     public static IReadOnlyList<(double X, double Y)> ComputePreviewPointsStatic(IDistribution dist)
     {
+        if (IsDiscreteDistribution(dist))
+            return ComputeDiscretePreviewPoints(dist);
+
         const int pointCount = 50;
         var points = new List<(double X, double Y)>(pointCount);
 
@@ -83,5 +86,114 @@ public partial class InputCardViewModel : ObservableObject
         }
 
         return points;
+    }
+
+    private static bool IsDiscreteDistribution(IDistribution dist)
+    {
+        return dist.Name.Equals("Binomial", StringComparison.OrdinalIgnoreCase)
+            || dist.Name.Equals("Geometric", StringComparison.OrdinalIgnoreCase)
+            || dist.Name.Equals("Poisson", StringComparison.OrdinalIgnoreCase)
+            || dist.Name.Equals("Discrete", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static IReadOnlyList<(double X, double Y)> ComputeDiscretePreviewPoints(IDistribution dist)
+    {
+        const int maxBars = 80;
+        var values = GetDiscretePreviewValues(dist, maxBars);
+        if (values.Count == 0)
+            return Array.Empty<(double X, double Y)>();
+
+        var points = new List<(double X, double Y)>(values.Count * 4);
+        var width = ComputeBarWidth(values);
+
+        foreach (var x in values)
+        {
+            var y = dist.PDF(x);
+            if (double.IsNaN(y) || double.IsInfinity(y) || y < 0)
+                y = 0;
+
+            points.Add((x - width, 0));
+            points.Add((x - width, y));
+            points.Add((x + width, y));
+            points.Add((x + width, 0));
+        }
+
+        return points;
+    }
+
+    private static List<double> GetDiscretePreviewValues(IDistribution dist, int maxBars)
+    {
+        if (dist.Name.Equals("Binomial", StringComparison.OrdinalIgnoreCase)
+            || dist.Name.Equals("Geometric", StringComparison.OrdinalIgnoreCase)
+            || dist.Name.Equals("Poisson", StringComparison.OrdinalIgnoreCase))
+        {
+            var start = SafeFinite(dist.Percentile(0.01), dist.Minimum);
+            var end = SafeFinite(dist.Percentile(0.99), dist.Mean + 3 * Math.Max(dist.StdDev, 1));
+
+            if (double.IsFinite(dist.Minimum))
+                start = Math.Max(start, dist.Minimum);
+            if (double.IsFinite(dist.Maximum))
+                end = Math.Min(end, dist.Maximum);
+
+            var kMin = (int)Math.Floor(start);
+            var kMax = (int)Math.Ceiling(end);
+            if (kMax < kMin)
+                kMax = kMin;
+
+            var range = kMax - kMin + 1;
+            var step = Math.Max(1, (int)Math.Ceiling(range / (double)maxBars));
+            var values = new List<double>();
+
+            for (var k = kMin; k <= kMax; k += step)
+                values.Add(k);
+
+            if (values.Count == 0 || Math.Abs(values[^1] - kMax) > 1e-9)
+                values.Add(kMax);
+
+            return values;
+        }
+
+        return GetFiniteDiscreteValuesFromPercentiles(dist, maxBars);
+    }
+
+    private static List<double> GetFiniteDiscreteValuesFromPercentiles(IDistribution dist, int maxBars)
+    {
+        var values = new List<double>();
+        for (var i = 1; i < 100 && values.Count < maxBars; i++)
+        {
+            var x = dist.Percentile(i / 100.0);
+            if (!double.IsFinite(x))
+                continue;
+
+            if (!values.Any(existing => Math.Abs(existing - x) < 1e-9))
+                values.Add(x);
+        }
+
+        values.Sort();
+        return values;
+    }
+
+    private static double ComputeBarWidth(IReadOnlyList<double> values)
+    {
+        if (values.Count < 2)
+            return 0.45;
+
+        var minGap = double.PositiveInfinity;
+        for (var i = 1; i < values.Count; i++)
+        {
+            var gap = Math.Abs(values[i] - values[i - 1]);
+            if (gap > 0 && gap < minGap)
+                minGap = gap;
+        }
+
+        return double.IsFinite(minGap) ? minGap * 0.4 : 0.45;
+    }
+
+    private static double SafeFinite(double value, double fallback)
+    {
+        if (double.IsFinite(value))
+            return value;
+
+        return double.IsFinite(fallback) ? fallback : 0;
     }
 }

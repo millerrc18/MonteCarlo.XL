@@ -110,6 +110,16 @@ public partial class SetupViewModel : ObservableObject
     [ObservableProperty] private string _paramRate = "1";
     /// <summary>Poisson: Lambda.</summary>
     [ObservableProperty] private string _paramLambda = "4.5";
+    /// <summary>Gamma: Rate.</summary>
+    [ObservableProperty] private string _paramRateGamma = "2";
+    /// <summary>Logistic: Scale.</summary>
+    [ObservableProperty] private string _paramS = "1";
+    /// <summary>GEV: Shape.</summary>
+    [ObservableProperty] private string _paramXi = "0";
+    /// <summary>Binomial: Trials.</summary>
+    [ObservableProperty] private string _paramN = "10";
+    /// <summary>Binomial/Geometric: Probability.</summary>
+    [ObservableProperty] private string _paramP = "0.5";
 
     /// <summary>Discrete value/probability pairs.</summary>
     [ObservableProperty]
@@ -219,6 +229,11 @@ public partial class SetupViewModel : ObservableObject
         ResetInputEditor();
     }
 
+    /// <summary>
+    /// Public entry point for host integrations such as the Excel ribbon.
+    /// </summary>
+    public void BeginAddInput() => ShowAddInput();
+
     [RelayCommand]
     private void ShowAddOutput()
     {
@@ -226,6 +241,11 @@ public partial class SetupViewModel : ObservableObject
         IsAddingInput = false;
         ResetOutputEditor();
     }
+
+    /// <summary>
+    /// Public entry point for host integrations such as the Excel ribbon.
+    /// </summary>
+    public void BeginAddOutput() => ShowAddOutput();
 
     [RelayCommand]
     private void CancelAddInput()
@@ -258,7 +278,12 @@ public partial class SetupViewModel : ObservableObject
     /// <summary>
     /// Called by the CellSelectionService when a cell is selected in Excel.
     /// </summary>
-    public void OnCellSelected(string sheetName, string cellAddress, string? suggestedLabel)
+    public void OnCellSelected(
+        string sheetName,
+        string cellAddress,
+        string? suggestedLabel,
+        string? detectedDistribution = null,
+        Dictionary<string, double>? detectedParameters = null)
     {
         if (IsSelectingCell)
         {
@@ -266,6 +291,10 @@ public partial class SetupViewModel : ObservableObject
             NewInputCellAddress = cellAddress;
             if (!string.IsNullOrEmpty(suggestedLabel))
                 NewInputLabel = suggestedLabel;
+
+            if (!string.IsNullOrEmpty(detectedDistribution) && detectedParameters != null)
+                ApplyDetectedDistribution(detectedDistribution, detectedParameters);
+
             IsSelectingCell = false;
         }
         else if (IsSelectingOutputCell)
@@ -276,6 +305,76 @@ public partial class SetupViewModel : ObservableObject
                 NewOutputLabel = suggestedLabel;
             IsSelectingOutputCell = false;
         }
+    }
+
+    private void ApplyDetectedDistribution(string distributionName, Dictionary<string, double> parameters)
+    {
+        // Match the canonical case from AvailableDistributions (dropdown uses exact strings)
+        var canonical = AvailableDistributions.FirstOrDefault(
+            d => string.Equals(d, distributionName, StringComparison.OrdinalIgnoreCase));
+        if (canonical == null) return;
+
+        SelectedDistribution = canonical;
+
+        string Fmt(double v) => v.ToString("G", System.Globalization.CultureInfo.InvariantCulture);
+
+        switch (distributionName.ToLowerInvariant())
+        {
+            case "normal":
+                if (parameters.TryGetValue("mean", out var mean)) ParamMean = Fmt(mean);
+                if (parameters.TryGetValue("stdDev", out var sd)) ParamStdDev = Fmt(sd);
+                break;
+            case "triangular":
+            case "pert":
+                if (parameters.TryGetValue("min", out var tmin)) ParamMin = Fmt(tmin);
+                if (parameters.TryGetValue("mode", out var tmode)) ParamMode = Fmt(tmode);
+                if (parameters.TryGetValue("max", out var tmax)) ParamMax = Fmt(tmax);
+                break;
+            case "uniform":
+                if (parameters.TryGetValue("min", out var umin)) ParamMin = Fmt(umin);
+                if (parameters.TryGetValue("max", out var umax)) ParamMax = Fmt(umax);
+                break;
+            case "lognormal":
+                if (parameters.TryGetValue("mu", out var mu)) ParamMu = Fmt(mu);
+                if (parameters.TryGetValue("sigma", out var sigma)) ParamSigma = Fmt(sigma);
+                break;
+            case "beta":
+                if (parameters.TryGetValue("alpha", out var alpha)) ParamAlpha = Fmt(alpha);
+                if (parameters.TryGetValue("beta", out var beta)) ParamBeta = Fmt(beta);
+                break;
+            case "weibull":
+                if (parameters.TryGetValue("shape", out var shape)) ParamShape = Fmt(shape);
+                if (parameters.TryGetValue("scale", out var scale)) ParamScale = Fmt(scale);
+                break;
+            case "exponential":
+                if (parameters.TryGetValue("rate", out var rate)) ParamRate = Fmt(rate);
+                break;
+            case "poisson":
+                if (parameters.TryGetValue("lambda", out var lambda)) ParamLambda = Fmt(lambda);
+                break;
+            case "gamma":
+                if (parameters.TryGetValue("shape", out var gshape)) ParamShape = Fmt(gshape);
+                if (parameters.TryGetValue("rate", out var grate)) ParamRateGamma = Fmt(grate);
+                break;
+            case "logistic":
+                if (parameters.TryGetValue("mu", out var lmu)) ParamMu = Fmt(lmu);
+                if (parameters.TryGetValue("s", out var ls)) ParamS = Fmt(ls);
+                break;
+            case "gev":
+                if (parameters.TryGetValue("mu", out var gmu)) ParamMu = Fmt(gmu);
+                if (parameters.TryGetValue("sigma", out var gsigma)) ParamSigma = Fmt(gsigma);
+                if (parameters.TryGetValue("xi", out var gxi)) ParamXi = Fmt(gxi);
+                break;
+            case "binomial":
+                if (parameters.TryGetValue("n", out var bn)) ParamN = Fmt(bn);
+                if (parameters.TryGetValue("p", out var bp)) ParamP = Fmt(bp);
+                break;
+            case "geometric":
+                if (parameters.TryGetValue("p", out var geop)) ParamP = Fmt(geop);
+                break;
+        }
+
+        UpdateEditorPreview();
     }
 
     [RelayCommand]
@@ -417,6 +516,26 @@ public partial class SetupViewModel : ObservableObject
             case "poisson":
                 p["lambda"] = ParseDouble(ParamLambda, "Lambda");
                 break;
+            case "gamma":
+                p["shape"] = ParseDouble(ParamShape, "Shape");
+                p["rate"] = ParseDouble(ParamRateGamma, "Rate");
+                break;
+            case "logistic":
+                p["mu"] = ParseDouble(ParamMu, "μ");
+                p["s"] = ParseDouble(ParamS, "s");
+                break;
+            case "gev":
+                p["mu"] = ParseDouble(ParamMu, "μ");
+                p["sigma"] = ParseDouble(ParamSigma, "σ");
+                p["xi"] = ParseDouble(ParamXi, "ξ");
+                break;
+            case "binomial":
+                p["n"] = ParseDouble(ParamN, "n (trials)");
+                p["p"] = ParseDouble(ParamP, "p (probability)");
+                break;
+            case "geometric":
+                p["p"] = ParseDouble(ParamP, "p (probability)");
+                break;
             case "discrete":
                 for (int i = 0; i < DiscretePairs.Count; i++)
                 {
@@ -456,6 +575,11 @@ public partial class SetupViewModel : ObservableObject
         ParamScale = "100";
         ParamRate = "1";
         ParamLambda = "4.5";
+        ParamRateGamma = "2";
+        ParamS = "1";
+        ParamXi = "0";
+        ParamN = "10";
+        ParamP = "0.5";
         DiscretePairs = new ObservableCollection<DiscretePairViewModel>
         {
             new() { Value = "0", Probability = "0.5" },

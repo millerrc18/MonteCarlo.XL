@@ -3,19 +3,25 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:conv="clr-namespace:MonteCarlo.UI.Converters">
     <UserControl.Resources>
-        <conv:DistributionVisibilityConverter x:Key="DistVis"/>
-        <Style x:Key="ParamLabel" TargetType="TextBlock" BasedOn="{StaticResource CaptionText}">
-            <Setter Property="Margin" Value="0,0,0,2"/>
-        </Style>
-        <Style x:Key="ParamInput" TargetType="TextBox">
-            <Setter Property="FontFamily" Value="{StaticResource MonoFont}"/>
-            <Setter Property="FontSize" Value="13"/>
-            <Setter Property="Padding" Value="8,6"/>
-            <Setter Property="Margin" Value="0,0,0,8"/>
-            <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}"/>
-            <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="Background" Value="{DynamicResource BackgroundBrush}"/>
-        </Style>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/MonteCarlo.UI;component/Styles/LightTheme.xaml"/>
+                <ResourceDictionary Source="/MonteCarlo.UI;component/Styles/GlobalStyles.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+            <conv:DistributionVisibilityConverter x:Key="DistVis"/>
+            <Style x:Key="ParamLabel" TargetType="TextBlock" BasedOn="{StaticResource CaptionText}">
+                <Setter Property="Margin" Value="0,0,0,2"/>
+            </Style>
+            <Style x:Key="ParamInput" TargetType="TextBox">
+                <Setter Property="FontFamily" Value="{StaticResource MonoFont}"/>
+                <Setter Property="FontSize" Value="13"/>
+                <Setter Property="Padding" Value="8,6"/>
+                <Setter Property="Margin" Value="0,0,0,8"/>
+                <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}"/>
+                <Setter Property="BorderThickness" Value="1"/>
+                <Setter Property="Background" Value="{DynamicResource BackgroundBrush}"/>
+            </Style>
+        </ResourceDictionary>
     </UserControl.Resources>
 
     <StackPanel>
@@ -94,6 +100,60 @@
             <TextBlock Text="Rate (λ)" Style="{StaticResource ParamLabel}"/>
             <TextBox Text="{Binding ParamLambda, UpdateSourceTrigger=PropertyChanged}"
                      Style="{StaticResource ParamInput}"/>
+        </StackPanel>
+
+        <!-- Gamma parameters -->
+        <StackPanel Visibility="{Binding SelectedDistribution, Converter={StaticResource DistVis}, ConverterParameter=Gamma}">
+            <TextBlock Text="Shape (k)" Style="{StaticResource ParamLabel}"/>
+            <TextBox Text="{Binding ParamShape, UpdateSourceTrigger=PropertyChanged}"
+                     Style="{StaticResource ParamInput}"/>
+            <TextBlock Text="Rate (β)" Style="{StaticResource ParamLabel}"/>
+            <TextBox Text="{Binding ParamRateGamma, UpdateSourceTrigger=PropertyChanged}"
+                     Style="{StaticResource ParamInput}"/>
+        </StackPanel>
+
+        <!-- Logistic parameters -->
+        <StackPanel Visibility="{Binding SelectedDistribution, Converter={StaticResource DistVis}, ConverterParameter=Logistic}">
+            <TextBlock Text="Location (μ)" Style="{StaticResource ParamLabel}"/>
+            <TextBox Text="{Binding ParamMu, UpdateSourceTrigger=PropertyChanged}"
+                     Style="{StaticResource ParamInput}"/>
+            <TextBlock Text="Scale (s)" Style="{StaticResource ParamLabel}"/>
+            <TextBox Text="{Binding ParamS, UpdateSourceTrigger=PropertyChanged}"
+                     Style="{StaticResource ParamInput}"/>
+        </StackPanel>
+
+        <!-- GEV parameters -->
+        <StackPanel Visibility="{Binding SelectedDistribution, Converter={StaticResource DistVis}, ConverterParameter=GEV}">
+            <TextBlock Text="Location (μ)" Style="{StaticResource ParamLabel}"/>
+            <TextBox Text="{Binding ParamMu, UpdateSourceTrigger=PropertyChanged}"
+                     Style="{StaticResource ParamInput}"/>
+            <TextBlock Text="Scale (σ)" Style="{StaticResource ParamLabel}"/>
+            <TextBox Text="{Binding ParamSigma, UpdateSourceTrigger=PropertyChanged}"
+                     Style="{StaticResource ParamInput}"/>
+            <TextBlock Text="Shape (ξ)" Style="{StaticResource ParamLabel}"
+                       ToolTip="ξ=0 Gumbel, ξ&gt;0 Fréchet, ξ&lt;0 Weibull"/>
+            <TextBox Text="{Binding ParamXi, UpdateSourceTrigger=PropertyChanged}"
+                     Style="{StaticResource ParamInput}"
+                     ToolTip="ξ=0 Gumbel, ξ&gt;0 Fréchet, ξ&lt;0 Weibull"/>
+        </StackPanel>
+
+        <!-- Binomial parameters -->
+        <StackPanel Visibility="{Binding SelectedDistribution, Converter={StaticResource DistVis}, ConverterParameter=Binomial}">
+            <TextBlock Text="Trials (n)" Style="{StaticResource ParamLabel}"/>
+            <TextBox Text="{Binding ParamN, UpdateSourceTrigger=PropertyChanged}"
+                     Style="{StaticResource ParamInput}"/>
+            <TextBlock Text="Probability (p)" Style="{StaticResource ParamLabel}"/>
+            <TextBox Text="{Binding ParamP, UpdateSourceTrigger=PropertyChanged}"
+                     Style="{StaticResource ParamInput}"/>
+        </StackPanel>
+
+        <!-- Geometric parameters -->
+        <StackPanel Visibility="{Binding SelectedDistribution, Converter={StaticResource DistVis}, ConverterParameter=Geometric}">
+            <TextBlock Text="Probability (p)" Style="{StaticResource ParamLabel}"
+                       ToolTip="Number of trials until first success"/>
+            <TextBox Text="{Binding ParamP, UpdateSourceTrigger=PropertyChanged}"
+                     Style="{StaticResource ParamInput}"
+                     ToolTip="Number of trials until first success"/>
         </StackPanel>
 
         <!-- Discrete parameters -->
