@@ -59,6 +59,8 @@ public partial class MainViewModel : ObservableObject
         // Wire SetupViewModel's run event to navigate to RunView
         SetupViewModel.RunSimulationRequested += (_, _) =>
             RequestSimulationRun();
+        SetupViewModel.CorrelationEditorRequested += () =>
+            NavigateToCorrelation();
 
         // Wire RunViewModel's stop event
         RunViewModel.StopRequested += (_, _) =>
@@ -97,6 +99,11 @@ public partial class MainViewModel : ObservableObject
     /// Public navigation entry point for host integrations such as the Excel ribbon.
     /// </summary>
     public void ShowSettingsView() => NavigateToSettings();
+
+    /// <summary>
+    /// Public navigation entry point for host integrations such as the Excel ribbon.
+    /// </summary>
+    public void ShowCorrelationView() => NavigateToCorrelation();
 
     /// <summary>
     /// Called by the Addin layer when simulation progress is reported.
@@ -176,5 +183,18 @@ public partial class MainViewModel : ObservableObject
     {
         CurrentView = RunView;
         CurrentViewName = "Run";
+    }
+
+    private void NavigateToCorrelation()
+    {
+        var viewModel = new CorrelationViewModel();
+        viewModel.Initialize(
+            SetupViewModel.Inputs.Select(input => input.Label).ToList(),
+            SetupViewModel.CorrelationMatrixValues);
+        viewModel.Applied += matrix => SetupViewModel.CorrelationMatrixValues = matrix;
+        viewModel.CloseRequested += NavigateToSetup;
+
+        CurrentView = new CorrelationView { DataContext = viewModel };
+        CurrentViewName = "Correlations";
     }
 }

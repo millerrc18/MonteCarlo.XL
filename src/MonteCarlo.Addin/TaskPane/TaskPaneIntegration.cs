@@ -114,6 +114,15 @@ internal sealed class TaskPaneIntegration : IDisposable
     }
 
     /// <summary>
+    /// Opens the input correlation editor from host UI such as the Excel ribbon.
+    /// </summary>
+    public void ShowCorrelations()
+    {
+        EnsureWired();
+        Dispatch(() => _viewModel?.ShowCorrelationView());
+    }
+
+    /// <summary>
     /// Opens setup and starts the add-input flow.
     /// </summary>
     public void BeginAddInput()

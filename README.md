@@ -8,6 +8,7 @@ Start here if you want to try the add-in in Excel:
 
 - [Quickstart guide](docs/QUICKSTART.md) - install the packed XLL, open the smoke workbook, run a first simulation, and export results.
 - [Distribution guide](docs/DISTRIBUTION_GUIDE.md) - plain-English explanations of every supported distribution, with formulas, parameters, and real modeling examples.
+- [@RISK-parity roadmap](docs/RISK_PARITY_ROADMAP.md) - 12 robustness and analyst-workflow initiatives with status and unfinished work.
 - [Local Excel debug path](docs/LOCAL_EXCEL_DEBUG.md) - developer-focused build, install, smoke test, and diagnostics notes.
 
 ## Current Direction

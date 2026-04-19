@@ -289,18 +289,24 @@ Target line:        #EF4444  (red, dashed)   — user-defined target threshold
 
 ---
 
-### Phase 4 — Future (Uncommitted)
+### Phase 4 — @RISK-Parity Roadmap
 
-Stretch goals to consider after Phase 3 ships:
+The next phase is tracked in detail in `docs/RISK_PARITY_ROADMAP.md`. It covers 12 robustness and analyst-workflow initiatives, with explicit status and unfinished work:
 
-- **Distribution fitting** — paste historical data, auto-fit best distribution (KS test, Anderson-Darling, AIC/BIC comparison)
-- **Scatter matrix** — input vs. output scatter plots for exploring non-linear relationships
-- **Scenario comparison** — overlay histograms from two profiles ("Base vs. Pessimistic") on the same chart
-- **Goal seek under uncertainty** — "what input mean gives me 90% chance of hitting target?"
-- **Report generation** — one-click multi-page report (cover + histogram + tornado + stats + assumptions) as a formatted Excel sheet or exported PDF
-- **Copula-based correlation** — Gaussian, Clayton, Gumbel copulas for tail-dependent inputs
-- **Time-series simulation** — correlated random walks for multi-period forecasting models
-- **Sensitivity spider chart** — one-at-a-time sensitivity plot showing how each input affects the output across its range
+- Model preflight / validation panel
+- Input / output manager
+- Better simulation settings
+- Distribution palette / wizard
+- Distribution fitting
+- Correlation workflow polish
+- Report builder
+- Scenario / stress analysis
+- Goal seek under uncertainty
+- Excel state safety
+- Function swap / model sharing
+- Performance modes
+
+The first recommended tickets are preflight validation, correlation workflow polish, and an input/output manager table.
 
 ---
 

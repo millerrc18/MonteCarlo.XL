@@ -56,6 +56,10 @@ public class MonteCarloRibbon : ExcelRibbon
                           imageMso='TraceDependents' onAction='OnBeginAddOutput'
                           screentip='Add Output Forecast'
                           supertip='Open the output editor so you can select the result cell to capture during simulation.' />
+                  <button id='CorrelationsButton' label='Correlations'
+                          imageMso='TraceDependents' onAction='OnOpenCorrelations'
+                          screentip='Define Correlations'
+                          supertip='Open the input correlation matrix editor for rank-correlated simulation inputs.' />
                 </group>
                 <group id='SimulationGroup' label='Simulation'>
                   <button id='RunButton' label='Run' size='large'
@@ -228,6 +232,18 @@ public class MonteCarloRibbon : ExcelRibbon
         {
             ShowTaskPaneAndWire();
             AddIn.Integration?.BeginAddOutput();
+        });
+    }
+
+    /// <summary>
+    /// Callback: Open the input correlation matrix editor.
+    /// </summary>
+    public void OnOpenCorrelations(IRibbonControl control)
+    {
+        RunRibbonAction("Open correlations", () =>
+        {
+            ShowTaskPaneAndWire();
+            AddIn.Integration?.ShowCorrelations();
         });
     }
 
