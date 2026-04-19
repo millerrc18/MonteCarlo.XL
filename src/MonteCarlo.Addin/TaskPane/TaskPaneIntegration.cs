@@ -73,6 +73,8 @@ internal sealed class TaskPaneIntegration : IDisposable
         viewModel.SetupViewModel.OutputAdded += OnOutputAdded;
         viewModel.SetupViewModel.InputRemoved += OnInputRemoved;
         viewModel.SetupViewModel.OutputRemoved += OnOutputRemoved;
+        viewModel.SetupViewModel.CellActionRequested += OnCellActionRequested;
+        viewModel.SetupViewModel.RefreshHighlightsRequested += OnRefreshHighlightsRequested;
 
         LoadSavedProfile(viewModel);
     }
@@ -314,6 +316,48 @@ internal sealed class TaskPaneIntegration : IDisposable
         SaveCurrentProfile();
     }
 
+    private void OnCellActionRequested(object? sender, SetupCellActionEventArgs e)
+    {
+        var cell = new Addin.Excel.CellReference
+        {
+            SheetName = e.SheetName,
+            CellAddress = e.CellAddress
+        };
+
+        try
+        {
+            if (e.Action == SetupCellAction.Jump)
+            {
+                SelectCell(cell);
+                return;
+            }
+
+            if (e.Role == SetupCellRole.Input)
+                _highlighter.HighlightInput(cell);
+            else
+                _highlighter.HighlightOutput(cell);
+        }
+        catch (Exception ex)
+        {
+            StartupDiagnostics.LogException("Failed to complete setup cell action.", ex);
+            Dispatch(() => _viewModel?.OnSimulationError(ex));
+        }
+    }
+
+    private void OnRefreshHighlightsRequested(object? sender, EventArgs e)
+    {
+        try
+        {
+            if (_viewModel != null)
+                SyncManagersFromSetup(_viewModel.SetupViewModel, clearExistingHighlights: false);
+        }
+        catch (Exception ex)
+        {
+            StartupDiagnostics.LogException("Failed to refresh input/output highlights.", ex);
+            Dispatch(() => _viewModel?.OnSimulationError(ex));
+        }
+    }
+
     private void StartCellSelection(string mode)
     {
         StopCellSelection();
@@ -332,6 +376,18 @@ internal sealed class TaskPaneIntegration : IDisposable
             StopCellSelection();
             Dispatch(() => _viewModel?.OnSimulationError(ex));
         }
+    }
+
+    private void SelectCell(Addin.Excel.CellReference cell)
+    {
+        var app = (Application)ExcelDnaUtil.Application;
+        var workbook = app.ActiveWorkbook ?? throw new InvalidOperationException("No active workbook is available.");
+        var sheet = (Worksheet)workbook.Sheets[cell.SheetName];
+        var range = (Range)sheet.Range[cell.CellAddress];
+
+        sheet.Activate();
+        app.Goto(range, true);
+        app.StatusBar = $"MonteCarlo.XL: selected {cell.SheetName}!{cell.CellAddress}.";
     }
 
     private void StopCellSelection()
@@ -669,6 +725,8 @@ internal sealed class TaskPaneIntegration : IDisposable
             _viewModel.SetupViewModel.OutputAdded -= OnOutputAdded;
             _viewModel.SetupViewModel.InputRemoved -= OnInputRemoved;
             _viewModel.SetupViewModel.OutputRemoved -= OnOutputRemoved;
+            _viewModel.SetupViewModel.CellActionRequested -= OnCellActionRequested;
+            _viewModel.SetupViewModel.RefreshHighlightsRequested -= OnRefreshHighlightsRequested;
         }
 
         _viewModel = null;

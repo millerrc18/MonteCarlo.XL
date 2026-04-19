@@ -23,6 +23,15 @@ public partial class InputCardViewModel : ObservableObject
     /// <summary>Human-readable parameter summary (e.g., "Normal(μ=100, σ=10)").</summary>
     public string ParameterSummary { get; }
 
+    /// <summary>Distribution mean formatted for manager tables.</summary>
+    public string MeanSummary => FormatFinite(Distribution.Mean);
+
+    /// <summary>Distribution 5th percentile formatted for manager tables.</summary>
+    public string P5Summary => FormatFinite(Distribution.Percentile(0.05));
+
+    /// <summary>Distribution 95th percentile formatted for manager tables.</summary>
+    public string P95Summary => FormatFinite(Distribution.Percentile(0.95));
+
     /// <summary>Full cell reference (e.g., "Sheet1!B4").</summary>
     public string FullReference => $"{SheetName}!{CellAddress}";
 
@@ -195,5 +204,12 @@ public partial class InputCardViewModel : ObservableObject
             return value;
 
         return double.IsFinite(fallback) ? fallback : 0;
+    }
+
+    private static string FormatFinite(double value)
+    {
+        return double.IsFinite(value)
+            ? value.ToString("G5", System.Globalization.CultureInfo.InvariantCulture)
+            : "n/a";
     }
 }

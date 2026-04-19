@@ -280,6 +280,206 @@
                     </StackPanel>
                 </Border>
 
+                <!-- === MODEL MANAGER === -->
+                <Border Style="{StaticResource Card}" Margin="0,0,0,16">
+                    <StackPanel>
+                        <Grid Margin="0,0,0,8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0">
+                                <TextBlock Text="MODEL MANAGER"
+                                           Style="{StaticResource HeadlineSmall}"
+                                           Foreground="{DynamicResource TextTertiaryBrush}"
+                                           FontSize="11"/>
+                                <TextBlock Text="Review, edit, copy, jump to, and repaint configured cells"
+                                           Style="{StaticResource CaptionText}"
+                                           Margin="0,2,0,0"/>
+                            </StackPanel>
+                            <Button Grid.Column="1"
+                                    Content="{Binding ManagerToggleLabel}"
+                                    Style="{StaticResource SecondaryButton}"
+                                    Command="{Binding ToggleManagerCommand}"
+                                    Padding="10,6"/>
+                        </Grid>
+
+                        <StackPanel Visibility="{Binding IsManagerVisible, Converter={StaticResource BoolVis}}">
+                            <Grid Margin="0,4,0,10">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="8"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0"
+                                           Text="Use Jump to activate the source cell in Excel, or Refresh highlights after workbook formatting changes."
+                                           Style="{StaticResource CaptionText}"
+                                           TextWrapping="Wrap"/>
+                                <Button Grid.Column="2"
+                                        Content="Refresh Highlights"
+                                        Style="{StaticResource GhostButton}"
+                                        Command="{Binding RefreshHighlightsCommand}"
+                                        Padding="8,4"/>
+                            </Grid>
+
+                            <Grid Margin="0,0,0,6">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0"
+                                           Text="Inputs"
+                                           Style="{StaticResource HeadlineSmall}"
+                                           Foreground="{StaticResource Blue500Brush}"/>
+                                <Button Grid.Column="1"
+                                        Content="Clear Inputs"
+                                        Style="{StaticResource GhostButton}"
+                                        Command="{Binding ClearInputsCommand}"
+                                        Padding="8,4"/>
+                            </Grid>
+
+                            <ItemsControl ItemsSource="{Binding Inputs}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate DataType="{x:Type vm:InputCardViewModel}">
+                                        <Border BorderBrush="{DynamicResource BorderBrush}"
+                                                BorderThickness="0,1,0,0"
+                                                Padding="0,8">
+                                            <StackPanel>
+                                                <Grid>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*"/>
+                                                        <ColumnDefinition Width="Auto"/>
+                                                    </Grid.ColumnDefinitions>
+                                                    <StackPanel Grid.Column="0">
+                                                        <TextBlock Text="{Binding Label}"
+                                                                   Style="{StaticResource BodyText}"
+                                                                   FontWeight="SemiBold"
+                                                                   TextTrimming="CharacterEllipsis"/>
+                                                        <TextBlock Style="{StaticResource CaptionText}">
+                                                            <Run Text="{Binding FullReference}"/>
+                                                            <Run Text=" | "/>
+                                                            <Run Text="{Binding DistributionName}"/>
+                                                        </TextBlock>
+                                                    </StackPanel>
+                                                    <WrapPanel Grid.Column="1" HorizontalAlignment="Right">
+                                                        <Button Content="Jump"
+                                                                Style="{StaticResource GhostButton}"
+                                                                Command="{Binding DataContext.JumpToInputCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                                CommandParameter="{Binding}"
+                                                                Padding="6,3"/>
+                                                        <Button Content="Edit"
+                                                                Style="{StaticResource GhostButton}"
+                                                                Command="{Binding DataContext.EditInputCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                                CommandParameter="{Binding}"
+                                                                Padding="6,3"/>
+                                                        <Button Content="Copy"
+                                                                Style="{StaticResource GhostButton}"
+                                                                Command="{Binding DataContext.DuplicateInputCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                                CommandParameter="{Binding}"
+                                                                Padding="6,3"/>
+                                                    </WrapPanel>
+                                                </Grid>
+                                                <TextBlock Text="{Binding ParameterSummary}"
+                                                           Style="{StaticResource CaptionText}"
+                                                           TextWrapping="Wrap"
+                                                           Margin="0,4,0,0"/>
+                                                <TextBlock Style="{StaticResource CaptionText}" Margin="0,2,0,0">
+                                                    <Run Text="Mean "/>
+                                                    <Run Text="{Binding MeanSummary}"/>
+                                                    <Run Text=" | P5 "/>
+                                                    <Run Text="{Binding P5Summary}"/>
+                                                    <Run Text=" | P95 "/>
+                                                    <Run Text="{Binding P95Summary}"/>
+                                                </TextBlock>
+                                                <WrapPanel Margin="0,6,0,0">
+                                                    <Button Content="Highlight"
+                                                            Style="{StaticResource GhostButton}"
+                                                            Command="{Binding DataContext.HighlightInputCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                            CommandParameter="{Binding}"
+                                                            Padding="6,3"/>
+                                                    <Button Content="Remove"
+                                                            Style="{StaticResource GhostButton}"
+                                                            Command="{Binding DataContext.RemoveInputCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                            CommandParameter="{Binding}"
+                                                            Padding="6,3"/>
+                                                </WrapPanel>
+                                            </StackPanel>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+
+                            <Grid Margin="0,14,0,6">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0"
+                                           Text="Outputs"
+                                           Style="{StaticResource HeadlineSmall}"
+                                           Foreground="{StaticResource Emerald500Brush}"/>
+                                <Button Grid.Column="1"
+                                        Content="Clear Outputs"
+                                        Style="{StaticResource GhostButton}"
+                                        Command="{Binding ClearOutputsCommand}"
+                                        Padding="8,4"/>
+                            </Grid>
+
+                            <ItemsControl ItemsSource="{Binding Outputs}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate DataType="{x:Type vm:OutputCardViewModel}">
+                                        <Border BorderBrush="{DynamicResource BorderBrush}"
+                                                BorderThickness="0,1,0,0"
+                                                Padding="0,8">
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                </Grid.ColumnDefinitions>
+                                                <StackPanel Grid.Column="0">
+                                                    <TextBlock Text="{Binding Label}"
+                                                               Style="{StaticResource BodyText}"
+                                                               FontWeight="SemiBold"
+                                                               TextTrimming="CharacterEllipsis"/>
+                                                    <TextBlock Text="{Binding FullReference}"
+                                                               Style="{StaticResource CaptionText}"/>
+                                                </StackPanel>
+                                                <WrapPanel Grid.Column="1" HorizontalAlignment="Right">
+                                                    <Button Content="Jump"
+                                                            Style="{StaticResource GhostButton}"
+                                                            Command="{Binding DataContext.JumpToOutputCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                            CommandParameter="{Binding}"
+                                                            Padding="6,3"/>
+                                                    <Button Content="Edit"
+                                                            Style="{StaticResource GhostButton}"
+                                                            Command="{Binding DataContext.EditOutputCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                            CommandParameter="{Binding}"
+                                                            Padding="6,3"/>
+                                                    <Button Content="Copy"
+                                                            Style="{StaticResource GhostButton}"
+                                                            Command="{Binding DataContext.DuplicateOutputCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                            CommandParameter="{Binding}"
+                                                            Padding="6,3"/>
+                                                    <Button Content="Highlight"
+                                                            Style="{StaticResource GhostButton}"
+                                                            Command="{Binding DataContext.HighlightOutputCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                            CommandParameter="{Binding}"
+                                                            Padding="6,3"/>
+                                                    <Button Content="Remove"
+                                                            Style="{StaticResource GhostButton}"
+                                                            Command="{Binding DataContext.RemoveOutputCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                            CommandParameter="{Binding}"
+                                                            Padding="6,3"/>
+                                                </WrapPanel>
+                                            </Grid>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+
                 <!-- === MODEL CHECK + RUN BUTTONS === -->
                 <Grid Margin="0,8,0,16">
                     <Grid.ColumnDefinitions>

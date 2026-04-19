@@ -31,6 +31,10 @@ public partial class SetupViewModel : ObservableObject
     [ObservableProperty]
     private bool _isSeedLocked;
 
+    /// <summary>Whether the model manager table is visible.</summary>
+    [ObservableProperty]
+    private bool _isManagerVisible;
+
     // --- Input editor state ---
 
     /// <summary>Whether the input editor panel is visible.</summary>
@@ -149,6 +153,12 @@ public partial class SetupViewModel : ObservableObject
     /// <summary>Saved correlation matrix values. Null means independent.</summary>
     public double[,]? CorrelationMatrixValues { get; set; }
 
+    /// <summary>Label for the model manager toggle button.</summary>
+    public string ManagerToggleLabel => IsManagerVisible ? "Hide Manager" : "Open Manager";
+
+    private InputCardViewModel? _editingInput;
+    private OutputCardViewModel? _editingOutput;
+
     /// <summary>Event raised when the user wants to open the correlation editor.</summary>
     public event Action? CorrelationEditorRequested;
 
@@ -184,6 +194,16 @@ public partial class SetupViewModel : ObservableObject
     /// </summary>
     public event EventHandler<OutputRemovedEventArgs>? OutputRemoved;
 
+    /// <summary>
+    /// Event raised when the user asks Excel to select or highlight a configured setup cell.
+    /// </summary>
+    public event EventHandler<SetupCellActionEventArgs>? CellActionRequested;
+
+    /// <summary>
+    /// Event raised when the user asks Excel to repaint all input/output highlights.
+    /// </summary>
+    public event EventHandler? RefreshHighlightsRequested;
+
     public SetupViewModel()
     {
         Inputs.CollectionChanged += (_, _) =>
@@ -204,6 +224,17 @@ public partial class SetupViewModel : ObservableObject
     private void RunPreflight()
     {
         PreflightRequested?.Invoke();
+    }
+
+    [RelayCommand]
+    private void ToggleManager()
+    {
+        IsManagerVisible = !IsManagerVisible;
+    }
+
+    partial void OnIsManagerVisibleChanged(bool value)
+    {
+        OnPropertyChanged(nameof(ManagerToggleLabel));
     }
 
     partial void OnSelectedDistributionChanged(string value)
@@ -236,6 +267,7 @@ public partial class SetupViewModel : ObservableObject
     {
         IsAddingInput = true;
         IsAddingOutput = false;
+        _editingInput = null;
         ResetInputEditor();
     }
 
@@ -249,6 +281,7 @@ public partial class SetupViewModel : ObservableObject
     {
         IsAddingOutput = true;
         IsAddingInput = false;
+        _editingOutput = null;
         ResetOutputEditor();
     }
 
@@ -262,6 +295,7 @@ public partial class SetupViewModel : ObservableObject
     {
         IsAddingInput = false;
         IsSelectingCell = false;
+        _editingInput = null;
     }
 
     [RelayCommand]
@@ -269,6 +303,7 @@ public partial class SetupViewModel : ObservableObject
     {
         IsAddingOutput = false;
         IsSelectingOutputCell = false;
+        _editingOutput = null;
     }
 
     [RelayCommand]
@@ -382,6 +417,20 @@ public partial class SetupViewModel : ObservableObject
             case "geometric":
                 if (parameters.TryGetValue("p", out var geop)) ParamP = Fmt(geop);
                 break;
+            case "discrete":
+                var pairs = new ObservableCollection<DiscretePairViewModel>();
+                for (var i = 0; parameters.ContainsKey($"value_{i}") || parameters.ContainsKey($"prob_{i}"); i++)
+                {
+                    pairs.Add(new DiscretePairViewModel
+                    {
+                        Value = parameters.TryGetValue($"value_{i}", out var value) ? Fmt(value) : "0",
+                        Probability = parameters.TryGetValue($"prob_{i}", out var probability) ? Fmt(probability) : "0"
+                    });
+                }
+
+                if (pairs.Count > 0)
+                    DiscretePairs = pairs;
+                break;
         }
 
         UpdateEditorPreview();
@@ -417,10 +466,26 @@ public partial class SetupViewModel : ObservableObject
                 parameters,
                 dist);
 
-            Inputs.Add(card);
-            IsAddingInput = false;
+            if (_editingInput != null)
+            {
+                var oldInput = _editingInput;
+                var index = Inputs.IndexOf(oldInput);
+                if (index >= 0)
+                    Inputs[index] = card;
+                else
+                    Inputs.Add(card);
 
-            InputAdded?.Invoke(this, new InputAddedEventArgs(card));
+                InputRemoved?.Invoke(this, new InputRemovedEventArgs(oldInput));
+                InputAdded?.Invoke(this, new InputAddedEventArgs(card));
+                _editingInput = null;
+            }
+            else
+            {
+                Inputs.Add(card);
+                InputAdded?.Invoke(this, new InputAddedEventArgs(card));
+            }
+
+            IsAddingInput = false;
         }
         catch (Exception ex)
         {
@@ -438,10 +503,26 @@ public partial class SetupViewModel : ObservableObject
             NewOutputLabel = NewOutputCellAddress;
 
         var card = new OutputCardViewModel(NewOutputSheetName, NewOutputCellAddress, NewOutputLabel);
-        Outputs.Add(card);
-        IsAddingOutput = false;
+        if (_editingOutput != null)
+        {
+            var oldOutput = _editingOutput;
+            var index = Outputs.IndexOf(oldOutput);
+            if (index >= 0)
+                Outputs[index] = card;
+            else
+                Outputs.Add(card);
 
-        OutputAdded?.Invoke(this, new OutputAddedEventArgs(card));
+            OutputRemoved?.Invoke(this, new OutputRemovedEventArgs(oldOutput));
+            OutputAdded?.Invoke(this, new OutputAddedEventArgs(card));
+            _editingOutput = null;
+        }
+        else
+        {
+            Outputs.Add(card);
+            OutputAdded?.Invoke(this, new OutputAddedEventArgs(card));
+        }
+
+        IsAddingOutput = false;
     }
 
     [RelayCommand]
@@ -456,6 +537,96 @@ public partial class SetupViewModel : ObservableObject
     {
         Outputs.Remove(output);
         OutputRemoved?.Invoke(this, new OutputRemovedEventArgs(output));
+    }
+
+    [RelayCommand]
+    private void EditInput(InputCardViewModel input)
+    {
+        _editingInput = input;
+        IsAddingInput = true;
+        IsAddingOutput = false;
+        NewInputSheetName = input.SheetName;
+        NewInputCellAddress = input.CellAddress;
+        NewInputLabel = input.Label;
+        ApplyDetectedDistribution(input.DistributionName, input.Parameters);
+    }
+
+    [RelayCommand]
+    private void DuplicateInput(InputCardViewModel input)
+    {
+        _editingInput = null;
+        IsAddingInput = true;
+        IsAddingOutput = false;
+        NewInputSheetName = string.Empty;
+        NewInputCellAddress = string.Empty;
+        NewInputLabel = $"{input.Label} copy";
+        ApplyDetectedDistribution(input.DistributionName, input.Parameters);
+    }
+
+    [RelayCommand]
+    private void JumpToInput(InputCardViewModel input)
+    {
+        CellActionRequested?.Invoke(this, SetupCellActionEventArgs.JumpToInput(input));
+    }
+
+    [RelayCommand]
+    private void HighlightInput(InputCardViewModel input)
+    {
+        CellActionRequested?.Invoke(this, SetupCellActionEventArgs.HighlightInput(input));
+    }
+
+    [RelayCommand]
+    private void EditOutput(OutputCardViewModel output)
+    {
+        _editingOutput = output;
+        IsAddingOutput = true;
+        IsAddingInput = false;
+        NewOutputSheetName = output.SheetName;
+        NewOutputCellAddress = output.CellAddress;
+        NewOutputLabel = output.Label;
+    }
+
+    [RelayCommand]
+    private void DuplicateOutput(OutputCardViewModel output)
+    {
+        _editingOutput = null;
+        IsAddingOutput = true;
+        IsAddingInput = false;
+        NewOutputSheetName = string.Empty;
+        NewOutputCellAddress = string.Empty;
+        NewOutputLabel = $"{output.Label} copy";
+    }
+
+    [RelayCommand]
+    private void JumpToOutput(OutputCardViewModel output)
+    {
+        CellActionRequested?.Invoke(this, SetupCellActionEventArgs.JumpToOutput(output));
+    }
+
+    [RelayCommand]
+    private void HighlightOutput(OutputCardViewModel output)
+    {
+        CellActionRequested?.Invoke(this, SetupCellActionEventArgs.HighlightOutput(output));
+    }
+
+    [RelayCommand]
+    private void RefreshHighlights()
+    {
+        RefreshHighlightsRequested?.Invoke(this, EventArgs.Empty);
+    }
+
+    [RelayCommand]
+    private void ClearInputs()
+    {
+        foreach (var input in Inputs.ToList())
+            RemoveInput(input);
+    }
+
+    [RelayCommand]
+    private void ClearOutputs()
+    {
+        foreach (var output in Outputs.ToList())
+            RemoveOutput(output);
     }
 
     [RelayCommand]
@@ -658,6 +829,47 @@ public class CellSelectionRequestedEventArgs : EventArgs
 {
     public string Mode { get; }
     public CellSelectionRequestedEventArgs(string mode) => Mode = mode;
+}
+
+public enum SetupCellAction
+{
+    Jump,
+    Highlight
+}
+
+public enum SetupCellRole
+{
+    Input,
+    Output
+}
+
+/// <summary>Event args when a configured input or output cell should be selected or highlighted in Excel.</summary>
+public class SetupCellActionEventArgs : EventArgs
+{
+    public string SheetName { get; }
+    public string CellAddress { get; }
+    public SetupCellRole Role { get; }
+    public SetupCellAction Action { get; }
+
+    private SetupCellActionEventArgs(string sheetName, string cellAddress, SetupCellRole role, SetupCellAction action)
+    {
+        SheetName = sheetName;
+        CellAddress = cellAddress;
+        Role = role;
+        Action = action;
+    }
+
+    public static SetupCellActionEventArgs JumpToInput(InputCardViewModel input) =>
+        new(input.SheetName, input.CellAddress, SetupCellRole.Input, SetupCellAction.Jump);
+
+    public static SetupCellActionEventArgs HighlightInput(InputCardViewModel input) =>
+        new(input.SheetName, input.CellAddress, SetupCellRole.Input, SetupCellAction.Highlight);
+
+    public static SetupCellActionEventArgs JumpToOutput(OutputCardViewModel output) =>
+        new(output.SheetName, output.CellAddress, SetupCellRole.Output, SetupCellAction.Jump);
+
+    public static SetupCellActionEventArgs HighlightOutput(OutputCardViewModel output) =>
+        new(output.SheetName, output.CellAddress, SetupCellRole.Output, SetupCellAction.Highlight);
 }
 
 /// <summary>Event args when an input is added.</summary>

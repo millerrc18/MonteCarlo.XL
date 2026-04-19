@@ -42,6 +42,7 @@ This roadmap tracks the 12 robustness and @RISK-like initiatives identified afte
 - The task pane supports 15 distributions; worksheet UDFs exist for all except Discrete.
 - Rank correlation engine and matrix editor exist. This roadmap pass wires the existing correlation editor into Setup navigation and adds a ribbon entry. Import/export and stronger warnings remain unfinished.
 - Model Check now validates the setup profile before run, blocks missing/invalid inputs and outputs, detects duplicate/conflicting cells, validates distribution parameters, checks correlation matrix shape/validity, and warns about very small/large runs.
+- The Setup view now includes a Model Manager section for reviewing inputs and outputs, editing through the existing add/edit forms, copying entries, jumping to cells, refreshing highlights, and bulk-clearing inputs or outputs.
 - Stop/cancel is available through task pane, keyboard shortcut, and ribbon callback.
 
 ## Unfinished Work Register
@@ -59,10 +60,10 @@ Open work:
 
 Open work:
 
-- Replace scattered cards with an optional sortable table view.
-- Add edit-in-place and jump-to-cell controls.
-- Show distribution summaries and mean/P5/P95 previews.
-- Add bulk remove and refresh-highlight actions.
+- Replace the current stacked manager rows with a true sortable/filterable table for large models.
+- Add true edit-in-place cells for labels and parameters; current edit flow reopens the existing editor.
+- Add output formula/result previews once Excel interop can safely evaluate them.
+- Add manual verification for jump-to-cell and highlight refresh across multiple sheets and workbooks.
 
 ### 3. Better Simulation Settings
 
