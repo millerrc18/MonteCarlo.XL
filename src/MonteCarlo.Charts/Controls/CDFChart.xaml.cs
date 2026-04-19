@@ -4,6 +4,7 @@ using System.Windows.Controls;
 using LiveChartsCore;
 using LiveChartsCore.SkiaSharpView;
 using LiveChartsCore.SkiaSharpView.Painting;
+using LiveChartsCore.SkiaSharpView.WPF;
 using MonteCarlo.Charts.Themes;
 using MonteCarlo.Engine.Analysis;
 
@@ -43,6 +44,7 @@ public partial class CDFChart : UserControl
 
     public CDFChart()
     {
+        _ = typeof(CartesianChart).Assembly;
         InitializeComponent();
     }
 

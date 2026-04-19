@@ -27,7 +27,12 @@ public class MCFunctionScanner
         { "Beta", new[] { "alpha", "beta" } },
         { "Weibull", new[] { "shape", "scale" } },
         { "Exponential", new[] { "rate" } },
-        { "Poisson", new[] { "lambda" } }
+        { "Poisson", new[] { "lambda" } },
+        { "Gamma", new[] { "shape", "rate" } },
+        { "Logistic", new[] { "mu", "s" } },
+        { "GEV", new[] { "mu", "sigma", "xi" } },
+        { "Binomial", new[] { "n", "p" } },
+        { "Geometric", new[] { "p" } }
     };
 
     /// <summary>

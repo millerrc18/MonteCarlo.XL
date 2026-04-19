@@ -45,25 +45,9 @@
             </Grid>
         </Border>
 
-        <!-- Content area — displays the current view with fade transition -->
+        <!-- Content area — displays the current view -->
         <ContentControl Grid.Row="1"
-                        Content="{Binding CurrentView, NotifyOnTargetUpdated=True}">
-            <ContentControl.Style>
-                <Style TargetType="ContentControl">
-                    <Style.Triggers>
-                        <EventTrigger RoutedEvent="ContentControl.TargetUpdated">
-                            <BeginStoryboard>
-                                <Storyboard>
-                                    <DoubleAnimation Storyboard.TargetProperty="Opacity"
-                                                     From="0" To="1"
-                                                     Duration="0:0:0.2"/>
-                                </Storyboard>
-                            </BeginStoryboard>
-                        </EventTrigger>
-                    </Style.Triggers>
-                </Style>
-            </ContentControl.Style>
-        </ContentControl>
+                        Content="{Binding CurrentView}"/>
 
         <!-- Bottom tab bar -->
         <Border Grid.Row="2"

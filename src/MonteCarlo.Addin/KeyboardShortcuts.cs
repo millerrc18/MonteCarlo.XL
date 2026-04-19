@@ -16,8 +16,8 @@ public static class KeyboardShortcuts
     public static void MonteCarloRunSimulation()
     {
         AddIn.TaskPane?.Show();
-        // Delegate to the ribbon's run action
-        // The MainViewModel's RunSimulationRequested event will be fired
+        AddIn.Integration?.EnsureWired();
+        AddIn.Integration?.RequestRunFromRibbon();
     }
 
     /// <summary>
@@ -36,5 +36,6 @@ public static class KeyboardShortcuts
     public static void MonteCarloToggleTaskPane()
     {
         AddIn.TaskPane?.Toggle();
+        AddIn.Integration?.EnsureWired();
     }
 }

@@ -1,5 +1,8 @@
 using System.Windows.Forms;
+using System.Windows.Threading;
 using ExcelDna.Integration.CustomUI;
+using MonteCarlo.Addin.Services;
+using MonteCarlo.UI.ViewModels;
 
 namespace MonteCarlo.Addin.TaskPane;
 
@@ -13,16 +16,33 @@ public class TaskPaneController : IDisposable
     private bool _disposed;
 
     /// <summary>
+    /// Raised when the WPF task pane host has been created.
+    /// </summary>
+    public event EventHandler? Created;
+
+    /// <summary>
     /// Whether the task pane is currently visible.
     /// </summary>
     public bool IsVisible => _taskPane?.Visible ?? false;
+
+    /// <summary>
+    /// Gets the root task pane view model, if the pane has been created.
+    /// </summary>
+    public MainViewModel? ViewModel => _host?.ViewModel;
+
+    /// <summary>
+    /// Gets the dispatcher for the hosted WPF control.
+    /// </summary>
+    public Dispatcher? Dispatcher => _host?.Dispatcher;
 
     /// <summary>
     /// Toggle task pane visibility. Creates the pane on first call.
     /// </summary>
     public void Toggle()
     {
-        EnsureCreated();
+        if (!EnsureCreated())
+            return;
+
         _taskPane!.Visible = !_taskPane.Visible;
     }
 
@@ -31,7 +51,9 @@ public class TaskPaneController : IDisposable
     /// </summary>
     public void Show()
     {
-        EnsureCreated();
+        if (!EnsureCreated())
+            return;
+
         _taskPane!.Visible = true;
     }
 
@@ -44,9 +66,10 @@ public class TaskPaneController : IDisposable
             _taskPane.Visible = false;
     }
 
-    private void EnsureCreated()
+    private bool EnsureCreated()
     {
-        if (_taskPane != null) return;
+        if (_taskPane != null)
+            return true;
 
         try
         {
@@ -54,11 +77,14 @@ public class TaskPaneController : IDisposable
             _taskPane = CustomTaskPaneFactory.CreateCustomTaskPane(_host, "MonteCarlo.XL");
             _taskPane.DockPosition = MsoCTPDockPosition.msoCTPDockPositionRight;
             _taskPane.Width = 380;
+            Created?.Invoke(this, EventArgs.Empty);
+            return true;
         }
         catch (Exception ex)
         {
+            StartupDiagnostics.LogException("Failed to create task pane.", ex);
             MessageBox.Show(
-                $"Failed to create task pane:\n\n{ex.GetType().Name}: {ex.Message}\n\n{ex.StackTrace}",
+                $"Failed to create task pane:\n\n{ex.GetType().Name}: {ex.Message}\n\nDiagnostics: {StartupDiagnostics.LogPath}",
                 "MonteCarlo.XL Error",
                 MessageBoxButtons.OK,
                 MessageBoxIcon.Error);
@@ -67,6 +93,7 @@ public class TaskPaneController : IDisposable
             _host?.Dispose();
             _host = null;
             _taskPane = null;
+            return false;
         }
     }
 

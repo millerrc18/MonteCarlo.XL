@@ -108,7 +108,8 @@ public partial class RunViewModel : ObservableObject
     /// </summary>
     public void UpdateLiveChart(HistogramData? histogram)
     {
-        LiveHistogramData = histogram;
+        if (histogram != null)
+            LiveHistogramData = histogram;
     }
 
     [RelayCommand]

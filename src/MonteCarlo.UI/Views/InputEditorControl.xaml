@@ -4,19 +4,26 @@
              xmlns:views="clr-namespace:MonteCarlo.UI.Views"
              xmlns:conv="clr-namespace:MonteCarlo.UI.Converters">
     <UserControl.Resources>
-        <conv:BoolToVisibilityConverter x:Key="BoolVis"/>
-        <Style x:Key="FieldLabel" TargetType="TextBlock" BasedOn="{StaticResource CaptionText}">
-            <Setter Property="Margin" Value="0,0,0,2"/>
-        </Style>
-        <Style x:Key="FieldInput" TargetType="TextBox">
-            <Setter Property="FontFamily" Value="{StaticResource DefaultFont}"/>
-            <Setter Property="FontSize" Value="13"/>
-            <Setter Property="Padding" Value="8,6"/>
-            <Setter Property="Margin" Value="0,0,0,8"/>
-            <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}"/>
-            <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="Background" Value="{DynamicResource BackgroundBrush}"/>
-        </Style>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/MonteCarlo.UI;component/Styles/LightTheme.xaml"/>
+                <ResourceDictionary Source="/MonteCarlo.UI;component/Styles/GlobalStyles.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+            <conv:BoolToVisibilityConverter x:Key="BoolVis"/>
+            <conv:NullToCollapsedConverter x:Key="NullToCollapsed"/>
+            <Style x:Key="FieldLabel" TargetType="TextBlock" BasedOn="{StaticResource CaptionText}">
+                <Setter Property="Margin" Value="0,0,0,2"/>
+            </Style>
+            <Style x:Key="FieldInput" TargetType="TextBox">
+                <Setter Property="FontFamily" Value="{StaticResource DefaultFont}"/>
+                <Setter Property="FontSize" Value="13"/>
+                <Setter Property="Padding" Value="8,6"/>
+                <Setter Property="Margin" Value="0,0,0,8"/>
+                <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}"/>
+                <Setter Property="BorderThickness" Value="1"/>
+                <Setter Property="Background" Value="{DynamicResource BackgroundBrush}"/>
+            </Style>
+        </ResourceDictionary>
     </UserControl.Resources>
 
     <Border Style="{StaticResource Card}" Margin="0,0,0,8"

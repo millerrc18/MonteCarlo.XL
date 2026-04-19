@@ -1,6 +1,6 @@
 # CLAUDE.md — Instructions for Claude Code
 
-You are the **developer** on the MonteCarlo.XL project — a VSTO Excel add-in for Monte Carlo simulation built with C# and WPF.
+You are the **developer** on the MonteCarlo.XL project — an Excel-DNA Excel add-in for Monte Carlo simulation built with C#/.NET 8 and WPF.
 
 The **architect** (the human's Claude chat session) plans the work and writes detailed task specs. You execute them. This file explains how that workflow operates.
 
@@ -48,7 +48,7 @@ MonteCarlo.XL/
 │   ├── MonteCarlo.Engine/        # Pure C# — NO Excel dependency
 │   ├── MonteCarlo.Charts/        # WPF chart controls
 │   ├── MonteCarlo.UI/            # WPF views + view models
-│   └── MonteCarlo.Addin/         # VSTO add-in (Excel integration)
+│   └── MonteCarlo.Addin/         # Excel-DNA add-in (Excel integration)
 ├── tests/
 │   └── MonteCarlo.Engine.Tests/
 ├── samples/                      # Sample Excel workbooks

@@ -1,6 +1,6 @@
 # MonteCarlo.XL — Project Roadmap
 
-> A powerful, free Excel add-in for Monte Carlo simulation, built with VSTO (C#) and WPF. Inspired by Palisade's @RISK — delivering the core 20% of features that cover 80% of real-world use, with clean, modern visualizations that make the story jump off the screen.
+> A powerful, free Excel add-in for Monte Carlo simulation, built with Excel-DNA, C#/.NET 8, and WPF. Inspired by Palisade's @RISK — delivering the core 20% of features that cover 80% of real-world use, with clean, modern visualizations that make the story jump off the screen.
 
 ---
 
@@ -14,8 +14,8 @@ Palisade's @RISK is the gold standard for Monte Carlo simulation in Excel, but i
 
 | Layer | Choice | Rationale |
 |-------|--------|-----------|
-| **Platform** | VSTO Add-in (.NET Framework / .NET 8+) | Full COM interop with Excel; native Windows performance; access to WPF for visuals |
-| **Language** | C# | Strong typing for math-heavy code; rich ecosystem; first-class VSTO support |
+| **Platform** | Excel-DNA XLL add-in (.NET 8) | Full Excel integration through a packed `.xll`; native Windows performance; access to WPF for visuals |
+| **Language** | C# | Strong typing for math-heavy code; rich ecosystem; modern .NET support through Excel-DNA |
 | **UI Framework** | WPF (Custom Task Pane via ElementHost) | Hardware-accelerated rendering; full control over layout, animation, and styling; modern flat design achievable out of the box |
 | **Charting** | LiveCharts2 (primary) + custom WPF controls | LiveCharts2 is open-source, GPU-accelerated, MVVM-native, and produces beautiful modern charts. Custom WPF/SkiaSharp controls for tornado diagrams and specialized visuals |
 | **Distributions** | Math.NET Numerics | Industry-standard .NET library; 40+ distributions with PDF/CDF/quantile/sampling; thoroughly tested |
@@ -24,14 +24,14 @@ Palisade's @RISK is the gold standard for Monte Carlo simulation in Excel, but i
 | **Testing** | xUnit + FluentAssertions + Moq | Standard .NET test stack; fast engine unit tests, mockable Excel interop layer |
 | **Build / CI** | MSBuild + GitHub Actions | Automated build, test, and artifact publishing |
 
-### Why VSTO over Office.js?
+### Why Excel-DNA over Office.js?
 
 We're going Windows-only, which unlocks massive advantages:
 
 - **Performance**: Direct COM interop means we can drive Excel's recalculation engine natively. Reading/writing cells is orders of magnitude faster than Office.js REST calls.
 - **WPF visuals**: We get hardware-accelerated, fully customizable UI — gradients, animations, custom chart controls, proper typography. Office.js task panes are limited to what a browser can render in a narrow iframe.
 - **Threading**: We can run simulations on background threads with full progress reporting, keeping Excel responsive. Office.js is single-threaded.
-- **Excel integration depth**: Ribbon customization, right-click context menus, custom cell formatting, worksheet event hooks — all available through VSTO.
+- **Excel integration depth**: Ribbon customization, custom task panes, UDFs, custom cell formatting, and worksheet event hooks are available through Excel-DNA plus Excel COM interop.
 
 The tradeoff is no Excel Online support, which we've accepted.
 
@@ -81,11 +81,9 @@ MonteCarlo.XL/
 │   │   │   └── SparklineBar.xaml/.cs         # Mini stat bars for the summary panel
 │   │   └── MonteCarlo.Charts.csproj
 │   │
-│   ├── MonteCarlo.Addin/                    # VSTO Add-in project — the Excel integration layer
-│   │   ├── ThisAddIn.cs                     # Add-in entry point, lifecycle
-│   │   ├── Ribbon/
-│   │   │   ├── MonteCarloRibbon.xml         # Ribbon XML (custom tab with simulation controls)
-│   │   │   └── MonteCarloRibbon.cs          # Ribbon callbacks
+│   ├── MonteCarlo.Addin/                    # Excel-DNA add-in project — the Excel integration layer
+│   │   ├── AddIn.cs                         # Excel-DNA entry point, lifecycle
+│   │   ├── MonteCarloRibbon.cs              # Ribbon XML + callbacks
 │   │   ├── TaskPane/
 │   │   │   ├── SimulationTaskPane.cs        # WPF task pane host (ElementHost)
 │   │   │   └── TaskPaneController.cs        # Show/hide, state management
@@ -235,7 +233,7 @@ Target line:        #EF4444  (red, dashed)   — user-defined target threshold
 
 | Task | Details | Est. |
 |------|---------|------|
-| Project scaffolding | VSTO solution structure, NuGet packages (Math.NET, LiveCharts2, CommunityToolkit.Mvvm), CI pipeline | 2 days |
+| Project scaffolding | Excel-DNA solution structure, NuGet packages (Math.NET, LiveCharts2, CommunityToolkit.Mvvm), CI pipeline | 2 days |
 | Distribution module | Implement 6 core distributions wrapping Math.NET: Normal, Triangular, PERT, Lognormal, Uniform, Discrete. IDistribution interface with Sample(), Mean, PDF(), CDF(), Percentile(). | 3 days |
 | Simulation engine | Core loop: generate sample matrix → (optionally recalc workbook) → store results. Support for seeded RNG, configurable iteration count. Background thread with progress callback. | 4 days |
 | Summary statistics | Mean, median, std dev, min, max, percentiles (P1/P5/P10/P25/P50/P75/P90/P95/P99), skewness, kurtosis. | 2 days |
@@ -279,7 +277,7 @@ Target line:        #EF4444  (red, dashed)   — user-defined target threshold
 |------|---------|------|
 | Iman-Conover correlation engine | Applies rank correlation to the sample matrix using a user-defined correlation matrix. Uses Cholesky decomposition (Math.NET). Validates matrix is positive semi-definite. | 6 days |
 | Correlation matrix UI | Editable grid in the task pane. Color-coded cells (blue = positive, red = negative). Auto-validates PSD constraint and highlights violations. | 5 days |
-| Excel UDF functions | =MC.Normal(mean, stddev), =MC.Triangular(min, mode, max), =MC.PERT(min, mode, max), etc. Registered via ExcelDna or COM automation. Cells display the mean/mode in non-simulation mode; during a sim run, they return the current iteration's sample. Auto-detected as inputs. | 6 days |
+| Excel UDF functions | =MC.Normal(mean, stddev), =MC.Triangular(min, mode, max), =MC.PERT(min, mode, max), etc. Registered via Excel-DNA. Cells display the mean/mode in non-simulation mode; during a sim run, they return the current iteration's sample. Auto-detected as inputs. | 6 days |
 | Simulation profiles | Save named configurations ("Base Case", "Pessimistic", "Optimistic"). Quick-switch between profiles. Stored in CustomXMLParts. | 3 days |
 | Dark theme | Full dark mode for the task pane and all chart controls. Follows Windows system theme or manual toggle. | 3 days |
 | Performance optimization | Parallel simulation batches (Parallel.For on the iteration loop). Batch COM calls for recalc mode. Memory pooling for large iteration counts. Target: 10,000 iterations on a 20-input model in < 5 seconds. | 4 days |
@@ -368,12 +366,12 @@ This gives users two workflows — GUI-driven (accessible) and formula-driven (f
 
 | Risk | Impact | Mitigation |
 |------|--------|------------|
-| **VSTO deployment friction** | VSTO add-ins require .NET Framework + VSTO runtime on each machine; IT policies may block installs | Provide MSI installer + ClickOnce alternative; document prerequisites clearly; consider ExcelDna as a lighter deployment option if VSTO proves painful |
+| **Excel-DNA loading friction** | Excel can block or disable add-ins from untrusted locations, and the `.xll` bitness must match Office | Ship the packed 64-bit `.xll` for 64-bit Office, document trusted-location setup, and log startup diagnostics under `%LOCALAPPDATA%\MonteCarlo.XL\Logs` |
 | **COM interop performance in recalc mode** | Recalculating a complex workbook 10,000 times through COM can be slow | Default to fast mode (in-memory); batch COM calls; disable screen updating + events during sim; offer iteration count guidance based on model complexity |
 | **LiveCharts2 rendering edge cases** | LiveCharts2 is mature but can have layout quirks with dynamic resizing in a task pane | Fall back to SkiaSharp direct rendering for any chart that proves unreliable; keep chart controls behind an interface for easy swap |
 | **Iman-Conover correctness** | Correlation implementation is mathematically non-trivial; subtle bugs produce plausible-looking but wrong results | Validate against published test cases (Iman & Conover 1982 paper examples); cross-validate against @RISK output on a trial license for specific test workbooks |
 | **CustomXMLPart compatibility** | Some Excel versions or third-party tools may strip custom XML parts | Implement a backup persistence strategy (hidden sheet with JSON); detect and recover gracefully |
-| **.NET version fragmentation** | VSTO traditionally targets .NET Framework 4.x; newer .NET 8+ is preferred for new code | Target .NET Framework 4.8 for maximum compatibility; architect engine + charts as .NET Standard 2.0 so they can migrate to .NET 8+ later |
+| **.NET runtime prerequisites** | Excel-DNA add-ins need the matching .NET desktop runtime on target machines | Document the .NET 8 desktop runtime requirement and prefer packed `.xll` artifacts for local testing |
 
 ---
 
@@ -381,10 +379,9 @@ This gives users two workflows — GUI-driven (accessible) and formula-driven (f
 
 ### Prerequisites
 
-- Visual Studio 2022 (Community is free) with:
-  - .NET desktop development workload
-  - Office/SharePoint development workload (includes VSTO project templates)
+- Visual Studio 2022 (Community is free) with the .NET desktop development workload
 - Microsoft Excel (desktop, Windows)
+- .NET 8 SDK / desktop runtime
 - Git
 
 ### First-Time Setup
@@ -404,8 +401,8 @@ start MonteCarlo.XL.sln
 #   - SkiaSharp.Views.WPF
 #   - xunit, FluentAssertions, Moq (test projects)
 
-# Build and run (F5)
-# → Visual Studio will launch Excel with the add-in sideloaded
+# Build the packed XLL and load the matching bitness in Excel.
+# For local details, see docs/LOCAL_EXCEL_DEBUG.md.
 ```
 
 ### Project Structure in Visual Studio
@@ -413,10 +410,10 @@ start MonteCarlo.XL.sln
 ```
 Solution 'MonteCarlo.XL'
 ├── src/
-│   ├── MonteCarlo.Engine        (Class Library — .NET Standard 2.0)
-│   ├── MonteCarlo.Charts        (WPF Class Library — .NET Framework 4.8)
-│   ├── MonteCarlo.UI            (WPF Class Library — .NET Framework 4.8)
-│   └── MonteCarlo.Addin         (VSTO Excel Add-in — .NET Framework 4.8)
+│   ├── MonteCarlo.Engine        (Class Library — .NET 8)
+│   ├── MonteCarlo.Charts        (WPF Class Library — .NET 8 Windows)
+│   ├── MonteCarlo.UI            (WPF Class Library — .NET 8 Windows)
+│   └── MonteCarlo.Addin         (Excel-DNA XLL Add-in — .NET 8 Windows)
 └── tests/
     └── MonteCarlo.Engine.Tests  (xUnit — .NET Standard 2.0)
 ```
@@ -438,7 +435,7 @@ Each phase is "done" when:
 
 ## 11. Open Questions
 
-- [ ] **VSTO vs. ExcelDna**: VSTO is the plan, but ExcelDna (open-source) is lighter to deploy (single .xll file, no VSTO runtime needed) and supports UDFs natively. Worth a spike in Week 1 to compare. If ExcelDna wins on deployment simplicity, we pivot early — the engine/charts architecture is identical either way.
+- [x] **Excel-DNA vs. VSTO**: Excel-DNA is the chosen host. It keeps the solution on modern .NET, produces packed `.xll` add-ins, and supports UDFs natively.
 - [ ] **LiveCharts2 vs. ScottPlot vs. OxyPlot**: LiveCharts2 is the current pick for its modern aesthetic, but ScottPlot is simpler and OxyPlot is battle-tested. Build one histogram in each during Week 1 to compare visual quality and task-pane behavior.
-- [ ] **.NET Framework 4.8 vs. .NET 8+**: VSTO requires .NET Framework. If we pivot to ExcelDna, we could target .NET 8+ for the whole stack (better performance, modern C# features). Decision depends on the VSTO vs. ExcelDna spike.
+- [x] **.NET Framework 4.8 vs. .NET 8+**: The solution targets .NET 8 for the engine and .NET 8 Windows for WPF/Addin projects.
 - [ ] **Chart export format**: For the "export to Excel sheet" feature, should we render charts as high-DPI PNG images embedded in the sheet, or attempt to generate native Excel charts programmatically? PNG is easier and preserves our design language; native charts are editable but won't look as good.

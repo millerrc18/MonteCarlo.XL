@@ -1,4 +1,5 @@
 using System.Windows.Controls;
+using MonteCarlo.Charts;
 using MonteCarlo.UI.ViewModels;
 
 namespace MonteCarlo.UI.Views;
@@ -10,6 +11,7 @@ public partial class ResultsView : UserControl
 {
     public ResultsView()
     {
+        _ = ChartPlaceholder.ProjectName;
         InitializeComponent();
     }
 

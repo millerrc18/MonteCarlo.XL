@@ -5,6 +5,7 @@ using MonteCarlo.Addin.Export;
 using MonteCarlo.Addin.Services;
 using MonteCarlo.Engine.Analysis;
 using MonteCarlo.Engine.Distributions;
+using MonteCarlo.Addin.UDF;
 using MonteCarlo.UI.ViewModels;
 
 namespace MonteCarlo.Addin.TaskPane;
@@ -348,7 +349,48 @@ internal sealed class TaskPaneIntegration : IDisposable
             var address = cell.Address[RowAbsolute: false, ColumnAbsolute: false];
             var label = GetSuggestedLabel(worksheet, cell) ?? address;
 
-            Dispatch(() => _viewModel?.SetupViewModel.OnCellSelected(worksheet.Name, address, label));
+            // Auto-detect MC.* distribution formula so the setup form pre-populates.
+            string? detectedDist = null;
+            Dictionary<string, double>? detectedParams = null;
+            try
+            {
+                if (cell.HasFormula)
+                {
+                    string formula = cell.Formula?.ToString() ?? string.Empty;
+                    if (formula.StartsWith("=MC.", StringComparison.OrdinalIgnoreCase))
+                    {
+                        var scanner = new MCFunctionScanner();
+                        var detected = new DetectedMCFunction
+                        {
+                            Cell = new Addin.Excel.CellReference { SheetName = worksheet.Name, CellAddress = address },
+                            DistributionName = "",
+                            ParameterNames = Array.Empty<string>(),
+                            Formula = formula
+                        };
+                        // Reparse via scanner to fill distribution/param names
+                        foreach (var fn in scanner.ScanWorksheet(worksheet))
+                        {
+                            if (string.Equals(fn.Cell.CellAddress, address, StringComparison.OrdinalIgnoreCase))
+                            {
+                                detected = fn;
+                                break;
+                            }
+                        }
+                        if (!string.IsNullOrEmpty(detected.DistributionName))
+                        {
+                            detectedDist = detected.DistributionName;
+                            detectedParams = scanner.ResolveParameters(detected, worksheet);
+                        }
+                    }
+                }
+            }
+            catch
+            {
+                // Formula detection is best-effort; fall back to manual entry.
+            }
+
+            Dispatch(() => _viewModel?.SetupViewModel.OnCellSelected(
+                worksheet.Name, address, label, detectedDist, detectedParams));
         }
         catch (Exception ex)
         {

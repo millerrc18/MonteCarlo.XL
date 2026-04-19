@@ -15,8 +15,17 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\MonteCarlo.Charts\MonteCarlo.Charts.csproj" />
     <ProjectReference Include="..\MonteCarlo.Engine\MonteCarlo.Engine.csproj" />
     <ProjectReference Include="..\MonteCarlo.UI\MonteCarlo.UI.csproj" />
   </ItemGroup>
+
+  <!-- Copy native SkiaSharp/HarfBuzz DLLs alongside the packed .xll in publish/ -->
+  <Target Name="CopyNativeLibsToPublish" AfterTargets="ExcelDnaPack">
+    <Copy SourceFiles="$(OutputPath)runtimes\win-x64\native\libSkiaSharp.dll"
+          DestinationFolder="$(OutputPath)publish\" />
+    <Copy SourceFiles="$(OutputPath)runtimes\win-x64\native\libHarfBuzzSharp.dll"
+          DestinationFolder="$(OutputPath)publish\" />
+  </Target>
 
 </Project>
