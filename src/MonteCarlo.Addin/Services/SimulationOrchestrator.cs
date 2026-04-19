@@ -194,15 +194,15 @@ public class SimulationOrchestrator
             }
         };
 
-        var savedCalculation = app.Calculation;
-        var savedScreenUpdating = app.ScreenUpdating;
-        var savedEnableEvents = app.EnableEvents;
+        using var excelState = ExcelStateScope.Capture(app, "Simulation run", restoreSelection: true);
 
         try
         {
-            app.ScreenUpdating = false;
-            app.EnableEvents = false;
-            app.Calculation = XlCalculation.xlCalculationManual;
+            excelState.Apply(
+                screenUpdating: false,
+                enableEvents: false,
+                calculation: XlCalculation.xlCalculationManual,
+                statusBar: "MonteCarlo.XL: running simulation...");
 
             var result = await engine.RunAsync(config, evaluator, _cts.Token);
             _lastResult = result;
@@ -249,8 +249,6 @@ public class SimulationOrchestrator
         finally
         {
             // 8. Restore original values and Excel state
-            app.Calculation = savedCalculation;
-
             foreach (var (cellRef, originalValue) in originalValues)
             {
                 try
@@ -285,8 +283,6 @@ public class SimulationOrchestrator
             }
 
             app.Calculate();
-            app.EnableEvents = savedEnableEvents;
-            app.ScreenUpdating = savedScreenUpdating;
             _cts = null;
         }
     }

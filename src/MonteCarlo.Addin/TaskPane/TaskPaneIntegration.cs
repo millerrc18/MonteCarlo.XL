@@ -24,6 +24,7 @@ internal sealed class TaskPaneIntegration : IDisposable
 
     private MainViewModel? _viewModel;
     private Application? _excelApp;
+    private ExcelStateScope? _selectionState;
     private AppEvents_SheetSelectionChangeEventHandler? _selectionHandler;
     private string? _selectionMode;
     private bool _disposed;
@@ -539,10 +540,12 @@ internal sealed class TaskPaneIntegration : IDisposable
         try
         {
             _excelApp = (Application)ExcelDnaUtil.Application;
+            _selectionState = ExcelStateScope.Capture(_excelApp, "Cell selection");
             _selectionMode = mode;
             _selectionHandler = OnSheetSelectionChange;
             _excelApp.SheetSelectionChange += _selectionHandler;
-            _excelApp.StatusBar = $"MonteCarlo.XL: click a worksheet cell to use as a simulation {mode}.";
+            _selectionState.Apply(
+                statusBar: $"MonteCarlo.XL: click a worksheet cell to use as a simulation {mode}.");
         }
         catch (Exception ex)
         {
@@ -571,8 +574,7 @@ internal sealed class TaskPaneIntegration : IDisposable
             if (_excelApp != null && _selectionHandler != null)
                 _excelApp.SheetSelectionChange -= _selectionHandler;
 
-            if (_excelApp != null)
-                _excelApp.StatusBar = false;
+            _selectionState?.Dispose();
         }
         catch
         {
@@ -581,6 +583,7 @@ internal sealed class TaskPaneIntegration : IDisposable
         finally
         {
             _selectionMode = null;
+            _selectionState = null;
             _selectionHandler = null;
             _excelApp = null;
         }

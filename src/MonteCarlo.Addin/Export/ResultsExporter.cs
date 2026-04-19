@@ -37,79 +37,73 @@ public class ResultsExporter
         var workbook = app.ActiveWorkbook;
         if (workbook == null) return;
 
+        using var excelState = ExcelStateScope.Capture(app, "Export summary", restoreSelection: true);
         var output = result.Config.Outputs[outputIndex];
         string sheetName = GetExportSheetName(workbook, $"{SheetPrefix}{output.Label}", createNewSheet);
 
         // Create or clear the sheet
         var sheet = EnsureSheet(workbook, sheetName, clearIfExists: !createNewSheet);
 
-        try
+        excelState.Apply(screenUpdating: false, statusBar: "MonteCarlo.XL: exporting summary...");
+
+        int row = 1;
+
+        // Title section
+        row = WriteTitleSection(sheet, row, output, result, profile);
+        row++;
+
+        // Summary statistics
+        row = WriteSummaryStats(sheet, row, stats);
+        row++;
+
+        // Percentiles
+        row = WritePercentiles(sheet, row, stats, percentiles);
+        row++;
+
+        // Sensitivity
+        if (sensitivity != null && sensitivity.Count > 0)
         {
-            app.ScreenUpdating = false;
-
-            int row = 1;
-
-            // Title section
-            row = WriteTitleSection(sheet, row, output, result, profile);
+            row = WriteSensitivity(sheet, row, sensitivity);
             row++;
-
-            // Summary statistics
-            row = WriteSummaryStats(sheet, row, stats);
-            row++;
-
-            // Percentiles
-            row = WritePercentiles(sheet, row, stats, percentiles);
-            row++;
-
-            // Sensitivity
-            if (sensitivity != null && sensitivity.Count > 0)
-            {
-                row = WriteSensitivity(sheet, row, sensitivity);
-                row++;
-            }
-
-            // Scenario analysis
-            row = WriteScenarioAnalysis(sheet, row, result, outputIndex);
-            row++;
-
-            // Input assumptions
-            row = WriteInputAssumptions(sheet, row, profile);
-            row++;
-
-            // Correlation assumptions
-            row = WriteCorrelationAssumptions(sheet, row, profile);
-            row++;
-
-            // Auto-fit columns
-            sheet.Columns["A:D"].AutoFit();
-
-            // Embed chart images (right side)
-            int imageColumn = 5; // Column E
-            int imageRow = 1;
-
-            if (histogramImage != null)
-                EmbedImage(sheet, histogramImage, imageRow, imageColumn, 500, 280);
-            else
-                AddHistogramChart(sheet, stats, output.Label, imageRow, imageColumn, 500, 280);
-
-            imageRow += 18;
-
-            if (tornadoImage != null)
-            {
-                EmbedImage(sheet, tornadoImage, imageRow, imageColumn, 500, 300);
-            }
-            else if (sensitivity != null && sensitivity.Count > 0)
-            {
-                AddSensitivityChart(sheet, sensitivity, stats.Median, imageRow, imageColumn, 500, 300);
-            }
-
-            // Sheet tab color (blue)
-            sheet.Tab.Color = 0xF6823B; // #3B82F6 in BGR
         }
-        finally
+
+        // Scenario analysis
+        row = WriteScenarioAnalysis(sheet, row, result, outputIndex);
+        row++;
+
+        // Input assumptions
+        row = WriteInputAssumptions(sheet, row, profile);
+        row++;
+
+        // Correlation assumptions
+        row = WriteCorrelationAssumptions(sheet, row, profile);
+        row++;
+
+        // Auto-fit columns
+        sheet.Columns["A:D"].AutoFit();
+
+        // Embed chart images (right side)
+        int imageColumn = 5; // Column E
+        int imageRow = 1;
+
+        if (histogramImage != null)
+            EmbedImage(sheet, histogramImage, imageRow, imageColumn, 500, 280);
+        else
+            AddHistogramChart(sheet, stats, output.Label, imageRow, imageColumn, 500, 280);
+
+        imageRow += 18;
+
+        if (tornadoImage != null)
         {
-            app.ScreenUpdating = true;
+            EmbedImage(sheet, tornadoImage, imageRow, imageColumn, 500, 300);
         }
+        else if (sensitivity != null && sensitivity.Count > 0)
+        {
+            AddSensitivityChart(sheet, sensitivity, stats.Median, imageRow, imageColumn, 500, 300);
+        }
+
+        // Sheet tab color (blue)
+        sheet.Tab.Color = 0xF6823B; // #3B82F6 in BGR
     }
 
     /// <summary>
@@ -121,53 +115,47 @@ public class ResultsExporter
         var workbook = app.ActiveWorkbook;
         if (workbook == null) return;
 
+        using var excelState = ExcelStateScope.Capture(app, "Export raw data", restoreSelection: true);
         var output = result.Config.Outputs[outputIndex];
         string sheetName = GetExportSheetName(workbook, $"{RawDataSheetPrefix}{output.Label}", createNewSheet);
         var sheet = EnsureSheet(workbook, sheetName, clearIfExists: !createNewSheet);
 
-        try
+        excelState.Apply(screenUpdating: false, statusBar: "MonteCarlo.XL: exporting raw data...");
+
+        int colCount = result.Config.Inputs.Count + 1; // inputs + 1 output
+        int rowCount = result.IterationCount;
+
+        // Headers
+        sheet.Cells[1, 1].Value2 = "Iteration";
+        for (int j = 0; j < result.Config.Inputs.Count; j++)
+            sheet.Cells[1, j + 2].Value2 = result.Config.Inputs[j].Label;
+        sheet.Cells[1, colCount + 1].Value2 = output.Label;
+
+        // Format header row
+        var headerRange = sheet.Range[sheet.Cells[1, 1], sheet.Cells[1, colCount + 1]];
+        headerRange.Font.Bold = true;
+        headerRange.Interior.Color = 0xFAF8F8; // #F8FAFC surface color in BGR
+
+        // Write data as 2D array for performance
+        var data = new object[rowCount, colCount + 1];
+        var inputSamples = new double[result.Config.Inputs.Count][];
+        for (int j = 0; j < result.Config.Inputs.Count; j++)
+            inputSamples[j] = result.GetInputSamples(result.Config.Inputs[j].Id);
+        var outputValues = result.GetOutputValues(result.Config.Outputs[outputIndex].Id);
+
+        for (int i = 0; i < rowCount; i++)
         {
-            app.ScreenUpdating = false;
-
-            int colCount = result.Config.Inputs.Count + 1; // inputs + 1 output
-            int rowCount = result.IterationCount;
-
-            // Headers
-            sheet.Cells[1, 1].Value2 = "Iteration";
+            data[i, 0] = i + 1;
             for (int j = 0; j < result.Config.Inputs.Count; j++)
-                sheet.Cells[1, j + 2].Value2 = result.Config.Inputs[j].Label;
-            sheet.Cells[1, colCount + 1].Value2 = output.Label;
-
-            // Format header row
-            var headerRange = sheet.Range[sheet.Cells[1, 1], sheet.Cells[1, colCount + 1]];
-            headerRange.Font.Bold = true;
-            headerRange.Interior.Color = 0xFAF8F8; // #F8FAFC surface color in BGR
-
-            // Write data as 2D array for performance
-            var data = new object[rowCount, colCount + 1];
-            var inputSamples = new double[result.Config.Inputs.Count][];
-            for (int j = 0; j < result.Config.Inputs.Count; j++)
-                inputSamples[j] = result.GetInputSamples(result.Config.Inputs[j].Id);
-            var outputValues = result.GetOutputValues(result.Config.Outputs[outputIndex].Id);
-
-            for (int i = 0; i < rowCount; i++)
-            {
-                data[i, 0] = i + 1;
-                for (int j = 0; j < result.Config.Inputs.Count; j++)
-                    data[i, j + 1] = inputSamples[j][i];
-                data[i, colCount] = outputValues[i];
-            }
-
-            var dataRange = sheet.Range[sheet.Cells[2, 1], sheet.Cells[rowCount + 1, colCount + 1]];
-            dataRange.Value2 = data;
-
-            sheet.Columns[$"A:{GetColumnLetter(colCount + 1)}"].AutoFit();
-            sheet.Tab.Color = 0xB981F5; // Violet in BGR
+                data[i, j + 1] = inputSamples[j][i];
+            data[i, colCount] = outputValues[i];
         }
-        finally
-        {
-            app.ScreenUpdating = true;
-        }
+
+        var dataRange = sheet.Range[sheet.Cells[2, 1], sheet.Cells[rowCount + 1, colCount + 1]];
+        dataRange.Value2 = data;
+
+        sheet.Columns[$"A:{GetColumnLetter(colCount + 1)}"].AutoFit();
+        sheet.Tab.Color = 0xB981F5; // Violet in BGR
     }
 
     #region Private Helpers

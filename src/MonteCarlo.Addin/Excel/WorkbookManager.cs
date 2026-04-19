@@ -72,18 +72,10 @@ public class WorkbookManager : IWorkbookManager
         var range = topLeft.Resize[rows, cols];
 
         var app = App;
-        app.ScreenUpdating = false;
-        var prevCalc = app.Calculation;
-        app.Calculation = XlCalculation.xlCalculationManual;
-        try
-        {
-            range.Value2 = values;
-        }
-        finally
-        {
-            app.Calculation = prevCalc;
-            app.ScreenUpdating = true;
-        }
+        using var excelState = ExcelStateScope.Capture(app, "Write range");
+        excelState.Apply(screenUpdating: false, calculation: XlCalculation.xlCalculationManual);
+
+        range.Value2 = values;
     }
 
     /// <inheritdoc />
@@ -93,33 +85,25 @@ public class WorkbookManager : IWorkbookManager
         var sheet = GetSheet(sheetName);
 
         var app = App;
-        app.ScreenUpdating = false;
-        var prevCalc = app.Calculation;
-        app.Calculation = XlCalculation.xlCalculationManual;
-        try
-        {
-            // Write headers in row 1
-            for (int c = 0; c < headers.Length; c++)
-            {
-                var cell = (Range)sheet.Cells[1, c + 1];
-                cell.Value2 = headers[c];
-                cell.Font.Bold = true;
-            }
+        using var excelState = ExcelStateScope.Capture(app, "Write results sheet");
+        excelState.Apply(screenUpdating: false, calculation: XlCalculation.xlCalculationManual);
 
-            // Write data starting at row 2
-            int rows = data.GetLength(0);
-            int cols = data.GetLength(1);
-            if (rows > 0 && cols > 0)
-            {
-                var topLeft = (Range)sheet.Cells[2, 1];
-                var range = topLeft.Resize[rows, cols];
-                range.Value2 = data;
-            }
-        }
-        finally
+        // Write headers in row 1
+        for (int c = 0; c < headers.Length; c++)
         {
-            app.Calculation = prevCalc;
-            app.ScreenUpdating = true;
+            var cell = (Range)sheet.Cells[1, c + 1];
+            cell.Value2 = headers[c];
+            cell.Font.Bold = true;
+        }
+
+        // Write data starting at row 2
+        int rows = data.GetLength(0);
+        int cols = data.GetLength(1);
+        if (rows > 0 && cols > 0)
+        {
+            var topLeft = (Range)sheet.Cells[2, 1];
+            var range = topLeft.Resize[rows, cols];
+            range.Value2 = data;
         }
     }
 

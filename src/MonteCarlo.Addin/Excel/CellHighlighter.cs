@@ -47,19 +47,14 @@ public class CellHighlighter : ICellHighlighter
     public void RefreshAll(IInputTagManager inputs, IOutputTagManager outputs)
     {
         var app = App;
-        app.ScreenUpdating = false;
-        try
-        {
-            foreach (var input in inputs.GetAllInputs())
-                HighlightInput(input.Cell);
+        using var excelState = ExcelStateScope.Capture(app, "Refresh highlights");
+        excelState.Apply(screenUpdating: false);
 
-            foreach (var output in outputs.GetAllOutputs())
-                HighlightOutput(output.Cell);
-        }
-        finally
-        {
-            app.ScreenUpdating = true;
-        }
+        foreach (var input in inputs.GetAllInputs())
+            HighlightInput(input.Cell);
+
+        foreach (var output in outputs.GetAllOutputs())
+            HighlightOutput(output.Cell);
     }
 
     private void SetCellColor(CellReference cell, int oleColor)

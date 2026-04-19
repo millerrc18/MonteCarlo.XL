@@ -182,9 +182,9 @@ public class ConfigPersistence
                 if (ws.Name == HiddenSheetName)
                 {
                     var app = workbook.Application;
-                    app.DisplayAlerts = false;
+                    using var excelState = ExcelStateScope.Capture(app, "Remove hidden config sheet");
+                    excelState.Apply(displayAlerts: false);
                     ws.Delete();
-                    app.DisplayAlerts = true;
                     break;
                 }
             }
