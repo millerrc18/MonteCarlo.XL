@@ -29,7 +29,7 @@ This roadmap tracks the 12 robustness and @RISK-like initiatives identified afte
 | 6 | Correlation workflow polish | Foundation | Correlation is critical for realistic risk models. | The matrix editor is reachable from Setup and ribbon, validates PSD matrices, can auto-fix, imports/exports Excel ranges, warns on risky values, and persists cleanly in workbook config. |
 | 7 | Report builder | Foundation | Simulation outputs need to be shared with stakeholders. | A report wizard lets users choose outputs and sections, then creates a formatted Excel report with histogram, CDF, tornado, summary stats, assumptions, target analysis, metadata, and optional raw-data appendix. |
 | 8 | Scenario / stress analysis | Foundation | Users need to understand not just the distribution, but why good or bad cases happen. | Results support target probabilities, conditional analysis for best/worst/target-hit cases, stress ranges, and baseline-vs-stressed comparisons. |
-| 9 | Goal seek under uncertainty | Planned | Many decisions ask for the input level needed to reach a probability target. | User selects a decision cell, target output condition, desired probability/statistic, bounds, and simulation settings. The add-in iterates simulations and reports the required decision value. |
+| 9 | Goal seek under uncertainty | Foundation | Many decisions ask for the input level needed to reach a probability target. | User selects a decision cell, target output condition, desired probability/statistic, bounds, and simulation settings. The add-in iterates simulations and reports the required decision value. |
 | 10 | Excel state safety | Foundation | An Excel add-in must leave workbooks stable after success, failure, and cancel. | All simulation/export paths reliably restore calculation mode, screen updating, events, status bar, selection, active sheet, and input cell values. Failures log phase-specific diagnostics. |
 | 11 | Function swap / model sharing | Planned | Workbooks should be shareable with people who do not have the add-in. | User can replace `MC.*` formulas with static expected values, preserve a restore map, restore formulas later, and export a non-add-in workbook copy. |
 | 12 | Performance modes | Foundation | Users need predictable speed/accuracy tradeoffs. | UI exposes preview/full/deep run presets, Monte Carlo vs Latin Hypercube where supported, Excel recalc vs engine modes, iteration/sec, ETA, raw-data memory warnings, and benchmark diagnostics. |
@@ -46,6 +46,7 @@ This roadmap tracks the 12 robustness and @RISK-like initiatives identified afte
 - Rank correlation engine and matrix editor exist. The editor is reachable from Setup and ribbon, imports/exports n by n Excel ranges, warns about high/fragile matrices, clearly shows the independent-input state, persists workbook correlation config, and passes correlations into simulation runs.
 - Results now include a Scenario Analysis card for worst-tail, best-tail, at-or-below-target, and above-target filters. It shows conditional input summaries so users can see which assumptions changed most in the selected cases.
 - Summary export now includes a scenario-analysis section comparing worst and best tail input means against all runs.
+- The engine now has a reusable uncertainty goal-seek solver for monotonic decision variables. It can target mean, percentile, P(output > target), or P(output <= target), and returns convergence/bracketing diagnostics for future Excel UI wiring.
 - Model Check now validates the setup profile before run, blocks missing/invalid inputs and outputs, detects duplicate/conflicting cells, validates distribution parameters, checks correlation matrix shape/validity, and warns about very small/large runs.
 - The Setup view now includes a Model Manager section for reviewing inputs and outputs, editing through the existing add/edit forms, copying entries, jumping to cells, refreshing highlights, and bulk-clearing inputs or outputs.
 - Stop/cancel is available through task pane, keyboard shortcut, and ribbon callback.
@@ -130,9 +131,10 @@ Open work:
 Open work:
 
 - Define decision-cell editing workflow.
-- Add search algorithms and stop conditions.
-- Add run budget controls.
-- Present convergence and confidence of the found decision value.
+- Wire the engine solver to Excel through a task-pane workflow that edits one decision cell, reruns simulations, and restores workbook state after each trial.
+- Add run budget controls and progress/cancel UI for repeated simulations.
+- Present convergence, bracketing, and confidence of the found decision value.
+- Add manual Excel verification with an example workbook and known monotonic decision target.
 
 ### 10. Excel State Safety
 
