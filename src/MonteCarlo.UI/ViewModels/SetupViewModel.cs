@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using MonteCarlo.Engine.Distributions;
+using MonteCarlo.Engine.Simulation;
 
 namespace MonteCarlo.UI.ViewModels;
 
@@ -151,6 +152,9 @@ public partial class SetupViewModel : ObservableObject
     /// <summary>Event raised when the user wants to open the correlation editor.</summary>
     public event Action? CorrelationEditorRequested;
 
+    /// <summary>Event raised when the user wants to run model preflight checks.</summary>
+    public event Action? PreflightRequested;
+
     /// <summary>Event raised when the user clicks Run Simulation.</summary>
     public event EventHandler? RunSimulationRequested;
 
@@ -194,6 +198,12 @@ public partial class SetupViewModel : ObservableObject
     private void OpenCorrelationEditor()
     {
         CorrelationEditorRequested?.Invoke();
+    }
+
+    [RelayCommand]
+    private void RunPreflight()
+    {
+        PreflightRequested?.Invoke();
     }
 
     partial void OnSelectedDistributionChanged(string value)
@@ -465,6 +475,43 @@ public partial class SetupViewModel : ObservableObject
     private void RunSimulation()
     {
         RunSimulationRequested?.Invoke(this, EventArgs.Empty);
+    }
+
+    /// <summary>
+    /// Builds a serializable profile from the current setup state for validation and persistence.
+    /// </summary>
+    public SimulationProfile BuildSimulationProfile()
+    {
+        var profile = new SimulationProfile
+        {
+            IterationCount = IterationCount,
+            RandomSeed = RandomSeed,
+            CorrelationMatrix = CorrelationMatrixValues
+        };
+
+        foreach (var input in Inputs)
+        {
+            profile.Inputs.Add(new SavedInput
+            {
+                SheetName = input.SheetName,
+                CellAddress = input.CellAddress,
+                Label = input.Label,
+                DistributionName = input.DistributionName,
+                Parameters = new Dictionary<string, double>(input.Parameters)
+            });
+        }
+
+        foreach (var output in Outputs)
+        {
+            profile.Outputs.Add(new SavedOutput
+            {
+                SheetName = output.SheetName,
+                CellAddress = output.CellAddress,
+                Label = output.Label
+            });
+        }
+
+        return profile;
     }
 
     [RelayCommand]

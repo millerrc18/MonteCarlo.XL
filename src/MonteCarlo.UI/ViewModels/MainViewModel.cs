@@ -2,6 +2,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using MonteCarlo.Engine.Analysis;
 using MonteCarlo.Engine.Simulation;
+using MonteCarlo.Engine.Validation;
 using MonteCarlo.UI.Views;
 
 namespace MonteCarlo.UI.ViewModels;
@@ -24,6 +25,7 @@ public partial class MainViewModel : ObservableObject
     private SetupView? _setupView;
     private RunView? _runView;
     private ResultsView? _resultsView;
+    private PreflightView? _preflightView;
 
     /// <summary>The persistent SetupView instance.</summary>
     public SetupView SetupView => _setupView ??= new SetupView();
@@ -33,6 +35,9 @@ public partial class MainViewModel : ObservableObject
 
     /// <summary>The persistent ResultsView instance.</summary>
     public ResultsView ResultsView => _resultsView ??= new ResultsView();
+
+    /// <summary>The persistent PreflightView instance.</summary>
+    public PreflightView PreflightView => _preflightView ??= CreatePreflightView();
 
     /// <summary>Convenience accessor for the SetupViewModel.</summary>
     public SetupViewModel SetupViewModel => SetupView.ViewModel;
@@ -61,6 +66,8 @@ public partial class MainViewModel : ObservableObject
             RequestSimulationRun();
         SetupViewModel.CorrelationEditorRequested += () =>
             NavigateToCorrelation();
+        SetupViewModel.PreflightRequested += () =>
+            ShowPreflightView();
 
         // Wire RunViewModel's stop event
         RunViewModel.StopRequested += (_, _) =>
@@ -79,6 +86,18 @@ public partial class MainViewModel : ObservableObject
     /// Starts the UI side of a simulation run and notifies the host add-in.
     /// </summary>
     public void RequestSimulationRun()
+    {
+        var report = ModelPreflightValidator.Validate(SetupViewModel.BuildSimulationProfile());
+        if (report.HasErrors)
+        {
+            NavigateToPreflight(report);
+            return;
+        }
+
+        StartSimulationRun();
+    }
+
+    private void StartSimulationRun()
     {
         NavigateToRun();
         RunViewModel.Reset(SetupViewModel.IterationCount);
@@ -104,6 +123,12 @@ public partial class MainViewModel : ObservableObject
     /// Public navigation entry point for host integrations such as the Excel ribbon.
     /// </summary>
     public void ShowCorrelationView() => NavigateToCorrelation();
+
+    /// <summary>
+    /// Public navigation entry point for host integrations such as the Excel ribbon.
+    /// </summary>
+    public void ShowPreflightView() =>
+        NavigateToPreflight(ModelPreflightValidator.Validate(SetupViewModel.BuildSimulationProfile()));
 
     /// <summary>
     /// Called by the Addin layer when simulation progress is reported.
@@ -185,6 +210,15 @@ public partial class MainViewModel : ObservableObject
         CurrentViewName = "Run";
     }
 
+    private void NavigateToPreflight(PreflightReport report)
+    {
+        var viewModel = (PreflightViewModel)PreflightView.DataContext;
+        viewModel.Load(report);
+
+        CurrentView = PreflightView;
+        CurrentViewName = "Model Check";
+    }
+
     private void NavigateToCorrelation()
     {
         var viewModel = new CorrelationViewModel();
@@ -196,5 +230,14 @@ public partial class MainViewModel : ObservableObject
 
         CurrentView = new CorrelationView { DataContext = viewModel };
         CurrentViewName = "Correlations";
+    }
+
+    private PreflightView CreatePreflightView()
+    {
+        var viewModel = new PreflightViewModel();
+        viewModel.BackToSetupRequested += NavigateToSetup;
+        viewModel.RunAnywayRequested += StartSimulationRun;
+
+        return new PreflightView { DataContext = viewModel };
     }
 }

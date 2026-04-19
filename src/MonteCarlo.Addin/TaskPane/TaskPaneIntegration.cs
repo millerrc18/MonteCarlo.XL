@@ -123,6 +123,15 @@ internal sealed class TaskPaneIntegration : IDisposable
     }
 
     /// <summary>
+    /// Opens the model preflight validation view.
+    /// </summary>
+    public void ShowPreflight()
+    {
+        EnsureWired();
+        Dispatch(() => _viewModel?.ShowPreflightView());
+    }
+
+    /// <summary>
     /// Opens setup and starts the add-input flow.
     /// </summary>
     public void BeginAddInput()

@@ -41,8 +41,9 @@ Open the workbook in Excel. It contains a simple model with uncertain inputs usi
 2. Click `Task Pane`.
 3. Add output cell `B9` on the `Smoke Model` sheet.
 4. Confirm the detected input formulas or add inputs manually.
-5. Set iterations to `1,000` for a quick run.
-6. Click `Run Simulation`.
+5. Click `Model Check` to validate the setup.
+6. Set iterations to `1,000` for a quick run.
+7. Click `Run Simulation`.
 
 The results view should show summary statistics and charts for the selected output.
 

@@ -21,7 +21,7 @@ This roadmap tracks the 12 robustness and @RISK-like initiatives identified afte
 
 | # | Initiative | Current Status | Why It Matters | Definition Of Done |
 | --- | --- | --- | --- | --- |
-| 1 | Model preflight / validation panel | Planned | Users need to know whether a workbook is safe to simulate before pressing Run. | A preflight view checks inputs, outputs, formulas, broken references, numeric output cells, invalid distributions, iteration settings, correlation validity, workbook calculation mode, and any unsupported workbook state. It blocks or warns before run with actionable fixes. |
+| 1 | Model preflight / validation panel | Foundation | Users need to know whether a workbook is safe to simulate before pressing Run. | A preflight view checks inputs, outputs, formulas, broken references, numeric output cells, invalid distributions, iteration settings, correlation validity, workbook calculation mode, and any unsupported workbook state. It blocks or warns before run with actionable fixes. |
 | 2 | Input / output manager | Foundation | Large workbooks need a single command center for assumptions and forecast cells. | A table view lists all inputs and outputs with cell, label, distribution, parameters, mean/representative value, jump-to-cell, edit, duplicate, remove, and highlight controls. |
 | 3 | Better simulation settings | Foundation | @RISK-like tools expose simulation defaults clearly instead of hiding behavior in code. | Settings include default iterations, random seed behavior, sampling method, convergence auto-stop, recalc mode, export defaults, default percentiles, and global vs workbook-specific persistence. |
 | 4 | Distribution palette / wizard | Planned | Analysts should not need distribution theory to choose a reasonable assumption. | A guided picker suggests distributions from plain-English prompts such as percentage, count, positive skew, min/mode/max, waiting time, and extreme value. It shows parameters, previews, and examples inline. |
@@ -41,6 +41,7 @@ This roadmap tracks the 12 robustness and @RISK-like initiatives identified afte
 - Light/dark/system theme switching is implemented and persisted.
 - The task pane supports 15 distributions; worksheet UDFs exist for all except Discrete.
 - Rank correlation engine and matrix editor exist. This roadmap pass wires the existing correlation editor into Setup navigation and adds a ribbon entry. Import/export and stronger warnings remain unfinished.
+- Model Check now validates the setup profile before run, blocks missing/invalid inputs and outputs, detects duplicate/conflicting cells, validates distribution parameters, checks correlation matrix shape/validity, and warns about very small/large runs.
 - Stop/cancel is available through task pane, keyboard shortcut, and ribbon callback.
 
 ## Unfinished Work Register
@@ -49,10 +50,10 @@ This roadmap tracks the 12 robustness and @RISK-like initiatives identified afte
 
 Open work:
 
-- Design the preflight result model and severity levels.
-- Add checks for missing inputs/outputs, invalid formulas, non-numeric outputs, workbook calculation state, invalid correlations, and excessive raw-data export size.
-- Surface results before Run and from the ribbon.
-- Add tests for pure validation rules.
+- Add Excel-interoperability checks for broken formulas, non-numeric output cells, worksheet/workbook protection, workbook calculation state, and unsupported workbook state.
+- Add active workbook/sheet context to the preflight report.
+- Add manual verification scenarios for success, failure, and warning-only runs in Excel.
+- Decide whether warnings should optionally pause a run or only appear in the Model Check view.
 
 ### 2. Input / Output Manager
 

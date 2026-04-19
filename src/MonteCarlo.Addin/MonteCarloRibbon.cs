@@ -62,6 +62,10 @@ public class MonteCarloRibbon : ExcelRibbon
                           supertip='Open the input correlation matrix editor for rank-correlated simulation inputs.' />
                 </group>
                 <group id='SimulationGroup' label='Simulation'>
+                  <button id='ModelCheckButton' label='Model Check'
+                          imageMso='ReviewAcceptChange' onAction='OnModelCheck'
+                          screentip='Check Model'
+                          supertip='Validate the current simulation setup before running.' />
                   <button id='RunButton' label='Run' size='large'
                           imageMso='PlayMacro' onAction='OnRunSimulation'
                           screentip='Run Simulation'
@@ -149,6 +153,18 @@ public class MonteCarloRibbon : ExcelRibbon
     public void OnStopSimulation(IRibbonControl control)
     {
         RunRibbonAction("Stop simulation", () => AddIn.Orchestrator?.CancelSimulation());
+    }
+
+    /// <summary>
+    /// Callback: Validate the current simulation setup.
+    /// </summary>
+    public void OnModelCheck(IRibbonControl control)
+    {
+        RunRibbonAction("Model check", () =>
+        {
+            ShowTaskPaneAndWire();
+            AddIn.Integration?.ShowPreflight();
+        });
     }
 
     /// <summary>

@@ -280,19 +280,39 @@
                     </StackPanel>
                 </Border>
 
-                <!-- === RUN BUTTON === -->
-                <Button Style="{StaticResource PrimaryButton}"
-                        Command="{Binding RunSimulationCommand}"
-                        IsEnabled="{Binding CanRun}"
-                        HorizontalAlignment="Stretch"
-                        Padding="16,12"
-                        FontSize="15"
-                        Margin="0,8,0,16">
-                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                        <TextBlock Text="&#x25B6;" Margin="0,0,8,0"/>
-                        <TextBlock Text="Run Simulation"/>
-                    </StackPanel>
-                </Button>
+                <!-- === MODEL CHECK + RUN BUTTONS === -->
+                <Grid Margin="0,8,0,16">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="8"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <Button Grid.Column="0"
+                            Style="{StaticResource SecondaryButton}"
+                            Command="{Binding RunPreflightCommand}"
+                            HorizontalAlignment="Stretch"
+                            Padding="12,12"
+                            FontSize="13">
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                            <TextBlock Text="&#x2713;" Margin="0,0,6,0"/>
+                            <TextBlock Text="Model Check"/>
+                        </StackPanel>
+                    </Button>
+
+                    <Button Grid.Column="2"
+                            Style="{StaticResource PrimaryButton}"
+                            Command="{Binding RunSimulationCommand}"
+                            IsEnabled="{Binding CanRun}"
+                            HorizontalAlignment="Stretch"
+                            Padding="16,12"
+                            FontSize="15">
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                            <TextBlock Text="&#x25B6;" Margin="0,0,8,0"/>
+                            <TextBlock Text="Run Simulation"/>
+                        </StackPanel>
+                    </Button>
+                </Grid>
 
             </StackPanel>
         </ScrollViewer>
