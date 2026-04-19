@@ -49,6 +49,20 @@ public sealed class ExcelStateScope : IDisposable
     }
 
     /// <summary>
+    /// Restore Excel to interactive defaults after an external failure leaves global state disabled.
+    /// </summary>
+    public static void RestoreInteractiveDefaults(Application app, string phase = "Excel state recovery")
+    {
+        ArgumentNullException.ThrowIfNull(app);
+
+        RestoreDefault(phase, nameof(app.Calculation), () => app.Calculation = XlCalculation.xlCalculationAutomatic);
+        RestoreDefault(phase, nameof(app.DisplayAlerts), () => app.DisplayAlerts = true);
+        RestoreDefault(phase, nameof(app.StatusBar), () => app.StatusBar = false);
+        RestoreDefault(phase, nameof(app.EnableEvents), () => app.EnableEvents = true);
+        RestoreDefault(phase, nameof(app.ScreenUpdating), () => app.ScreenUpdating = true);
+    }
+
+    /// <summary>
     /// Apply temporary Excel settings for a protected operation.
     /// </summary>
     public void Apply(
@@ -142,6 +156,18 @@ public sealed class ExcelStateScope : IDisposable
         catch (Exception ex)
         {
             StartupDiagnostics.LogException($"{_phase}: failed to restore Excel {propertyName}.", ex);
+        }
+    }
+
+    private static void RestoreDefault(string phase, string propertyName, System.Action restore)
+    {
+        try
+        {
+            restore();
+        }
+        catch (Exception ex)
+        {
+            StartupDiagnostics.LogException($"{phase}: failed to restore Excel {propertyName}.", ex);
         }
     }
 }

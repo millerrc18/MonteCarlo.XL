@@ -4,6 +4,7 @@ using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
 using ExcelDna.Integration.CustomUI;
+using MonteCarlo.Addin.Excel;
 using MonteCarlo.Addin.Services;
 
 namespace MonteCarlo.Addin;
@@ -119,6 +120,11 @@ public class MonteCarloRibbon : ExcelRibbon
                           supertip='Restore MC.* formulas from the workbook restore map.' />
                 </group>
                 <group id='SupportGroup' label='Support'>
+                  <button id='RecoverExcelStateButton' label='Recover Excel'
+                          imageMso='RefreshAll'
+                          onAction='OnRecoverExcelState'
+                          screentip='Recover Excel State'
+                          supertip='Restore calculation, events, alerts, screen updating, and the status bar after an interrupted run or external automation failure.' />
                   <button id='OpenLogButton' label='Startup Log'
                           imageMso='FileFind' onAction='OnOpenDiagnosticsLog'
                           screentip='Open Startup Log'
@@ -368,6 +374,29 @@ public class MonteCarloRibbon : ExcelRibbon
             MessageBox.Show(
                 result.Message,
                 "Restore MC Formulas",
+                MessageBoxButtons.OK,
+                MessageBoxIcon.Information);
+        });
+    }
+
+    /// <summary>
+    /// Callback: Restore Excel interactive state after an interrupted operation.
+    /// </summary>
+    public void OnRecoverExcelState(IRibbonControl control)
+    {
+        RunRibbonAction("Recover Excel state", () =>
+        {
+            var app = (Application)ExcelDna.Integration.ExcelDnaUtil.Application;
+            ExcelStateScope.RestoreInteractiveDefaults(app, "Ribbon recovery command");
+
+            MessageBox.Show(
+                "Excel has been restored to interactive defaults:\r\n\r\n" +
+                "- Calculation: Automatic\r\n" +
+                "- Events: Enabled\r\n" +
+                "- Screen updating: Enabled\r\n" +
+                "- Alerts: Enabled\r\n" +
+                "- Status bar: Cleared",
+                "Recover Excel",
                 MessageBoxButtons.OK,
                 MessageBoxIcon.Information);
         });

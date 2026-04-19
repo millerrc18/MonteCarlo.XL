@@ -48,6 +48,7 @@ This roadmap tracks the 12 robustness and @RISK-like initiatives identified afte
 - Summary export now includes a scenario-analysis section comparing worst and best tail input means against all runs.
 - The engine now has a reusable uncertainty goal-seek solver for monotonic decision variables. It can target mean, percentile, P(output > target), or P(output <= target), and returns convergence/bracketing diagnostics for future Excel UI wiring.
 - Excel state capture/restore is centralized for simulation runs, summary/raw exports, workbook writes, highlight refresh, hidden-sheet cleanup, and cell-selection status messages. Restore failures are logged with phase-specific diagnostics.
+- The Support ribbon includes a `Recover Excel` command that restores automatic calculation, events, screen updating, alerts, and the status bar after an interrupted run or external automation failure.
 - The ribbon now includes workbook-sharing commands to replace `MC.*` formulas with current values and later restore them from a workbook custom-XML map.
 - Setup, Settings, and the ribbon now expose named run presets for Preview, Standard, Full, and Deep runs. The Run view labels the current run scale, shows live iteration/sec throughput next to elapsed and remaining time, and raw-data export warns before writing large datasets or blocks exports that exceed Excel's row limit.
 - Model Check now validates the setup profile before run, blocks missing/invalid inputs and outputs, detects duplicate/conflicting cells, validates distribution parameters, checks correlation matrix shape/validity, and warns about very small/large runs.
@@ -146,7 +147,6 @@ Open work:
 - Expand state scopes to any future COM automation paths as they are added.
 - Add an automated Excel smoke harness for success, failure, and cancel paths if CI can run desktop Excel.
 - Manually test simulation success, simulation failure, cancel, summary export, raw export, highlight refresh, and cell selection in a live workbook.
-- Add a small user-visible recovery command if Excel is left in manual calculation mode by external failures.
 
 ### 11. Function Swap / Model Sharing
 
