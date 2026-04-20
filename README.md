@@ -51,3 +51,5 @@ See `docs/LOCAL_EXCEL_DEBUG.md` for the local Excel install/debug path.
 ## User Settings
 
 Open `MonteCarlo.XL > Settings` in the ribbon/task pane to choose Light, Dark, or System theme. The settings page also includes a results-export option. By default, each export creates a new worksheet so earlier summaries remain available; turn that off if you prefer to replace the prior export sheet.
+
+`Export Summary` creates an Excel report sheet with workbook/run metadata, statistics, percentiles, target analysis, scenario analysis, assumptions, correlations, and summary charts. Enter a target threshold in the Results view before exporting if you want the report to include probability-above and probability-below calculations for that target.

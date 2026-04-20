@@ -31,7 +31,8 @@ public class ResultsExporter
         byte[]? histogramImage = null,
         byte[]? tornadoImage = null,
         bool createNewSheet = true,
-        IReadOnlyList<double>? percentiles = null)
+        IReadOnlyList<double>? percentiles = null,
+        double? targetValue = null)
     {
         var app = (Application)ExcelDnaUtil.Application;
         var workbook = app.ActiveWorkbook;
@@ -49,7 +50,11 @@ public class ResultsExporter
         int row = 1;
 
         // Title section
-        row = WriteTitleSection(sheet, row, output, result, profile);
+        row = WriteTitleSection(sheet, row, output);
+        row++;
+
+        // Report metadata
+        row = WriteReportMetadata(sheet, row, workbook, output, result, profile, outputIndex);
         row++;
 
         // Summary statistics
@@ -58,6 +63,10 @@ public class ResultsExporter
 
         // Percentiles
         row = WritePercentiles(sheet, row, stats, percentiles);
+        row++;
+
+        // Target analysis
+        row = WriteTargetAnalysis(sheet, row, stats, targetValue);
         row++;
 
         // Sensitivity
@@ -91,6 +100,9 @@ public class ResultsExporter
         else
             AddHistogramChart(sheet, stats, output.Label, imageRow, imageColumn, 500, 280);
 
+        imageRow += 18;
+
+        AddCdfChart(sheet, stats, output.Label, imageRow, imageColumn, 500, 280);
         imageRow += 18;
 
         if (tornadoImage != null)
@@ -160,11 +172,10 @@ public class ResultsExporter
 
     #region Private Helpers
 
-    private static int WriteTitleSection(Worksheet sheet, int row, SimulationOutput output,
-        SimulationResult result, SimulationProfile profile)
+    private static int WriteTitleSection(Worksheet sheet, int row, SimulationOutput output)
     {
         var titleCell = sheet.Cells[row, 1];
-        titleCell.Value2 = "MonteCarlo.XL Simulation Results";
+        titleCell.Value2 = "MonteCarlo.XL Simulation Report";
         titleCell.Font.Size = 16;
         titleCell.Font.Bold = true;
         row++;
@@ -173,9 +184,45 @@ public class ResultsExporter
         sheet.Cells[row, 1].Font.Size = 12;
         row++;
 
-        sheet.Cells[row, 1].Value2 = $"Iterations: {result.IterationCount:N0}";
-        sheet.Cells[row, 2].Value2 = $"Date: {DateTime.Now:yyyy-MM-dd}";
+        return row;
+    }
+
+    private static int WriteReportMetadata(
+        Worksheet sheet,
+        int row,
+        Workbook workbook,
+        SimulationOutput output,
+        SimulationResult result,
+        SimulationProfile profile,
+        int outputIndex)
+    {
+        WriteSectionHeader(sheet, row, "REPORT METADATA");
         row++;
+
+        WriteTableHeader(sheet, row, "Field", "Value");
+        row++;
+
+        var savedOutput = GetSavedOutput(profile, output, outputIndex);
+        var outputCell = savedOutput == null
+            ? output.Id
+            : $"{savedOutput.SheetName}!{savedOutput.CellAddress}";
+
+        row = WriteMetadataRow(sheet, row, "Generated at", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"));
+        row = WriteMetadataRow(sheet, row, "Workbook", SafeWorkbookName(workbook));
+        row = WriteMetadataRow(sheet, row, "Workbook path", SafeWorkbookFullName(workbook));
+        row = WriteMetadataRow(sheet, row, "Profile", profile.Name);
+        row = WriteMetadataRow(sheet, row, "Output", output.Label);
+        row = WriteMetadataRow(sheet, row, "Output cell", outputCell);
+        row = WriteMetadataRow(sheet, row, "Iterations", result.IterationCount.ToString("N0"));
+        row = WriteMetadataRow(sheet, row, "Elapsed time", FormatElapsed(result.ElapsedTime));
+        row = WriteMetadataRow(sheet, row, "Inputs", result.Config.Inputs.Count.ToString("N0"));
+        row = WriteMetadataRow(sheet, row, "Outputs", result.Config.Outputs.Count.ToString("N0"));
+        row = WriteMetadataRow(sheet, row, "Sampling method", result.Config.Sampling.ToString());
+        row = WriteMetadataRow(sheet, row, "Random seed", result.Config.RandomSeed?.ToString() ?? "Random each run");
+        row = WriteMetadataRow(sheet, row, "Convergence auto-stop", result.Config.AutoStopOnConvergence
+            ? $"On, minimum {result.Config.ConvergenceMinIterations:N0} iterations"
+            : "Off");
+        row = WriteMetadataRow(sheet, row, "Correlation", DescribeCorrelation(profile));
 
         return row;
     }
@@ -242,6 +289,29 @@ public class ResultsExporter
                 ApplyAltRowShading(sheet, row, 2);
             row++;
         }
+
+        return row;
+    }
+
+    private static int WriteTargetAnalysis(Worksheet sheet, int row, SummaryStatistics stats, double? targetValue)
+    {
+        WriteSectionHeader(sheet, row, "TARGET ANALYSIS");
+        row++;
+
+        if (targetValue == null)
+        {
+            sheet.Cells[row, 1].Value2 = "No target value was entered in the Results view before export.";
+            return row + 1;
+        }
+
+        WriteTableHeader(sheet, row, "Metric", "Value");
+        row++;
+
+        var target = targetValue.Value;
+        row = WriteMetricRow(sheet, row, "Target value", target, GetNumberFormat(target));
+        row = WriteMetricRow(sheet, row, "P(output <= target)", stats.ProbabilityBelow(target), "0.0%");
+        row = WriteMetricRow(sheet, row, "P(output > target)", stats.ProbabilityAbove(target), "0.0%");
+        row = WriteMetricRow(sheet, row, "Target percentile rank", stats.ProbabilityBelow(target), "0.0%");
 
         return row;
     }
@@ -499,6 +569,62 @@ public class ResultsExporter
         valueAxis.AxisTitle.Text = "Relative frequency";
     }
 
+    private static void AddCdfChart(Worksheet sheet, SummaryStatistics stats, string outputLabel,
+        int row, int col, int widthPx, int heightPx)
+    {
+        const int maxPoints = 101;
+        var sortedValues = stats.SortedValues;
+        var pointCount = Math.Min(maxPoints, sortedValues.Length);
+        if (pointCount == 0)
+            return;
+
+        const int dataRow = 1;
+        const int dataCol = 34; // AH
+
+        sheet.Cells[dataRow, dataCol].Value2 = "Output Value";
+        sheet.Cells[dataRow, dataCol + 1].Value2 = "Cumulative Probability";
+
+        var data = new object[pointCount, 2];
+        for (var i = 0; i < pointCount; i++)
+        {
+            var index = pointCount == 1
+                ? 0
+                : (int)Math.Round(i * (sortedValues.Length - 1) / (double)(pointCount - 1));
+
+            data[i, 0] = sortedValues[index];
+            data[i, 1] = (index + 1) / (double)sortedValues.Length;
+        }
+
+        var firstDataRow = dataRow + 1;
+        var lastDataRow = firstDataRow + pointCount - 1;
+        var dataRange = sheet.Range[sheet.Cells[firstDataRow, dataCol], sheet.Cells[lastDataRow, dataCol + 1]];
+        dataRange.Value2 = data;
+
+        var chartObject = AddChartObject(sheet, row, col, widthPx, heightPx);
+        var chart = chartObject.Chart;
+        chart.ChartType = ExcelChartType.xlXYScatterLinesNoMarkers;
+        chart.HasTitle = true;
+        chart.ChartTitle.Text = $"{outputLabel} Cumulative Probability";
+        chart.HasLegend = false;
+
+        var series = (Series)((ExcelSeriesCollection)chart.SeriesCollection()).NewSeries();
+        series.Name = "Cumulative Probability";
+        series.XValues = sheet.Range[sheet.Cells[firstDataRow, dataCol], sheet.Cells[lastDataRow, dataCol]];
+        series.Values = sheet.Range[sheet.Cells[firstDataRow, dataCol + 1], sheet.Cells[lastDataRow, dataCol + 1]];
+
+        var categoryAxis = (Axis)chart.Axes(ExcelAxisType.xlCategory);
+        categoryAxis.TickLabels.NumberFormat = GetNumberFormat(stats.Mean);
+        categoryAxis.HasTitle = true;
+        categoryAxis.AxisTitle.Text = "Output value";
+
+        var valueAxis = (Axis)chart.Axes(ExcelAxisType.xlValue);
+        valueAxis.MinimumScale = 0;
+        valueAxis.MaximumScale = 1;
+        valueAxis.TickLabels.NumberFormat = "0%";
+        valueAxis.HasTitle = true;
+        valueAxis.AxisTitle.Text = "Cumulative probability";
+    }
+
     private static void AddSensitivityChart(Worksheet sheet, IReadOnlyList<SensitivityResult> sensitivity,
         double baseValue, int row, int col, int widthPx, int heightPx)
     {
@@ -672,9 +798,111 @@ public class ResultsExporter
             "pert" => $"PERT({p.GetValueOrDefault("min")}, {p.GetValueOrDefault("mode")}, {p.GetValueOrDefault("max")})",
             "lognormal" => $"Lognormal(μ={p.GetValueOrDefault("mu")}, σ={p.GetValueOrDefault("sigma")})",
             "uniform" => $"Uniform({p.GetValueOrDefault("min")}, {p.GetValueOrDefault("max")})",
+            "beta" => $"Beta(α={p.GetValueOrDefault("alpha")}, β={p.GetValueOrDefault("beta")})",
+            "exponential" => $"Exponential(λ={p.GetValueOrDefault("rate")})",
+            "weibull" => $"Weibull(k={p.GetValueOrDefault("shape")}, λ={p.GetValueOrDefault("scale")})",
+            "poisson" => $"Poisson(λ={p.GetValueOrDefault("lambda")})",
+            "gamma" => $"Gamma(shape={p.GetValueOrDefault("shape")}, rate={p.GetValueOrDefault("rate")})",
+            "logistic" => $"Logistic(μ={p.GetValueOrDefault("mu")}, s={p.GetValueOrDefault("s")})",
+            "gev" => $"GEV(μ={p.GetValueOrDefault("mu")}, σ={p.GetValueOrDefault("sigma")}, ξ={p.GetValueOrDefault("xi")})",
+            "binomial" => $"Binomial(n={p.GetValueOrDefault("n")}, p={p.GetValueOrDefault("p")})",
+            "geometric" => $"Geometric(p={p.GetValueOrDefault("p")})",
             "discrete" => "Discrete(...)",
             _ => input.DistributionName
         };
+    }
+
+    private static int WriteMetricRow(Worksheet sheet, int row, string label, double value, string numberFormat)
+    {
+        sheet.Cells[row, 1].Value2 = label;
+        sheet.Cells[row, 2].Value2 = value;
+        sheet.Cells[row, 2].NumberFormat = numberFormat;
+
+        if (row % 2 == 0)
+            ApplyAltRowShading(sheet, row, 2);
+
+        return row + 1;
+    }
+
+    private static int WriteMetadataRow(Worksheet sheet, int row, string label, string value)
+    {
+        sheet.Cells[row, 1].Value2 = label;
+        sheet.Cells[row, 2].Value2 = value;
+
+        if (row % 2 == 0)
+            ApplyAltRowShading(sheet, row, 2);
+
+        return row + 1;
+    }
+
+    private static SavedOutput? GetSavedOutput(
+        SimulationProfile profile,
+        SimulationOutput output,
+        int outputIndex)
+    {
+        if (outputIndex >= 0 && outputIndex < profile.Outputs.Count)
+            return profile.Outputs[outputIndex];
+
+        return profile.Outputs.FirstOrDefault(saved =>
+            string.Equals(saved.Label, output.Label, StringComparison.OrdinalIgnoreCase));
+    }
+
+    private static string SafeWorkbookName(Workbook workbook)
+    {
+        try
+        {
+            return workbook.Name;
+        }
+        catch
+        {
+            return "Unknown workbook";
+        }
+    }
+
+    private static string SafeWorkbookFullName(Workbook workbook)
+    {
+        try
+        {
+            return workbook.FullName;
+        }
+        catch
+        {
+            return "Unsaved workbook";
+        }
+    }
+
+    private static string FormatElapsed(TimeSpan elapsed)
+    {
+        return elapsed.TotalMinutes < 1
+            ? $"{elapsed.TotalSeconds:0.00} seconds"
+            : elapsed.ToString(@"hh\:mm\:ss");
+    }
+
+    private static string DescribeCorrelation(SimulationProfile profile)
+    {
+        var matrix = profile.CorrelationMatrix;
+        if (matrix == null)
+            return "Independent inputs";
+
+        var nonZeroPairs = 0;
+        var maxAbsCorrelation = 0.0;
+        var inputCount = Math.Min(matrix.GetLength(0), matrix.GetLength(1));
+        for (var i = 0; i < inputCount; i++)
+        {
+            for (var j = i + 1; j < inputCount; j++)
+            {
+                var absCorrelation = Math.Abs(matrix[i, j]);
+                if (absCorrelation < 1e-12)
+                    continue;
+
+                nonZeroPairs++;
+                maxAbsCorrelation = Math.Max(maxAbsCorrelation, absCorrelation);
+            }
+        }
+
+        return nonZeroPairs == 0
+            ? "Matrix configured, no non-zero pairs"
+            : $"{nonZeroPairs:N0} correlated pair(s), max |ρ| {maxAbsCorrelation:0.000}";
     }
 
     private static string GetColumnLetter(int col)

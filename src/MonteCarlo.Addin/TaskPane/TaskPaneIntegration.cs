@@ -944,7 +944,8 @@ internal sealed class TaskPaneIntegration : IDisposable
                     profile,
                     outputIndex,
                     createNewSheet: userSettings.CreateNewWorksheetForExports,
-                    percentiles: userSettings.GetDefaultPercentileFractions());
+                    percentiles: userSettings.GetDefaultPercentileFractions(),
+                    targetValue: resultsViewModel.TargetValueNumeric);
 
                 StartupDiagnostics.Log($"Export summary completed for output '{selectedOutputId}'.");
             }
