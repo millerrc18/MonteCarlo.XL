@@ -63,6 +63,28 @@ public sealed class ExcelStateScope : IDisposable
     }
 
     /// <summary>
+    /// Creates a compact diagnostic snapshot of the current Excel interactive state.
+    /// </summary>
+    public static string DescribeCurrentState(Application app)
+    {
+        ArgumentNullException.ThrowIfNull(app);
+
+        var parts = new[]
+        {
+            $"Calculation={SafeRead(() => app.Calculation.ToString(), "unknown")}",
+            $"ScreenUpdating={SafeRead(() => app.ScreenUpdating.ToString(), "unknown")}",
+            $"EnableEvents={SafeRead(() => app.EnableEvents.ToString(), "unknown")}",
+            $"DisplayAlerts={SafeRead(() => app.DisplayAlerts.ToString(), "unknown")}",
+            $"StatusBar={FormatStatusBar(SafeRead<object?>(() => app.StatusBar, null))}",
+            $"Workbook={SafeRead(() => app.ActiveWorkbook?.Name ?? "none", "unknown")}",
+            $"Sheet={SafeRead(() => ((Worksheet)app.ActiveSheet).Name, "unknown")}",
+            $"Selection={SafeRead(() => ((Range)app.Selection).Address[false, false], "unknown")}"
+        };
+
+        return string.Join(", ", parts);
+    }
+
+    /// <summary>
     /// Apply temporary Excel settings for a protected operation.
     /// </summary>
     public void Apply(
@@ -170,4 +192,24 @@ public sealed class ExcelStateScope : IDisposable
             StartupDiagnostics.LogException($"{phase}: failed to restore Excel {propertyName}.", ex);
         }
     }
+
+    private static T SafeRead<T>(Func<T> read, T fallback)
+    {
+        try
+        {
+            return read();
+        }
+        catch
+        {
+            return fallback;
+        }
+    }
+
+    private static string FormatStatusBar(object? statusBar) =>
+        statusBar switch
+        {
+            null => "unknown",
+            bool value => value ? "true" : "false",
+            _ => statusBar.ToString() ?? "unknown"
+        };
 }

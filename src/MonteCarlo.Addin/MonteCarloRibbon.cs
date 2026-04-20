@@ -414,7 +414,10 @@ public class MonteCarloRibbon : ExcelRibbon
         RunRibbonAction("Recover Excel state", () =>
         {
             var app = (Application)ExcelDna.Integration.ExcelDnaUtil.Application;
+            var before = ExcelStateScope.DescribeCurrentState(app);
             ExcelStateScope.RestoreInteractiveDefaults(app, "Ribbon recovery command");
+            var after = ExcelStateScope.DescribeCurrentState(app);
+            StartupDiagnostics.Log($"Recover Excel command completed. Before: {before}. After: {after}.");
 
             MessageBox.Show(
                 "Excel has been restored to interactive defaults:\r\n\r\n" +
@@ -422,7 +425,8 @@ public class MonteCarloRibbon : ExcelRibbon
                 "- Events: Enabled\r\n" +
                 "- Screen updating: Enabled\r\n" +
                 "- Alerts: Enabled\r\n" +
-                "- Status bar: Cleared",
+                "- Status bar: Cleared\r\n\r\n" +
+                $"Current state:\r\n{after}",
                 "Recover Excel",
                 MessageBoxButtons.OK,
                 MessageBoxIcon.Information);
