@@ -51,6 +51,7 @@ public partial class SettingsView : UserControl
         FixedSeedTextBox.Text = settings.FixedRandomSeed.ToString();
         SamplingMethodComboBox.SelectedItem = settings.SamplingMethod;
         AutoStopOnConvergenceCheckBox.IsChecked = settings.AutoStopOnConvergence;
+        PauseOnPreflightWarningsCheckBox.IsChecked = settings.PauseOnPreflightWarnings;
         DefaultPercentilesTextBox.Text = settings.DefaultPercentiles;
         SettingsSavedText.Text = string.Empty;
 
@@ -153,6 +154,7 @@ public partial class SettingsView : UserControl
                 ? method
                 : UserSettings.Default.SamplingMethod,
             AutoStopOnConvergence = AutoStopOnConvergenceCheckBox.IsChecked == true,
+            PauseOnPreflightWarnings = PauseOnPreflightWarningsCheckBox.IsChecked == true,
             DefaultPercentiles = percentiles
         };
 

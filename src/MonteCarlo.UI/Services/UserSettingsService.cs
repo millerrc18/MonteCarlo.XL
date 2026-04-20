@@ -16,6 +16,7 @@ public class UserSettingsService
     private const string FixedRandomSeedValue = "FixedRandomSeed";
     private const string SamplingMethodValue = "SamplingMethod";
     private const string AutoStopOnConvergenceValue = "AutoStopOnConvergence";
+    private const string PauseOnPreflightWarningsValue = "PauseOnPreflightWarnings";
     private const string DefaultPercentilesValue = "DefaultPercentiles";
 
     public UserSettings Load()
@@ -51,6 +52,10 @@ public class UserSettingsService
                     key,
                     AutoStopOnConvergenceValue,
                     UserSettings.Default.AutoStopOnConvergence),
+                PauseOnPreflightWarnings = ReadBool(
+                    key,
+                    PauseOnPreflightWarningsValue,
+                    UserSettings.Default.PauseOnPreflightWarnings),
                 DefaultPercentiles = ReadString(
                     key,
                     DefaultPercentilesValue,
@@ -91,6 +96,10 @@ public class UserSettingsService
             key.SetValue(
                 AutoStopOnConvergenceValue,
                 settings.AutoStopOnConvergence ? 1 : 0,
+                RegistryValueKind.DWord);
+            key.SetValue(
+                PauseOnPreflightWarningsValue,
+                settings.PauseOnPreflightWarnings ? 1 : 0,
                 RegistryValueKind.DWord);
             key.SetValue(
                 DefaultPercentilesValue,
@@ -156,6 +165,7 @@ public class UserSettings
         FixedRandomSeed = 42,
         SamplingMethod = SamplingMethod.LatinHypercube,
         AutoStopOnConvergence = false,
+        PauseOnPreflightWarnings = true,
         DefaultPercentiles = "1,5,10,25,50,75,90,95,99"
     };
 
@@ -178,6 +188,9 @@ public class UserSettings
 
     /// <summary>Whether simulations should request convergence auto-stop from the engine.</summary>
     public bool AutoStopOnConvergence { get; init; }
+
+    /// <summary>Whether warnings from Model Check should pause before starting a run.</summary>
+    public bool PauseOnPreflightWarnings { get; init; }
 
     /// <summary>Comma-separated percentile list for future report-builder defaults.</summary>
     public string DefaultPercentiles { get; init; } = string.Empty;

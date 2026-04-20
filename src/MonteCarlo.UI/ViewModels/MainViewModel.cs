@@ -65,6 +65,11 @@ public partial class MainViewModel : ObservableObject
     public Func<SimulationProfile?, PreflightReport>? PreflightReportProvider { get; set; }
 
     /// <summary>
+    /// Optional host-supplied setting that controls whether warning-only reports pause a run.
+    /// </summary>
+    public Func<bool>? PauseOnPreflightWarningsProvider { get; set; }
+
+    /// <summary>
     /// Event raised when the correlation editor requests an Excel range import.
     /// </summary>
     public event Action<CorrelationViewModel>? CorrelationImportRequested;
@@ -108,7 +113,7 @@ public partial class MainViewModel : ObservableObject
     public void RequestSimulationRun()
     {
         var report = BuildPreflightReport();
-        if (report.HasErrors)
+        if (report.HasErrors || (report.WarningCount > 0 && ShouldPauseOnPreflightWarnings()))
         {
             NavigateToPreflight(report);
             return;
@@ -244,6 +249,9 @@ public partial class MainViewModel : ObservableObject
         var profile = SetupViewModel.BuildSimulationProfile();
         return PreflightReportProvider?.Invoke(profile) ?? ModelPreflightValidator.Validate(profile);
     }
+
+    private bool ShouldPauseOnPreflightWarnings() =>
+        PauseOnPreflightWarningsProvider?.Invoke() ?? false;
 
     private void NavigateToCorrelation()
     {

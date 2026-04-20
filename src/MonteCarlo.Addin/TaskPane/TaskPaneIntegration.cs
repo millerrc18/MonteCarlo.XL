@@ -72,6 +72,8 @@ internal sealed class TaskPaneIntegration : IDisposable
         _viewModel = viewModel;
         viewModel.PreflightReportProvider = profile =>
             ExcelModelPreflightValidator.Validate(profile, TryGetExcelApplication());
+        viewModel.PauseOnPreflightWarningsProvider = () =>
+            new UserSettingsService().Load().PauseOnPreflightWarnings;
         viewModel.RunSimulationRequested += OnRunSimulationRequested;
         viewModel.CancelSimulationRequested += OnCancelSimulationRequested;
         viewModel.CorrelationImportRequested += OnCorrelationImportRequested;

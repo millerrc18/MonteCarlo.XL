@@ -39,7 +39,7 @@ This roadmap tracks the 12 robustness and @RISK-like initiatives identified afte
 - Core Excel add-in workflow is implemented with Excel-DNA, WPF task pane, ribbon, packed 64-bit XLL deployment, and startup diagnostics.
 - Summary export now includes charts, input assumptions, correlation assumptions, and can create unique worksheets by default.
 - Light/dark/system theme switching is implemented and persisted.
-- Settings now persist export worksheet behavior, default iterations, random vs fixed seed defaults, sampling method, convergence auto-stop, and default percentile lists used by summary exports.
+- Settings now persist export worksheet behavior, default iterations, random vs fixed seed defaults, sampling method, convergence auto-stop, whether Model Check warnings pause a run, and default percentile lists used by summary exports.
 - The task pane supports 15 distributions; worksheet UDFs exist for all except Discrete.
 - The add-input flow includes a distribution helper with plain-English starting points for all supported distributions.
 - The add-input helper can fit candidate distributions from the currently selected numeric Excel range and apply the selected fit to the parameter editor.
@@ -51,7 +51,7 @@ This roadmap tracks the 12 robustness and @RISK-like initiatives identified afte
 - The Support ribbon includes a `Recover Excel` command that restores automatic calculation, events, screen updating, alerts, and the status bar after an interrupted run or external automation failure.
 - The ribbon now includes workbook-sharing commands to replace `MC.*` formulas with current values and later restore them from a workbook custom-XML map.
 - Setup, Settings, and the ribbon now expose named run presets for Preview, Standard, Full, and Deep runs. The Run view labels the current run scale, shows live iteration/sec throughput next to elapsed and remaining time, and raw-data export warns before writing large datasets or blocks exports that exceed Excel's row limit.
-- Model Check now validates the setup profile before run, blocks missing/invalid inputs and outputs, detects duplicate/conflicting cells, validates distribution parameters, checks correlation matrix shape/validity, warns about very small/large runs, and adds Excel-aware checks for active workbook context, calculation/events/screen updating state, workbook protection, missing sheets/cells, protected input cells, formula errors, non-numeric outputs, and static output cells.
+- Model Check now validates the setup profile before run, blocks missing/invalid inputs and outputs, detects duplicate/conflicting cells, validates distribution parameters, checks correlation matrix shape/validity, warns about very small/large runs, adds Excel-aware checks for active workbook context, calculation/events/screen updating state, workbook protection, missing sheets/cells, protected input cells, formula errors, non-numeric outputs, and static output cells, and can pause runs on warning-only reports when enabled in Settings.
 - The Setup view now includes a Model Manager section for reviewing inputs and outputs, editing through the existing add/edit forms, copying entries, jumping to cells, refreshing highlights, and bulk-clearing inputs or outputs.
 - Stop/cancel is available through task pane, keyboard shortcut, and ribbon callback.
 
@@ -63,7 +63,7 @@ Open work:
 
 - Expand Excel-interoperability checks for unsupported workbook states beyond the configured input/output cells.
 - Add manual verification scenarios for success, failure, and warning-only runs in Excel.
-- Decide whether warnings should optionally pause a run or only appear in the Model Check view.
+- Add per-workbook warning-pause overrides if global Settings is too coarse for teams.
 - Expand formula dependency checks beyond configured input/output cells if performance remains acceptable on large workbooks.
 
 ### 2. Input / Output Manager
