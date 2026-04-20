@@ -183,7 +183,7 @@
                                 Margin="0,12,0,0"
                                 Padding="0,12,0,0">
                             <StackPanel>
-                                <TextBlock Text="Fit from selected Excel data"
+                                <TextBlock Text="Fit from historical Excel data"
                                            Style="{StaticResource CaptionText}"
                                            Margin="0,0,0,6"/>
                                 <Grid Margin="0,0,0,8">
@@ -200,7 +200,7 @@
                                               FontFamily="{StaticResource DefaultFont}"
                                               FontSize="13"/>
                                     <Button Grid.Column="2"
-                                            Content="Fit Range"
+                                            Content="Select Range"
                                             Style="{StaticResource SecondaryButton}"
                                             Command="{Binding RequestDistributionFitCommand}"
                                             Padding="10,6"/>

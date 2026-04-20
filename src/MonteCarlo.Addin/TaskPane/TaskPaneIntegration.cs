@@ -404,8 +404,12 @@ internal sealed class TaskPaneIntegration : IDisposable
         try
         {
             var app = (Application)ExcelDnaUtil.Application;
-            if (app.Selection is not Range selection)
-                throw new InvalidOperationException("Select a numeric Excel range before fitting a distribution.");
+            var selection = PickDistributionFitRange(app);
+            if (selection == null)
+            {
+                Dispatch(() => _viewModel?.SetupViewModel.ShowDistributionFitError("Distribution fit cancelled."));
+                return;
+            }
 
             var values = ReadNumericValues(selection);
             if (values.Length < 3)
@@ -422,6 +426,24 @@ internal sealed class TaskPaneIntegration : IDisposable
             StartupDiagnostics.LogException("Distribution fitting failed.", ex);
             Dispatch(() => _viewModel?.SetupViewModel.ShowDistributionFitError(ex.Message));
         }
+    }
+
+    private static Range? PickDistributionFitRange(Application app)
+    {
+        using var state = ExcelStateScope.Capture(app, "Distribution fit range selection", restoreSelection: true);
+        state.Apply(statusBar: "MonteCarlo.XL: select historical numeric data for distribution fitting.");
+
+        object defaultAddress = Type.Missing;
+        if (app.Selection is Range currentSelection)
+            defaultAddress = currentSelection.Address[RowAbsolute: false, ColumnAbsolute: false];
+
+        var picked = app.InputBox(
+            Prompt: "Select the historical numeric data range to fit.",
+            Title: "Fit Distribution",
+            Default: defaultAddress,
+            Type: 8);
+
+        return picked is Range range ? range : null;
     }
 
     private void OnCorrelationImportRequested(CorrelationViewModel editor)

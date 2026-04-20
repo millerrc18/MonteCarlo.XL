@@ -324,7 +324,7 @@ public partial class SetupViewModel : ObservableObject
     [RelayCommand]
     private void RequestDistributionFit()
     {
-        DistributionFitStatus = "Reading selected Excel range...";
+        DistributionFitStatus = "Select a numeric Excel range for fitting.";
         DistributionFitRequested?.Invoke();
     }
 
