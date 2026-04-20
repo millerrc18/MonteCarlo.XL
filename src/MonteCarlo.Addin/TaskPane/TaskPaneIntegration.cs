@@ -458,7 +458,11 @@ internal sealed class TaskPaneIntegration : IDisposable
             if (inputCount < 2)
                 throw new InvalidOperationException("At least two inputs are required before importing correlations.");
 
-            var source = GetTopLeftRange(selection).Resize[inputCount, inputCount];
+            var topLeft = GetTopLeftRange(selection);
+            var labeledSource = topLeft.Resize[inputCount + 1, inputCount + 1];
+            var source = LooksLikeLabeledCorrelationMatrix(labeledSource, editor.InputLabels)
+                ? ((Range)topLeft.Offset[1, 1]).Resize[inputCount, inputCount]
+                : topLeft.Resize[inputCount, inputCount];
             var matrix = ReadCorrelationMatrix(source, inputCount);
             var address = GetRangeAddress(source);
 
@@ -482,8 +486,8 @@ internal sealed class TaskPaneIntegration : IDisposable
             if (app.Selection is not Range selection)
                 throw new InvalidOperationException("Select the top-left destination cell for the correlation matrix.");
 
-            var target = GetTopLeftRange(selection).Resize[editor.MatrixValues.GetLength(0), editor.MatrixValues.GetLength(1)];
-            WriteCorrelationMatrix(target, editor.MatrixValues);
+            var target = GetTopLeftRange(selection).Resize[editor.MatrixValues.GetLength(0) + 1, editor.MatrixValues.GetLength(1) + 1];
+            WriteCorrelationMatrix(target, editor.MatrixValues, editor.InputLabels);
             var address = GetRangeAddress(target);
 
             Dispatch(() => editor.MarkExported(address));
@@ -541,6 +545,64 @@ internal sealed class TaskPaneIntegration : IDisposable
         target.Value2 = matrix;
         target.NumberFormat = "0.00";
         target.Columns.AutoFit();
+    }
+
+    private static void WriteCorrelationMatrix(Range target, double[,] matrix, IReadOnlyList<string> inputLabels)
+    {
+        var n = matrix.GetLength(0);
+        var data = new object[n + 1, n + 1];
+        data[0, 0] = "Input";
+
+        for (var i = 0; i < n; i++)
+        {
+            var label = i < inputLabels.Count ? inputLabels[i] : $"Input {i + 1}";
+            data[0, i + 1] = label;
+            data[i + 1, 0] = label;
+        }
+
+        for (var row = 0; row < n; row++)
+        {
+            for (var col = 0; col < n; col++)
+                data[row + 1, col + 1] = matrix[row, col];
+        }
+
+        target.Value2 = data;
+        target.Rows[1].Font.Bold = true;
+        target.Columns[1].Font.Bold = true;
+
+        var dataStart = (Range)target.Cells[2, 2];
+        var dataRange = dataStart.Resize[n, n];
+        dataRange.NumberFormat = "0.00";
+        target.Columns.AutoFit();
+    }
+
+    private static bool LooksLikeLabeledCorrelationMatrix(Range range, IReadOnlyList<string> inputLabels)
+    {
+        var n = inputLabels.Count;
+        var labelSet = inputLabels.ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var labelMatches = 0;
+        var nonNumericHeaders = 0;
+
+        for (var i = 0; i < n; i++)
+        {
+            InspectHeaderCell((Range)range.Cells[1, i + 2]);
+            InspectHeaderCell((Range)range.Cells[i + 2, 1]);
+        }
+
+        return labelMatches > 0 || nonNumericHeaders >= Math.Max(2, n);
+
+        void InspectHeaderCell(Range cell)
+        {
+            var text = Convert.ToString(cell.Value2)?.Trim();
+            if (string.IsNullOrWhiteSpace(text))
+                return;
+
+            if (!TryConvertToDouble(text, out double _))
+                nonNumericHeaders++;
+
+            if (labelSet.Contains(text))
+                labelMatches++;
+        }
     }
 
     private static Range GetTopLeftRange(Range range) => (Range)range.Cells[1, 1];

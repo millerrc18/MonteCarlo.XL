@@ -76,7 +76,7 @@
                                Style="{StaticResource CaptionText}"
                                Foreground="{DynamicResource TextSecondaryBrush}">
                         <Run Text="Tip:"/> Enter Spearman rank correlations (-1 to +1).
-                        Leave as 0 for independent inputs. To import or export, select the top-left cell of an n by n numeric matrix in Excel.
+                        Leave as 0 for independent inputs. Export writes a labeled template. Import accepts either that labeled template or an n by n numeric matrix from the selected top-left cell.
                     </TextBlock>
                 </Border>
 

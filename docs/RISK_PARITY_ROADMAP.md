@@ -43,7 +43,7 @@ This roadmap tracks the 12 robustness and @RISK-like initiatives identified afte
 - The task pane supports 15 distributions; worksheet UDFs exist for all except Discrete.
 - The add-input flow includes a guided distribution helper with category, complexity, and search filters plus plain-English starting points for all supported distributions.
 - The add-input helper can open a dedicated Excel range picker, fit candidate distributions from the selected numeric data, and apply the selected fit to the parameter editor.
-- Rank correlation engine and matrix editor exist. The editor is reachable from Setup and ribbon, imports/exports n by n Excel ranges, warns about high/fragile matrices, clearly shows the independent-input state, persists workbook correlation config, and passes correlations into simulation runs.
+- Rank correlation engine and matrix editor exist. The editor is reachable from Setup and ribbon, imports numeric n by n ranges, exports and re-imports labeled templates, warns about high/fragile matrices, clearly shows the independent-input state, persists workbook correlation config, and passes correlations into simulation runs.
 - Results now include a Scenario Analysis card for worst-tail, best-tail, at-or-below-target, and above-target filters. It shows conditional input summaries so users can see which assumptions changed most in the selected cases.
 - Summary export now includes a scenario-analysis section comparing worst and best tail input means against all runs.
 - The engine now has a reusable uncertainty goal-seek solver for monotonic decision variables. It can target mean, percentile, P(output > target), or P(output <= target), and returns convergence/bracketing diagnostics for future Excel UI wiring.
@@ -105,7 +105,6 @@ Open work:
 
 Open work:
 
-- Add labels to matrix export/import templates so users can round-trip named rows and columns, not only numeric n by n ranges.
 - Add richer PSD diagnostics, such as exact conflicting pairs and recommended lower correlations.
 - Add manual Excel verification for import/export, persistence after reopening, and a correlated sample smoke test.
 
