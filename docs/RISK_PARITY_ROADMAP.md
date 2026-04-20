@@ -51,7 +51,7 @@ This roadmap tracks the 12 robustness and @RISK-like initiatives identified afte
 - The Support ribbon includes a `Recover Excel` command that restores automatic calculation, events, screen updating, alerts, and the status bar after an interrupted run or external automation failure.
 - The ribbon now includes workbook-sharing commands to replace `MC.*` formulas with current values and later restore them from a workbook custom-XML map.
 - Setup, Settings, and the ribbon now expose named run presets for Preview, Standard, Full, and Deep runs. The Run view labels the current run scale, shows live iteration/sec throughput next to elapsed and remaining time, and raw-data export warns before writing large datasets or blocks exports that exceed Excel's row limit.
-- Model Check now validates the setup profile before run, blocks missing/invalid inputs and outputs, detects duplicate/conflicting cells, validates distribution parameters, checks correlation matrix shape/validity, and warns about very small/large runs.
+- Model Check now validates the setup profile before run, blocks missing/invalid inputs and outputs, detects duplicate/conflicting cells, validates distribution parameters, checks correlation matrix shape/validity, warns about very small/large runs, and adds Excel-aware checks for active workbook context, calculation/events/screen updating state, workbook protection, missing sheets/cells, protected input cells, formula errors, non-numeric outputs, and static output cells.
 - The Setup view now includes a Model Manager section for reviewing inputs and outputs, editing through the existing add/edit forms, copying entries, jumping to cells, refreshing highlights, and bulk-clearing inputs or outputs.
 - Stop/cancel is available through task pane, keyboard shortcut, and ribbon callback.
 
@@ -61,10 +61,10 @@ This roadmap tracks the 12 robustness and @RISK-like initiatives identified afte
 
 Open work:
 
-- Add Excel-interoperability checks for broken formulas, non-numeric output cells, worksheet/workbook protection, workbook calculation state, and unsupported workbook state.
-- Add active workbook/sheet context to the preflight report.
+- Expand Excel-interoperability checks for unsupported workbook states beyond the configured input/output cells.
 - Add manual verification scenarios for success, failure, and warning-only runs in Excel.
 - Decide whether warnings should optionally pause a run or only appear in the Model Check view.
+- Expand formula dependency checks beyond configured input/output cells if performance remains acceptable on large workbooks.
 
 ### 2. Input / Output Manager
 

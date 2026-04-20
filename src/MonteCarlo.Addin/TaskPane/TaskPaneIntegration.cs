@@ -70,6 +70,8 @@ internal sealed class TaskPaneIntegration : IDisposable
             return;
 
         _viewModel = viewModel;
+        viewModel.PreflightReportProvider = profile =>
+            ExcelModelPreflightValidator.Validate(profile, TryGetExcelApplication());
         viewModel.RunSimulationRequested += OnRunSimulationRequested;
         viewModel.CancelSimulationRequested += OnCancelSimulationRequested;
         viewModel.CorrelationImportRequested += OnCorrelationImportRequested;
@@ -139,6 +141,20 @@ internal sealed class TaskPaneIntegration : IDisposable
     {
         EnsureWired();
         Dispatch(() => _viewModel?.ShowPreflightView());
+    }
+
+    private Application? TryGetExcelApplication()
+    {
+        try
+        {
+            _excelApp ??= (Application)ExcelDnaUtil.Application;
+            return _excelApp;
+        }
+        catch (Exception ex)
+        {
+            StartupDiagnostics.LogException("Failed to get Excel application for model preflight.", ex);
+            return null;
+        }
     }
 
     /// <summary>

@@ -60,6 +60,11 @@ public partial class MainViewModel : ObservableObject
     public event EventHandler? CancelSimulationRequested;
 
     /// <summary>
+    /// Optional host-supplied preflight provider. Excel add-in hosts can append workbook/cell checks.
+    /// </summary>
+    public Func<SimulationProfile?, PreflightReport>? PreflightReportProvider { get; set; }
+
+    /// <summary>
     /// Event raised when the correlation editor requests an Excel range import.
     /// </summary>
     public event Action<CorrelationViewModel>? CorrelationImportRequested;
@@ -102,7 +107,7 @@ public partial class MainViewModel : ObservableObject
     /// </summary>
     public void RequestSimulationRun()
     {
-        var report = ModelPreflightValidator.Validate(SetupViewModel.BuildSimulationProfile());
+        var report = BuildPreflightReport();
         if (report.HasErrors)
         {
             NavigateToPreflight(report);
@@ -143,7 +148,7 @@ public partial class MainViewModel : ObservableObject
     /// Public navigation entry point for host integrations such as the Excel ribbon.
     /// </summary>
     public void ShowPreflightView() =>
-        NavigateToPreflight(ModelPreflightValidator.Validate(SetupViewModel.BuildSimulationProfile()));
+        NavigateToPreflight(BuildPreflightReport());
 
     /// <summary>
     /// Called by the Addin layer when simulation progress is reported.
@@ -232,6 +237,12 @@ public partial class MainViewModel : ObservableObject
 
         CurrentView = PreflightView;
         CurrentViewName = "Model Check";
+    }
+
+    private PreflightReport BuildPreflightReport()
+    {
+        var profile = SetupViewModel.BuildSimulationProfile();
+        return PreflightReportProvider?.Invoke(profile) ?? ModelPreflightValidator.Validate(profile);
     }
 
     private void NavigateToCorrelation()
