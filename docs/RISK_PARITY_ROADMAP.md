@@ -49,7 +49,7 @@ This roadmap tracks the 12 robustness and @RISK-like initiatives identified afte
 - Goal Seek now has a ribbon workflow for monotonic decision cells: select a deterministic decision cell, choose an output, probability target, bounds, run budget, and tolerance, then MonteCarlo.XL reruns simulations, restores the decision cell, and writes a solver-history report sheet. The engine solver also supports mean, percentile, P(output > target), and P(output <= target) metrics for future UI expansion.
 - Excel state capture/restore is centralized for simulation runs, goal seek trials, summary/raw exports, workbook writes, highlight refresh, hidden-sheet cleanup, and cell-selection status messages. Restore failures are logged with phase-specific diagnostics.
 - The Support ribbon includes a `Recover Excel` command that restores automatic calculation, events, screen updating, alerts, and the status bar after an interrupted run or external automation failure, then logs before/after Excel state snapshots.
-- The ribbon now includes workbook-sharing commands to replace `MC.*` formulas with current values and later restore them from a workbook custom-XML map.
+- The ribbon now includes workbook-sharing commands to save a separate shareable value-only copy, replace `MC.*` formulas with current values in the active workbook, and later restore them from a workbook custom-XML map.
 - Setup, Settings, and the ribbon now expose named run presets for Preview, Standard, Full, and Deep runs. The Run view labels the current run scale, shows live iteration/sec throughput next to elapsed and remaining time, and raw-data export warns before writing large datasets or blocks exports that exceed Excel's row limit.
 - Model Check now validates the setup profile before run, blocks missing/invalid inputs and outputs, detects duplicate/conflicting cells, validates distribution parameters, checks correlation matrix shape/validity, warns about very small/large runs, adds Excel-aware checks for active workbook context, calculation/events/screen updating state, workbook protection, missing sheets/cells, protected input cells, formula errors, non-numeric outputs, and static output cells, and can pause runs on warning-only reports when enabled in Settings.
 - The Setup view now includes a Model Manager section for reviewing inputs and outputs, editing through the existing add/edit forms, copying entries, jumping to cells, refreshing highlights, and bulk-clearing inputs or outputs.
@@ -148,7 +148,6 @@ Open work:
 
 Open work:
 
-- Add a one-click "Save shareable copy" workflow so the user's working model remains formula-backed.
 - Add a catalog preview before replacement so users can review affected sheets and cells.
 - Add conflict handling when cells have changed after replacement but before restore.
 - Manually verify replace/restore across multiple worksheets, protected sheets, and workbooks without the add-in installed.

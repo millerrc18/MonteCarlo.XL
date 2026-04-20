@@ -92,11 +92,12 @@ When Excel is not simulating, these formulas return an expected or representativ
 
 If someone needs to open the workbook without MonteCarlo.XL:
 
-1. Save a normal backup copy first.
-2. Open the `MonteCarlo.XL` ribbon tab.
-3. Click `Replace MC Formulas` to replace `MC.*` formulas with their current values.
-4. Send the value-only workbook.
-5. Click `Restore MC Formulas` later to restore the formulas from the workbook restore map.
+1. Open the `MonteCarlo.XL` ribbon tab.
+2. Click `Save Shareable Copy`.
+3. Choose a destination path.
+4. Send the value-only copy.
+
+The active workbook stays formula-backed. The older `Replace MC Formulas` and `Restore MC Formulas` commands are still available when you intentionally want to flatten and later restore the current workbook.
 
 ## 7. Troubleshooting
 

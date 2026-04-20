@@ -113,6 +113,11 @@ public class MonteCarloRibbon : ExcelRibbon
                           supertip='Open the results dashboard.' />
                 </group>
                 <group id='SharingGroup' label='Sharing'>
+                  <button id='SaveShareableCopyButton' label='Save Shareable Copy'
+                          imageMso='FileSaveAsExcelXlsx'
+                          onAction='OnSaveShareableCopy'
+                          screentip='Save Shareable Copy'
+                          supertip='Save a separate workbook copy with MC.* formulas replaced by current values. The active workbook remains formula-backed.' />
                   <button id='ReplaceMcFormulasButton' label='Replace MC Formulas'
                           imageMso='PasteValues'
                           onAction='OnReplaceMcFormulas'
@@ -351,6 +356,22 @@ public class MonteCarloRibbon : ExcelRibbon
         {
             ShowTaskPaneAndWire();
             AddIn.Integration?.ExportCurrentRawData();
+        });
+    }
+
+    /// <summary>
+    /// Callback: Save a shareable workbook copy with MC formulas replaced.
+    /// </summary>
+    public void OnSaveShareableCopy(IRibbonControl control)
+    {
+        RunRibbonAction("Save shareable copy", () =>
+        {
+            var result = new FunctionSwapService().SaveShareableCopy();
+            MessageBox.Show(
+                result.Message,
+                "Save Shareable Copy",
+                MessageBoxButtons.OK,
+                MessageBoxIcon.Information);
         });
     }
 

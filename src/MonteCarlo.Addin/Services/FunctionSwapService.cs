@@ -1,9 +1,11 @@
 using System.Text.Json;
 using System.Xml;
+using System.IO;
 using ExcelDna.Integration;
 using MonteCarlo.Addin.Excel;
 using MonteCarlo.Addin.UDF;
 using Microsoft.Office.Interop.Excel;
+using WinForms = System.Windows.Forms;
 
 namespace MonteCarlo.Addin.Services;
 
@@ -102,6 +104,76 @@ public sealed class FunctionSwapService
             RemoveExistingSnapshot(workbook);
 
         return new FunctionSwapResult(restored, $"Restored {restored:N0} MC.* formulas.");
+    }
+
+    /// <summary>
+    /// Save a separate workbook copy with MC.* formulas replaced by current values.
+    /// The active workbook is left unchanged and formula-backed.
+    /// </summary>
+    public FunctionSwapResult SaveShareableCopy()
+    {
+        var app = (Application)ExcelDnaUtil.Application;
+        var sourceWorkbook = GetActiveWorkbook();
+
+        using var dialog = new WinForms.SaveFileDialog
+        {
+            Title = "Save Shareable MonteCarlo.XL Copy",
+            Filter = "Excel Workbook (*.xlsx)|*.xlsx|Macro-Enabled Workbook (*.xlsm)|*.xlsm",
+            FileName = GetDefaultShareFileName(sourceWorkbook),
+            InitialDirectory = GetDefaultShareDirectory(sourceWorkbook),
+            AddExtension = true,
+            OverwritePrompt = true
+        };
+
+        if (dialog.ShowDialog() != WinForms.DialogResult.OK)
+            return new FunctionSwapResult(0, "Shareable copy cancelled.");
+
+        var destinationPath = dialog.FileName;
+        var sourceExtension = Path.GetExtension(sourceWorkbook.Name);
+        if (string.IsNullOrWhiteSpace(sourceExtension))
+            sourceExtension = ".xlsx";
+
+        var tempPath = Path.Combine(
+            Path.GetTempPath(),
+            $"mcxl-share-{Guid.NewGuid():N}{sourceExtension}");
+
+        Workbook? copyWorkbook = null;
+        using var excelState = ExcelStateScope.Capture(app, "Save shareable copy", restoreSelection: true);
+
+        try
+        {
+            excelState.Apply(
+                screenUpdating: false,
+                displayAlerts: false,
+                calculation: XlCalculation.xlCalculationManual,
+                statusBar: "MonteCarlo.XL: saving shareable copy...");
+
+            sourceWorkbook.SaveCopyAs(tempPath);
+            copyWorkbook = app.Workbooks.Open(tempPath, UpdateLinks: 0, ReadOnly: false);
+
+            var captured = CaptureWorkbook(copyWorkbook);
+            foreach (var formula in captured)
+            {
+                var range = GetRange(copyWorkbook, formula.Entry);
+                range.Value2 = formula.ReplacementValue;
+            }
+
+            RemoveExistingSnapshot(copyWorkbook);
+            copyWorkbook.SaveAs(
+                Filename: destinationPath,
+                FileFormat: GetFileFormat(destinationPath),
+                ConflictResolution: XlSaveConflictResolution.xlLocalSessionChanges);
+
+            return new FunctionSwapResult(
+                captured.Count,
+                $"Saved shareable copy with {captured.Count:N0} MC.* formulas replaced:\r\n{destinationPath}");
+        }
+        finally
+        {
+            try { copyWorkbook?.Close(SaveChanges: false); } catch { }
+            try { sourceWorkbook.Activate(); } catch { }
+            try { if (File.Exists(tempPath)) File.Delete(tempPath); } catch { }
+        }
     }
 
     private static Workbook GetActiveWorkbook()
@@ -241,6 +313,29 @@ public sealed class FunctionSwapService
     }
 
     private sealed record CapturedFormula(FormulaSwapEntry Entry, object ReplacementValue);
+
+    private static string GetDefaultShareFileName(Workbook workbook)
+    {
+        var baseName = Path.GetFileNameWithoutExtension(workbook.Name);
+        return $"{baseName} - shareable.xlsx";
+    }
+
+    private static string GetDefaultShareDirectory(Workbook workbook)
+    {
+        try
+        {
+            if (!string.IsNullOrWhiteSpace(workbook.Path))
+                return workbook.Path;
+        }
+        catch { }
+
+        return Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+    }
+
+    private static XlFileFormat GetFileFormat(string path) =>
+        string.Equals(Path.GetExtension(path), ".xlsm", StringComparison.OrdinalIgnoreCase)
+            ? XlFileFormat.xlOpenXMLWorkbookMacroEnabled
+            : XlFileFormat.xlOpenXMLWorkbook;
 }
 
 /// <summary>
