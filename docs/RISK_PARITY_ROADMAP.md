@@ -45,7 +45,7 @@ This roadmap tracks the 12 robustness and @RISK-like initiatives identified afte
 - The add-input helper can open a dedicated Excel range picker, fit candidate distributions from the selected numeric data, and apply the selected fit to the parameter editor.
 - Rank correlation engine and matrix editor exist. The editor is reachable from Setup and ribbon, imports numeric n by n ranges, exports and re-imports labeled templates, warns about high/fragile matrices, clearly shows the independent-input state, persists workbook correlation config, and passes correlations into simulation runs.
 - Results now include a Scenario Analysis card for worst-tail, best-tail, at-or-below-target, and above-target filters. It shows conditional input summaries so users can see which assumptions changed most in the selected cases.
-- Summary export now includes a scenario-analysis section comparing worst and best tail input means against all runs and carries the Results view target threshold into exported target probabilities.
+- Summary export now includes scenario-analysis sections comparing worst, best, and target-hit input means against all runs when a target threshold is entered before export.
 - The engine now has a reusable uncertainty goal-seek solver for monotonic decision variables. It can target mean, percentile, P(output > target), or P(output <= target), and returns convergence/bracketing diagnostics for future Excel UI wiring.
 - Excel state capture/restore is centralized for simulation runs, summary/raw exports, workbook writes, highlight refresh, hidden-sheet cleanup, and cell-selection status messages. Restore failures are logged with phase-specific diagnostics.
 - The Support ribbon includes a `Recover Excel` command that restores automatic calculation, events, screen updating, alerts, and the status bar after an interrupted run or external automation failure.
@@ -123,7 +123,6 @@ Open work:
 
 - Add a dedicated stress-run setup where selected inputs can be fixed, shifted, or range-scaled for a second simulation.
 - Compare baseline and stressed output distributions side by side.
-- Export target-hit scenario summaries, not only worst/best tail summaries.
 - Add richer conditional summaries such as median/range shifts, top changed outputs, and optional full scenario data export.
 - Manually verify worst/best/target-hit filtering in Excel against a known workbook.
 

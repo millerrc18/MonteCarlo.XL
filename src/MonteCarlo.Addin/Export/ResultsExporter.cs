@@ -77,7 +77,7 @@ public class ResultsExporter
         }
 
         // Scenario analysis
-        row = WriteScenarioAnalysis(sheet, row, result, outputIndex);
+        row = WriteScenarioAnalysis(sheet, row, result, outputIndex, targetValue);
         row++;
 
         // Input assumptions
@@ -348,26 +348,50 @@ public class ResultsExporter
         return row;
     }
 
-    private static int WriteScenarioAnalysis(Worksheet sheet, int row, SimulationResult result, int outputIndex)
+    private static int WriteScenarioAnalysis(
+        Worksheet sheet,
+        int row,
+        SimulationResult result,
+        int outputIndex,
+        double? targetValue)
     {
         WriteSectionHeader(sheet, row, "SCENARIO ANALYSIS");
         row++;
 
-        sheet.Cells[row, 1].Value2 = "Tail cases compare input means inside the scenario against all simulation runs.";
+        sheet.Cells[row, 1].Value2 = targetValue == null
+            ? "Tail cases compare input means inside the scenario against all simulation runs. Enter a target before export to include target-hit cases."
+            : "Tail and target-hit cases compare input means inside the scenario against all simulation runs.";
         row++;
 
         WriteTableHeader(sheet, row, "Scenario", "Input", "Scenario Mean", "Delta vs All");
         row++;
 
-        var scenarios = new[]
+        var scenarios = new List<ScenarioAnalysisResult>
         {
             ScenarioAnalysis.Analyze(result, outputIndex, ScenarioFilterMode.WorstPercent, 0.10),
             ScenarioAnalysis.Analyze(result, outputIndex, ScenarioFilterMode.BestPercent, 0.10)
         };
 
+        if (targetValue is double target)
+        {
+            scenarios.Add(ScenarioAnalysis.Analyze(result, outputIndex, ScenarioFilterMode.AtOrBelowTarget, target));
+            scenarios.Add(ScenarioAnalysis.Analyze(result, outputIndex, ScenarioFilterMode.AboveTarget, target));
+        }
+
         foreach (var scenario in scenarios)
         {
-            foreach (var input in scenario.InputSummaries.Take(5))
+            var topInputs = scenario.InputSummaries.Take(5).ToList();
+            if (topInputs.Count == 0)
+            {
+                sheet.Cells[row, 1].Value2 = $"{scenario.Description} ({scenario.MatchedFraction:0.0%})";
+                sheet.Cells[row, 2].Value2 = "No matching runs";
+                sheet.Cells[row, 3].Value2 = string.Empty;
+                sheet.Cells[row, 4].Value2 = string.Empty;
+                row++;
+                continue;
+            }
+
+            foreach (var input in topInputs)
             {
                 sheet.Cells[row, 1].Value2 =
                     $"{scenario.Description} ({scenario.MatchedFraction:0.0%})";
