@@ -144,6 +144,11 @@ public class MonteCarloRibbon : ExcelRibbon
                           onAction='OnOpenDiagnosticsFolder'
                           screentip='Open Log Folder'
                           supertip='Open the local MonteCarlo.XL diagnostics folder.' />
+                  <button id='RunBenchmarkButton' label='Benchmark'
+                          imageMso='CalculateNow'
+                          onAction='OnRunBenchmark'
+                          screentip='Run Benchmark'
+                          supertip='Measure workbook recalculation time and raw simulation engine throughput, then write a benchmark sheet.' />
                   <button id='AboutButton' label='About'
                           imageMso='Info' onAction='OnAbout'
                           screentip='About MonteCarlo.XL'
@@ -487,6 +492,42 @@ public class MonteCarloRibbon : ExcelRibbon
                 UseShellExecute = true
             });
         });
+    }
+
+    /// <summary>
+    /// Callback: Run local performance diagnostics.
+    /// </summary>
+    public async void OnRunBenchmark(IRibbonControl control)
+    {
+        try
+        {
+            var confirm = MessageBox.Show(
+                "Run performance diagnostics now?\r\n\r\n" +
+                "MonteCarlo.XL will recalculate the active workbook and run a synthetic engine benchmark, then add a benchmark sheet.",
+                "MonteCarlo.XL Benchmark",
+                MessageBoxButtons.YesNo,
+                MessageBoxIcon.Question);
+
+            if (confirm != DialogResult.Yes)
+                return;
+
+            await new PerformanceBenchmarkService().RunAsync();
+
+            MessageBox.Show(
+                "Benchmark complete. A benchmark sheet was added to the active workbook.",
+                "MonteCarlo.XL Benchmark",
+                MessageBoxButtons.OK,
+                MessageBoxIcon.Information);
+        }
+        catch (Exception ex)
+        {
+            StartupDiagnostics.LogException("Benchmark failed.", ex);
+            MessageBox.Show(
+                $"Benchmark failed:\r\n\r\n{ex.GetType().Name}: {ex.Message}\r\n\r\nDiagnostics: {StartupDiagnostics.LogPath}",
+                "MonteCarlo.XL Error",
+                MessageBoxButtons.OK,
+                MessageBoxIcon.Error);
+        }
     }
 
     /// <summary>
