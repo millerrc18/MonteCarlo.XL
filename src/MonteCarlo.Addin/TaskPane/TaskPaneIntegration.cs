@@ -145,6 +145,52 @@ internal sealed class TaskPaneIntegration : IDisposable
         Dispatch(() => _viewModel?.ShowPreflightView());
     }
 
+    /// <summary>
+    /// Starts the Goal Seek under uncertainty workflow from host UI such as the Excel ribbon.
+    /// </summary>
+    public async Task RunGoalSeekFromRibbonAsync()
+    {
+        EnsureWired();
+        var viewModel = _viewModel;
+        if (viewModel == null || _isRunning)
+            return;
+
+        _isRunning = true;
+        _errorRaisedDuringRun = false;
+
+        try
+        {
+            var userSettings = new UserSettingsService().Load();
+            var runSeed = viewModel.SetupViewModel.IsSeedLocked
+                ? viewModel.SetupViewModel.RandomSeed
+                : userSettings.SeedMode == SeedMode.Fixed
+                    ? userSettings.FixedRandomSeed
+                    : null;
+
+            SyncManagersFromSetup(viewModel.SetupViewModel, clearExistingHighlights: true);
+            SaveCurrentProfile();
+
+            var service = new GoalSeekWorkflowService();
+            await service.RunAsync(
+                _orchestrator,
+                _inputManager.GetAllInputs(),
+                _outputManager.GetAllOutputs(),
+                viewModel.SetupViewModel.CorrelationMatrixValues,
+                userSettings.SamplingMethod,
+                runSeed);
+        }
+        catch (Exception ex)
+        {
+            StartupDiagnostics.LogException("Goal Seek workflow failed.", ex);
+            Dispatch(() => viewModel.OnSimulationError(ex));
+        }
+        finally
+        {
+            _isRunning = false;
+            _errorRaisedDuringRun = false;
+        }
+    }
+
     private Application? TryGetExcelApplication()
     {
         try

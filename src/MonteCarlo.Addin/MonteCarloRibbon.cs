@@ -75,6 +75,11 @@ public class MonteCarloRibbon : ExcelRibbon
                           imageMso='CancelRequest' onAction='OnStopSimulation'
                           screentip='Stop Simulation'
                           supertip='Cancel the currently running simulation.' />
+                  <button id='GoalSeekButton' label='Goal Seek'
+                          imageMso='WhatIfAnalysisMenu'
+                          onAction='OnGoalSeek'
+                          screentip='Goal Seek Under Uncertainty'
+                          supertip='Find the decision-cell value needed to reach a probability target by rerunning simulations across a bound.' />
                   <menu id='IterationPresetMenu' label='Iterations'
                         imageMso='CalculateNow'
                         screentip='Iteration Presets'
@@ -171,6 +176,28 @@ public class MonteCarloRibbon : ExcelRibbon
     public void OnStopSimulation(IRibbonControl control)
     {
         RunRibbonAction("Stop simulation", () => AddIn.Orchestrator?.CancelSimulation());
+    }
+
+    /// <summary>
+    /// Callback: Run goal seek under uncertainty.
+    /// </summary>
+    public async void OnGoalSeek(IRibbonControl control)
+    {
+        try
+        {
+            ShowTaskPaneAndWire();
+            if (AddIn.Integration != null)
+                await AddIn.Integration.RunGoalSeekFromRibbonAsync();
+        }
+        catch (Exception ex)
+        {
+            StartupDiagnostics.LogException("Goal Seek failed.", ex);
+            MessageBox.Show(
+                $"Goal Seek failed:\r\n\r\n{ex.GetType().Name}: {ex.Message}\r\n\r\nDiagnostics: {StartupDiagnostics.LogPath}",
+                "MonteCarlo.XL Error",
+                MessageBoxButtons.OK,
+                MessageBoxIcon.Error);
+        }
     }
 
     /// <summary>

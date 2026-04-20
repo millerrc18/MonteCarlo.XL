@@ -64,7 +64,18 @@ Raw-data export can create very large worksheets. MonteCarlo.XL warns before lar
 
 Settings also lets you choose defaults for new workbook setups: run preset or custom iteration count, random versus fixed seed, sampling method, convergence auto-stop, whether warning-only Model Check reports pause before a run, and the percentile list used in summary exports.
 
-## 5. Add Monte Carlo Formulas To Your Own Workbook
+## 5. Goal Seek Under Uncertainty
+
+Use `Goal Seek` when you want to find the deterministic decision value needed to reach a probability target.
+
+1. Select a deterministic decision cell in Excel. Do not select a Monte Carlo input cell.
+2. Click `Goal Seek` on the `MonteCarlo.XL` ribbon.
+3. Choose the output, lower and upper decision bounds, output target, desired probability, iterations per trial, and solver tolerance.
+4. Run the workflow. MonteCarlo.XL tests decision values across the bounds, restores the original decision cell value, and adds a `MC Goal Seek` report sheet with the solver history.
+
+The current workflow targets `P(output > target)`. Mean, percentile, and `P(output <= target)` targets are supported in the engine and are tracked in the roadmap for a richer task-pane UI.
+
+## 6. Add Monte Carlo Formulas To Your Own Workbook
 
 Use `MC.*` formulas where your deterministic model has uncertain assumptions. For example:
 
