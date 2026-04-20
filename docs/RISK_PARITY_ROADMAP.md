@@ -41,7 +41,7 @@ This roadmap tracks the 12 robustness and @RISK-like initiatives identified afte
 - Light/dark/system theme switching is implemented and persisted.
 - Settings now persist export worksheet behavior, default iterations, random vs fixed seed defaults, sampling method, convergence auto-stop, whether Model Check warnings pause a run, and default percentile lists used by summary exports.
 - The task pane supports 15 distributions; worksheet UDFs exist for all except Discrete.
-- The add-input flow includes a distribution helper with plain-English starting points for all supported distributions.
+- The add-input flow includes a guided distribution helper with category, complexity, and search filters plus plain-English starting points for all supported distributions.
 - The add-input helper can fit candidate distributions from the currently selected numeric Excel range and apply the selected fit to the parameter editor.
 - Rank correlation engine and matrix editor exist. The editor is reachable from Setup and ribbon, imports/exports n by n Excel ranges, warns about high/fragile matrices, clearly shows the independent-input state, persists workbook correlation config, and passes correlations into simulation runs.
 - Results now include a Scenario Analysis card for worst-tail, best-tail, at-or-below-target, and above-target filters. It shows conditional input summaries so users can see which assumptions changed most in the selected cases.
@@ -88,8 +88,8 @@ Open work:
 
 Open work:
 
-- Replace the current one-step suggestion list with a multi-question wizard.
-- Add richer category metadata, search, and filtering.
+- Expand the current category/search helper into a deeper multi-question wizard with branching prompts.
+- Add richer category metadata and filtering as more model archetypes emerge from manual testing.
 - Link each suggestion to the full `docs/DISTRIBUTION_GUIDE.md` explanation.
 - Add parameter guardrails that explain invalid parameter combinations before preview creation fails.
 

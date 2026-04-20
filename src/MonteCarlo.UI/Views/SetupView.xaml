@@ -118,13 +118,53 @@
                                    Foreground="{DynamicResource TextTertiaryBrush}"
                                    FontSize="11"
                                    Margin="0,0,0,8"/>
-                        <ComboBox ItemsSource="{Binding DistributionSuggestions}"
+
+                        <TextBlock Text="What kind of uncertainty is this?"
+                                   Style="{StaticResource CaptionText}"
+                                   Margin="0,0,0,4"/>
+                        <Grid Margin="0,0,0,8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="8"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <ComboBox Grid.Column="0"
+                                      ItemsSource="{Binding DistributionSuggestionCategories}"
+                                      SelectedItem="{Binding SelectedDistributionSuggestionCategory}"
+                                      Padding="8,6"
+                                      FontFamily="{StaticResource DefaultFont}"
+                                      FontSize="13"/>
+                            <ComboBox Grid.Column="2"
+                                      ItemsSource="{Binding DistributionSuggestionComplexities}"
+                                      SelectedItem="{Binding SelectedDistributionSuggestionComplexity}"
+                                      Padding="8,6"
+                                      FontFamily="{StaticResource DefaultFont}"
+                                      FontSize="13"/>
+                        </Grid>
+
+                        <TextBlock Text="Search" Style="{StaticResource CaptionText}" Margin="0,0,0,4"/>
+                        <TextBox Text="{Binding DistributionSuggestionSearchText, UpdateSourceTrigger=PropertyChanged}"
+                                 Margin="0,0,0,8"
+                                 Padding="8,6"
+                                 FontFamily="{StaticResource DefaultFont}"
+                                 FontSize="13"
+                                 BorderBrush="{DynamicResource BorderBrush}"
+                                 BorderThickness="1"/>
+
+                        <ComboBox ItemsSource="{Binding FilteredDistributionSuggestions}"
                                   SelectedItem="{Binding SelectedDistributionSuggestion}"
                                   DisplayMemberPath="DisplayName"
-                                  Margin="0,0,0,8"
+                                  Margin="0,0,0,4"
                                   Padding="8,6"
                                   FontFamily="{StaticResource DefaultFont}"
                                   FontSize="13"/>
+                        <TextBlock Text="{Binding DistributionSuggestionStatus}"
+                                   Style="{StaticResource CaptionText}"
+                                   Margin="0,0,0,8"/>
+                        <TextBlock Text="{Binding SelectedDistributionSuggestion.HelperSummary}"
+                                   Style="{StaticResource CaptionText}"
+                                   FontWeight="SemiBold"
+                                   Margin="0,0,0,4"/>
                         <TextBlock Text="{Binding SelectedDistributionSuggestion.UseCase}"
                                    Style="{StaticResource BodyText}"
                                    TextWrapping="Wrap"

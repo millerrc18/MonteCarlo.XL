@@ -147,6 +147,26 @@ public partial class SetupViewModel : ObservableObject
     [ObservableProperty]
     private DistributionSuggestionViewModel? _selectedDistributionSuggestion;
 
+    /// <summary>Filtered distribution suggestions shown in the helper.</summary>
+    [ObservableProperty]
+    private ObservableCollection<DistributionSuggestionViewModel> _filteredDistributionSuggestions = new();
+
+    /// <summary>Selected helper category for narrowing distribution suggestions.</summary>
+    [ObservableProperty]
+    private string _selectedDistributionSuggestionCategory = "All";
+
+    /// <summary>Selected helper complexity for narrowing distribution suggestions.</summary>
+    [ObservableProperty]
+    private string _selectedDistributionSuggestionComplexity = "All";
+
+    /// <summary>Search text for narrowing distribution suggestions.</summary>
+    [ObservableProperty]
+    private string _distributionSuggestionSearchText = string.Empty;
+
+    /// <summary>Status text for the helper filter results.</summary>
+    [ObservableProperty]
+    private string _distributionSuggestionStatus = string.Empty;
+
     /// <summary>Distribution fits computed from a selected Excel range.</summary>
     [ObservableProperty]
     private ObservableCollection<DistributionFitResultViewModel> _distributionFitResults = new();
@@ -165,6 +185,14 @@ public partial class SetupViewModel : ObservableObject
     /// <summary>Plain-English distribution suggestions for the input wizard.</summary>
     public IReadOnlyList<DistributionSuggestionViewModel> DistributionSuggestions { get; } =
         DistributionSuggestionViewModel.Defaults;
+
+    /// <summary>Distribution helper categories.</summary>
+    public IReadOnlyList<string> DistributionSuggestionCategories { get; } =
+        DistributionSuggestionViewModel.Categories;
+
+    /// <summary>Distribution helper complexity filters.</summary>
+    public IReadOnlyList<string> DistributionSuggestionComplexities { get; } =
+        DistributionSuggestionViewModel.Complexities;
 
     /// <summary>Common iteration count presets.</summary>
     public IReadOnlyList<int> IterationPresets { get; } = new[] { 1000, 5000, 10000, 25000, 50000 };
@@ -199,6 +227,15 @@ public partial class SetupViewModel : ObservableObject
         if (value != null && IterationCount != value.Iterations)
             IterationCount = value.Iterations;
     }
+
+    partial void OnSelectedDistributionSuggestionCategoryChanged(string value) =>
+        RefreshDistributionSuggestions();
+
+    partial void OnSelectedDistributionSuggestionComplexityChanged(string value) =>
+        RefreshDistributionSuggestions();
+
+    partial void OnDistributionSuggestionSearchTextChanged(string value) =>
+        RefreshDistributionSuggestions();
 
     /// <summary>Event raised when the user wants to open the correlation editor.</summary>
     public event Action? CorrelationEditorRequested;
@@ -250,7 +287,7 @@ public partial class SetupViewModel : ObservableObject
 
     public SetupViewModel()
     {
-        SelectedDistributionSuggestion = DistributionSuggestions.FirstOrDefault();
+        RefreshDistributionSuggestions();
         Inputs.CollectionChanged += (_, _) =>
         {
             OnPropertyChanged(nameof(CanRun));
@@ -903,6 +940,38 @@ public partial class SetupViewModel : ObservableObject
         EditorPreviewPoints = null;
     }
 
+    private void RefreshDistributionSuggestions()
+    {
+        IEnumerable<DistributionSuggestionViewModel> suggestions = DistributionSuggestions;
+
+        if (!string.Equals(SelectedDistributionSuggestionCategory, "All", StringComparison.OrdinalIgnoreCase))
+        {
+            suggestions = suggestions.Where(s =>
+                string.Equals(s.Category, SelectedDistributionSuggestionCategory, StringComparison.OrdinalIgnoreCase));
+        }
+
+        if (!string.Equals(SelectedDistributionSuggestionComplexity, "All", StringComparison.OrdinalIgnoreCase))
+        {
+            suggestions = suggestions.Where(s =>
+                string.Equals(s.Complexity, SelectedDistributionSuggestionComplexity, StringComparison.OrdinalIgnoreCase));
+        }
+
+        if (!string.IsNullOrWhiteSpace(DistributionSuggestionSearchText))
+        {
+            var searchText = DistributionSuggestionSearchText.Trim();
+            suggestions = suggestions.Where(s => s.Matches(searchText));
+        }
+
+        var filtered = suggestions.ToList();
+        FilteredDistributionSuggestions = new ObservableCollection<DistributionSuggestionViewModel>(filtered);
+        DistributionSuggestionStatus = filtered.Count == 1
+            ? "1 starting point matches."
+            : $"{filtered.Count} starting points match.";
+
+        if (SelectedDistributionSuggestion == null || !filtered.Contains(SelectedDistributionSuggestion))
+            SelectedDistributionSuggestion = filtered.FirstOrDefault();
+    }
+
     private void ResetOutputEditor()
     {
         NewOutputCellAddress = string.Empty;
@@ -928,7 +997,10 @@ public sealed class DistributionSuggestionViewModel
         string useCase,
         string parameterHint,
         string labelExample,
-        Dictionary<string, double> parameters)
+        Dictionary<string, double> parameters,
+        string category = "General",
+        string complexity = "Common",
+        string keywords = "")
     {
         Title = title;
         DistributionName = distributionName;
@@ -936,6 +1008,9 @@ public sealed class DistributionSuggestionViewModel
         ParameterHint = parameterHint;
         LabelExample = labelExample;
         Parameters = parameters;
+        Category = category;
+        Complexity = complexity;
+        Keywords = keywords;
     }
 
     public string Title { get; }
@@ -944,7 +1019,46 @@ public sealed class DistributionSuggestionViewModel
     public string ParameterHint { get; }
     public string LabelExample { get; }
     public Dictionary<string, double> Parameters { get; }
+    public string Category { get; }
+    public string Complexity { get; }
+    public string Keywords { get; }
     public string DisplayName => $"{Title} ({DistributionName})";
+    public string HelperSummary => $"{Category} • {Complexity}";
+
+    public bool Matches(string searchText)
+    {
+        if (string.IsNullOrWhiteSpace(searchText))
+            return true;
+
+        return Title.Contains(searchText, StringComparison.OrdinalIgnoreCase)
+               || DistributionName.Contains(searchText, StringComparison.OrdinalIgnoreCase)
+               || UseCase.Contains(searchText, StringComparison.OrdinalIgnoreCase)
+               || ParameterHint.Contains(searchText, StringComparison.OrdinalIgnoreCase)
+               || Category.Contains(searchText, StringComparison.OrdinalIgnoreCase)
+               || Keywords.Contains(searchText, StringComparison.OrdinalIgnoreCase);
+    }
+
+    public static IReadOnlyList<string> Categories { get; } = new[]
+    {
+        "All",
+        "Three-point",
+        "Symmetric",
+        "Positive skew",
+        "Percentage",
+        "Range",
+        "Scenarios",
+        "Count",
+        "Waiting time",
+        "Reliability",
+        "Extreme value"
+    };
+
+    public static IReadOnlyList<string> Complexities { get; } = new[]
+    {
+        "All",
+        "Common",
+        "Advanced"
+    };
 
     public static IReadOnlyList<DistributionSuggestionViewModel> Defaults { get; } = new[]
     {
@@ -954,105 +1068,150 @@ public sealed class DistributionSuggestionViewModel
             "Use when you know low, most likely, and high estimates and want a smooth expert-judgment curve.",
             "Starts with min 80, mode 100, max 140.",
             "Estimate",
-            new Dictionary<string, double> { ["min"] = 80, ["mode"] = 100, ["max"] = 140 }),
+            new Dictionary<string, double> { ["min"] = 80, ["mode"] = 100, ["max"] = 140 },
+            "Three-point",
+            "Common",
+            "low most likely high estimate pert expert judgment project cost schedule"),
         new DistributionSuggestionViewModel(
             "Simple low-likely-high",
             "Triangular",
             "Use when the three-point estimate should be direct and transparent.",
             "Starts with min 80, mode 100, max 140.",
             "Three point input",
-            new Dictionary<string, double> { ["min"] = 80, ["mode"] = 100, ["max"] = 140 }),
+            new Dictionary<string, double> { ["min"] = 80, ["mode"] = 100, ["max"] = 140 },
+            "Three-point",
+            "Common",
+            "low likely high simple transparent project cost schedule"),
         new DistributionSuggestionViewModel(
             "Symmetric forecast error",
             "Normal",
             "Use when values vary around a center and upside/downside misses are roughly balanced.",
             "Starts with mean 0 and standard deviation 1.",
             "Forecast error",
-            new Dictionary<string, double> { ["mean"] = 0, ["stdDev"] = 1 }),
+            new Dictionary<string, double> { ["mean"] = 0, ["stdDev"] = 1 },
+            "Symmetric",
+            "Common",
+            "balanced around mean forecast error variance uncertainty"),
         new DistributionSuggestionViewModel(
             "Heavier-tail forecast error",
             "Logistic",
             "Use when errors are centered but large misses happen more often than a Normal curve implies.",
             "Starts with location 0 and scale 1.",
             "Heavy-tail error",
-            new Dictionary<string, double> { ["mu"] = 0, ["s"] = 1 }),
+            new Dictionary<string, double> { ["mu"] = 0, ["s"] = 1 },
+            "Symmetric",
+            "Advanced",
+            "heavy tails centered forecast error large misses"),
         new DistributionSuggestionViewModel(
             "Positive skewed amount",
             "Lognormal",
             "Use for positive values with plausible large upside outcomes, such as deal size or repair cost.",
             "Starts with mu 0 and sigma 0.35.",
             "Positive amount",
-            new Dictionary<string, double> { ["mu"] = 0, ["sigma"] = 0.35 }),
+            new Dictionary<string, double> { ["mu"] = 0, ["sigma"] = 0.35 },
+            "Positive skew",
+            "Common",
+            "positive cost revenue deal size repair cost upside skew"),
         new DistributionSuggestionViewModel(
             "Positive total or duration",
             "Gamma",
             "Use for positive continuous totals built from multiple waiting-time-like effects.",
             "Starts with shape 3 and rate 0.4.",
             "Processing time",
-            new Dictionary<string, double> { ["shape"] = 3, ["rate"] = 0.4 }),
+            new Dictionary<string, double> { ["shape"] = 3, ["rate"] = 0.4 },
+            "Positive skew",
+            "Advanced",
+            "positive duration total processing time waiting time aggregate skew"),
         new DistributionSuggestionViewModel(
             "Percentage or rate",
             "Beta",
             "Use for values constrained between 0 and 1, such as conversion, churn, or defect rates.",
             "Starts with alpha 8 and beta 32.",
             "Conversion rate",
-            new Dictionary<string, double> { ["alpha"] = 8, ["beta"] = 32 }),
+            new Dictionary<string, double> { ["alpha"] = 8, ["beta"] = 32 },
+            "Percentage",
+            "Common",
+            "percentage rate conversion churn defect probability bounded zero one"),
         new DistributionSuggestionViewModel(
             "No better view than a range",
             "Uniform",
             "Use when every value in a known range is equally plausible.",
             "Starts with min 0 and max 1.",
             "Bounded range",
-            new Dictionary<string, double> { ["min"] = 0, ["max"] = 1 }),
+            new Dictionary<string, double> { ["min"] = 0, ["max"] = 1 },
+            "Range",
+            "Common",
+            "bounded range equal probability min max no better view"),
         new DistributionSuggestionViewModel(
             "Exact scenarios",
             "Discrete",
             "Use for a small set of known outcomes with assigned probabilities.",
             "Starts with two outcomes: 0 at 50% and 1 at 50%.",
             "Scenario outcome",
-            new Dictionary<string, double> { ["value_0"] = 0, ["prob_0"] = 0.5, ["value_1"] = 1, ["prob_1"] = 0.5 }),
+            new Dictionary<string, double> { ["value_0"] = 0, ["prob_0"] = 0.5, ["value_1"] = 1, ["prob_1"] = 0.5 },
+            "Scenarios",
+            "Common",
+            "scenario exact outcomes probabilities discrete cases"),
         new DistributionSuggestionViewModel(
             "Count in a fixed period",
             "Poisson",
             "Use for independent event counts over a defined period.",
             "Starts with lambda 4.5.",
             "Event count",
-            new Dictionary<string, double> { ["lambda"] = 4.5 }),
+            new Dictionary<string, double> { ["lambda"] = 4.5 },
+            "Count",
+            "Common",
+            "count events arrivals fixed period incidents"),
         new DistributionSuggestionViewModel(
             "Successes out of trials",
             "Binomial",
             "Use when there are a fixed number of independent yes/no attempts.",
             "Starts with 20 trials and 35% probability.",
             "Prospect wins",
-            new Dictionary<string, double> { ["n"] = 20, ["p"] = 0.35 }),
+            new Dictionary<string, double> { ["n"] = 20, ["p"] = 0.35 },
+            "Count",
+            "Common",
+            "successes trials yes no wins conversions attempts probability"),
         new DistributionSuggestionViewModel(
             "Attempts until first success",
             "Geometric",
             "Use for the number of tries until the first win or event.",
             "Starts with 25% success probability.",
             "Calls until win",
-            new Dictionary<string, double> { ["p"] = 0.25 }),
+            new Dictionary<string, double> { ["p"] = 0.25 },
+            "Count",
+            "Advanced",
+            "tries until first success attempts calls win probability"),
         new DistributionSuggestionViewModel(
             "Time to failure",
             "Weibull",
             "Use for component life or reliability where failure risk changes over time.",
             "Starts with shape 1.6 and scale 1200.",
             "Failure time",
-            new Dictionary<string, double> { ["shape"] = 1.6, ["scale"] = 1200 }),
+            new Dictionary<string, double> { ["shape"] = 1.6, ["scale"] = 1200 },
+            "Reliability",
+            "Advanced",
+            "failure time reliability component life hazard aging"),
         new DistributionSuggestionViewModel(
             "Waiting time to event",
             "Exponential",
             "Use for waiting time until an event with a constant hazard rate.",
             "Starts with rate 0.2.",
             "Wait time",
-            new Dictionary<string, double> { ["rate"] = 0.2 }),
+            new Dictionary<string, double> { ["rate"] = 0.2 },
+            "Waiting time",
+            "Common",
+            "waiting time event constant hazard arrivals service"),
         new DistributionSuggestionViewModel(
             "Extreme maximum or minimum",
             "GEV",
             "Use for block maxima or minima such as annual peak demand or worst annual loss.",
             "Starts with location 100, scale 12, shape 0.1.",
             "Annual maximum",
-            new Dictionary<string, double> { ["mu"] = 100, ["sigma"] = 12, ["xi"] = 0.1 })
+            new Dictionary<string, double> { ["mu"] = 100, ["sigma"] = 12, ["xi"] = 0.1 },
+            "Extreme value",
+            "Advanced",
+            "extreme maximum minimum annual peak demand worst loss tail")
     };
 }
 
