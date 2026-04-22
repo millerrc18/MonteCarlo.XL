@@ -37,6 +37,7 @@ This roadmap tracks the 12 robustness and @RISK-like initiatives identified afte
 ## Current Implementation Notes
 
 - Core Excel add-in workflow is implemented with Excel-DNA, WPF task pane, ribbon, packed 64-bit XLL deployment, and startup diagnostics.
+- Native ARM64 Excel support is not shipped. The current host stack depends on Excel-DNA XLL loaders for x86/x64 Excel, so Windows ARM support requires either an ARM-capable XLL host or a different add-in host strategy.
 - Summary export now creates a foundation report with workbook/run metadata, histogram, CDF, optional tornado chart, target analysis, scenario analysis, input assumptions, correlation assumptions, and unique worksheets by default.
 - Light/dark/system theme switching is implemented and persisted.
 - Settings now persist export worksheet behavior, default iterations, random vs fixed seed defaults, sampling method, convergence auto-stop, whether Model Check warnings pause a run, and default percentile lists used by summary exports.

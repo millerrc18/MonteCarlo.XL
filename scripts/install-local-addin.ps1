@@ -5,7 +5,9 @@ param(
 
     [switch]$Build,
 
-    [switch]$Uninstall
+    [switch]$Uninstall,
+
+    [switch]$AllowUnsupportedArm
 )
 
 $ErrorActionPreference = "Stop"
@@ -13,6 +15,29 @@ $ErrorActionPreference = "Stop"
 $repoRoot = Split-Path -Parent $PSScriptRoot
 $installDir = Join-Path $env:APPDATA "Microsoft\Excel\XLSTART"
 $installedAddin = Join-Path $installDir "MonteCarlo.XL.xll"
+
+function Get-SystemArchitecture {
+    try {
+        $cpu = Get-CimInstance Win32_Processor | Select-Object -First 1
+        switch ($cpu.Architecture) {
+            12 { return "ARM64" }
+            9 { return "x64" }
+            0 { return "x86" }
+        }
+    }
+    catch {
+    }
+
+    if ($env:PROCESSOR_ARCHITECTURE -match "ARM64" -or $env:PROCESSOR_IDENTIFIER -match "ARM") {
+        return "ARM64"
+    }
+
+    if ($env:PROCESSOR_ARCHITECTURE) {
+        return $env:PROCESSOR_ARCHITECTURE
+    }
+
+    return "Unknown"
+}
 
 if ($Uninstall) {
     if (Test-Path $installedAddin) {
@@ -33,6 +58,23 @@ if ($Build) {
     finally {
         Pop-Location
     }
+}
+
+$systemArchitecture = Get-SystemArchitecture
+if ($systemArchitecture -eq "ARM64" -and -not $AllowUnsupportedArm) {
+    throw @"
+MonteCarlo.XL does not currently support native ARM64 Excel installs.
+
+This repository packages Excel-DNA XLL loaders for x86 and x64 Excel only. Microsoft 365 Excel on Windows ARM is typically ARM-native, so the add-in will not load there as-is.
+
+Use an x64 Windows Excel machine today, or rerun this script with -AllowUnsupportedArm only if you have already verified an x64-compatible Excel environment and want to experiment.
+
+See README.md and docs/ARM64_SUPPORT.md for the current status and the real upgrade paths.
+"@
+}
+
+if ($systemArchitecture -eq "ARM64" -and $AllowUnsupportedArm) {
+    Write-Warning "ARM64 system detected. Proceeding only because -AllowUnsupportedArm was specified."
 }
 
 $officeConfigPaths = @(

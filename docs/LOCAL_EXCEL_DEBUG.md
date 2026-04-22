@@ -24,6 +24,8 @@ src/MonteCarlo.Addin/bin/Debug/net8.0-windows/publish/MonteCarlo.Addin-AddIn64-p
 
 Use `MonteCarlo.Addin-AddIn-packed.xll` only for 32-bit Excel.
 
+On Windows ARM, treat the current repo as unsupported for native Excel installs. The install script now stops on ARM64 by default; see [ARM64 support status](ARM64_SUPPORT.md) for details.
+
 ## Install For Local Testing
 
 PowerShell:
@@ -32,7 +34,7 @@ PowerShell:
 .\scripts\install-local-addin.ps1 -Configuration Debug -Build
 ```
 
-The script detects Office bitness, builds if requested, copies the correct packed `.xll` to Excel's user `XLSTART` folder, and unblocks the file. Restart Excel after installing.
+The script detects Office bitness, builds if requested, copies the correct packed `.xll` to Excel's user `XLSTART` folder, and unblocks the file. On ARM64 systems it stops unless you explicitly pass `-AllowUnsupportedArm`. Restart Excel after installing.
 
 To remove it:
 

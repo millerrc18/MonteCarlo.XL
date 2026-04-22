@@ -9,6 +9,7 @@ Start here if you want to try the add-in in Excel:
 - [Quickstart guide](docs/QUICKSTART.md) - install the packed XLL, open the smoke workbook, run a first simulation, and export results.
 - [Distribution guide](docs/DISTRIBUTION_GUIDE.md) - plain-English explanations of every supported distribution, with formulas, parameters, and real modeling examples.
 - [@RISK-parity roadmap](docs/RISK_PARITY_ROADMAP.md) - 12 robustness and analyst-workflow initiatives with status and unfinished work.
+- [ARM64 support status](docs/ARM64_SUPPORT.md) - what works today, what does not, and the real paths to native Windows ARM support.
 - [Local Excel debug path](docs/LOCAL_EXCEL_DEBUG.md) - developer-focused build, install, smoke test, and diagnostics notes.
 
 ## Current Direction
@@ -47,6 +48,20 @@ src/MonteCarlo.Addin/bin/Debug/net8.0-windows/publish/MonteCarlo.Addin-AddIn64-p
 ```
 
 See `docs/LOCAL_EXCEL_DEBUG.md` for the local Excel install/debug path.
+
+## Work Install
+
+MonteCarlo.XL is meant for desktop Excel on Windows. The current packaged add-in is the 64-bit `.xll`, so the best-fit work setup is:
+
+- Excel for Windows desktop
+- 64-bit Excel
+- permission to load custom `.xll` add-ins from a trusted local folder or `XLSTART`
+
+It is not a fit for Excel for web or Excel for Mac. On Windows ARM, the current add-in depends on x64 compatibility; there is not a native ARM64 Excel-DNA build in this project today.
+
+The local install script now stops on ARM64 systems by default so it does not copy an add-in into a native ARM64 Excel setup that cannot load it. See [ARM64 support status](docs/ARM64_SUPPORT.md) for the real upgrade paths.
+
+The most common work blocker is corporate policy rather than Excel itself. Some organizations block unsigned/custom add-ins, restrict trusted locations, or lock down `XLSTART`. If your company allows local add-ins, load the packed `.xll` and confirm the `MonteCarlo.XL` ribbon appears. If Excel blocks it, you will usually need a trusted location or IT approval.
 
 ## User Settings
 

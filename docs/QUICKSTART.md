@@ -11,13 +11,15 @@ dotnet build src/MonteCarlo.Addin/MonteCarlo.Addin.csproj -c Release
 .\scripts\install-local-addin.ps1 -Configuration Release
 ```
 
-The install script detects Excel bitness, copies the correct packed `.xll` into your user `XLSTART` folder, and unblocks the file. On the local development machine, Excel is 64-bit, so the packed add-in is:
+The install script detects Excel bitness, copies the correct packed `.xll` into your user `XLSTART` folder, and unblocks the file. On ARM64 Windows, it now stops by default because the current add-in is not a native ARM64 Excel build. On the local development machine, Excel is 64-bit, so the packed add-in is:
 
 ```text
 src/MonteCarlo.Addin/bin/Release/net8.0-windows/publish/MonteCarlo.Addin-AddIn64-packed.xll
 ```
 
 Restart Excel after installing. The ribbon should show a `MonteCarlo.XL` tab.
+
+If you are working on a Windows ARM device and intentionally want to try an unsupported setup, rerun the install script with `-AllowUnsupportedArm`. See [ARM64 support status](ARM64_SUPPORT.md) before doing that.
 
 ## 2. Open The Smoke Workbook
 
@@ -111,6 +113,7 @@ Common fixes:
 
 - Close all Excel instances before reinstalling the `.xll`.
 - Use the 64-bit packed `.xll` with 64-bit Excel.
+- On Windows ARM, expect the install script to stop unless you explicitly pass `-AllowUnsupportedArm`.
 - Put the `.xll` in a trusted location or unblock it if Excel blocks loading.
 - Rebuild after code changes before copying the packed add-in to `XLSTART`.
 - Use `MonteCarlo.XL` > `Recover Excel` if Excel appears stuck in manual calculation, disabled events, or a stale status-bar message after an interrupted run.
