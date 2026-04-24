@@ -91,6 +91,8 @@ npm run build
 
 That writes the bundled task pane into `src\MonteCarlo.OfficeAddin\dist` and republishes the `.NET` browser bridge into `src\MonteCarlo.OfficeAddin\public\wasm` during the build.
 
+If the target device is specifically a Surface tablet, use the dedicated checklist in [SURFACE_INSTALL.md](SURFACE_INSTALL.md). It includes the shared-folder catalog setup, localhost certificate expectations, and the Desktop App Web Viewer loopback fix if Excel blocks `https://localhost`.
+
 ## Real Paths To ARM Support
 
 ### Path 1: Keep Excel-DNA, Build A New ARM-Capable XLL Host

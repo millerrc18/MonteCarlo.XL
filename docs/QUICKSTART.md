@@ -148,3 +148,5 @@ What still needs real ARM verification:
 - deeper ribbon parity
 - broader persistence and reopen testing
 - richer task-pane workflows such as the full settings, sharing, and goal-seek experience
+
+For a Surface-specific install checklist, including the shared-folder sideload flow and the `localhost` loopback fix, see [SURFACE_INSTALL.md](SURFACE_INSTALL.md).

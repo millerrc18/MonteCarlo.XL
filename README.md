@@ -10,6 +10,7 @@ Start here if you want to try the add-in in Excel:
 - [Distribution guide](docs/DISTRIBUTION_GUIDE.md) - plain-English explanations of every supported distribution, with formulas, parameters, and real modeling examples.
 - [@RISK-parity roadmap](docs/RISK_PARITY_ROADMAP.md) - 12 robustness and analyst-workflow initiatives with status and unfinished work.
 - [ARM64 support status](docs/ARM64_SUPPORT.md) - what works today, what does not, and the real paths to native Windows ARM support.
+- [Surface Pro install guide](docs/SURFACE_INSTALL.md) - the current experimental sideload checklist for Windows ARM tablets.
 - [Local Excel debug path](docs/LOCAL_EXCEL_DEBUG.md) - developer-focused build, install, smoke test, and diagnostics notes.
 
 ## Current Direction
@@ -81,6 +82,31 @@ The repo now also contains an **experimental Office.js dual-host foundation** fo
 That Office host builds today, but it is still a foundation project rather than a fully validated replacement for the x64 `.xll`. The production recommendation for workbooks you need to trust remains the x64 Excel-DNA add-in until the ARM path is manually validated on real hardware.
 
 The most common work blocker is corporate policy rather than Excel itself. Some organizations block unsigned/custom add-ins, restrict trusted locations, or lock down `XLSTART`. If your company allows local add-ins, load the packed `.xll` and confirm the `MonteCarlo.XL` ribbon appears. If Excel blocks it, you will usually need a trusted location or IT approval.
+
+## Surface / ARM Trial
+
+If you are trying MonteCarlo.XL on a **Surface Pro running Windows on ARM**, do **not** start with the Excel-DNA `.xll` installer. The current ARM path is the experimental Office.js host.
+
+High-level flow:
+
+1. Open PowerShell on the Surface
+2. Run:
+
+```powershell
+cd "C:\path\to\MonteCarlo.XL\src\MonteCarlo.OfficeAddin"
+npm install
+npm run dev
+```
+
+3. Open `https://localhost:3000/taskpane.html` in Edge and trust the local HTTPS certificate if prompted
+4. Sideload `src\MonteCarlo.OfficeAddin\manifest.xml` into desktop Excel through a trusted shared-folder catalog
+
+Use the full checklist in [docs/SURFACE_INSTALL.md](docs/SURFACE_INSTALL.md). That guide also covers:
+
+- the `localhost` loopback fix if Excel blocks the add-in
+- the shared-folder catalog setup in Excel
+- first-run smoke validation on the Surface
+- the current limits of the ARM path
 
 ## User Settings
 
