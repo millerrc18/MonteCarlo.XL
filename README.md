@@ -1,6 +1,6 @@
 # MonteCarlo.XL
 
-MonteCarlo.XL is a Windows desktop Excel add-in for Monte Carlo simulation, built with Excel-DNA, C#/.NET 8, WPF, and a pure simulation engine. The product goal is an @RISK-style workflow inside existing Excel workbooks: define uncertain inputs, choose output cells, run simulations, and inspect modern histogram/CDF/tornado-style results.
+MonteCarlo.XL is an Excel Monte Carlo simulation tool built around an @RISK-style workflow inside existing workbooks: define uncertain inputs, choose output cells, run simulations, and inspect histogram/CDF/tornado-style results. Today the production host is an Excel-DNA `.xll` for desktop Excel on Windows x64, and the repository now also contains an Office.js plus .NET WebAssembly host foundation aimed at native Windows ARM Excel.
 
 ## Quickstart
 
@@ -17,6 +17,7 @@ Start here if you want to try the add-in in Excel:
 - Excel remains the primary product surface.
 - Excel-DNA is the add-in host, not VSTO.
 - `MonteCarlo.Engine` stays pure and reusable, with no Excel or UI dependency.
+- ARM is now being pursued through a dual-host path: shared simulation/formula logic plus an Office.js task-pane and custom-functions host for native ARM Excel.
 - A standalone WPF EXE can be added later as a demo/development harness, after the Excel workflow runs end-to-end.
 
 ## Supported Distributions
@@ -49,6 +50,16 @@ src/MonteCarlo.Addin/bin/Debug/net8.0-windows/publish/MonteCarlo.Addin-AddIn64-p
 
 See `docs/LOCAL_EXCEL_DEBUG.md` for the local Excel install/debug path.
 
+For the experimental Office.js and ARM-oriented host:
+
+```bash
+cd src/MonteCarlo.OfficeAddin
+cmd.exe /C npm install
+cmd.exe /C npm run build
+```
+
+That build publishes the .NET WebAssembly bridge into `src/MonteCarlo.OfficeAddin/public/wasm`, bundles the Office task pane into `src/MonteCarlo.OfficeAddin/dist`, and leaves the sideload manifest at `src/MonteCarlo.OfficeAddin/manifest.xml`.
+
 ## Work Install
 
 MonteCarlo.XL is meant for desktop Excel on Windows. The current packaged add-in is the 64-bit `.xll`, so the best-fit work setup is:
@@ -57,9 +68,17 @@ MonteCarlo.XL is meant for desktop Excel on Windows. The current packaged add-in
 - 64-bit Excel
 - permission to load custom `.xll` add-ins from a trusted local folder or `XLSTART`
 
-It is not a fit for Excel for web or Excel for Mac. On Windows ARM, the current add-in depends on x64 compatibility; there is not a native ARM64 Excel-DNA build in this project today.
+It is not a fit for Excel for web or Excel for Mac. On Windows ARM, there is still no native ARM64 Excel-DNA build in this project today.
 
 The local install script now stops on ARM64 systems by default so it does not copy an add-in into a native ARM64 Excel setup that cannot load it. See [ARM64 support status](docs/ARM64_SUPPORT.md) for the real upgrade paths.
+
+The repo now also contains an **experimental Office.js dual-host foundation** for ARM work:
+
+- `src/MonteCarlo.Shared` shares formula catalog, parser, normal-mode evaluation, workbook-config constants, and simulation analysis contracts.
+- `src/MonteCarlo.Engine.Wasm` exposes the engine through `[JSExport]` methods in a browser build.
+- `src/MonteCarlo.OfficeAddin` contains a React plus Fluent UI task pane, custom functions, workbook scanning, simulation execution, Excel chart export, and an Office manifest for sideload testing.
+
+That Office host builds today, but it is still a foundation project rather than a fully validated replacement for the x64 `.xll`. The production recommendation for workbooks you need to trust remains the x64 Excel-DNA add-in until the ARM path is manually validated on real hardware.
 
 The most common work blocker is corporate policy rather than Excel itself. Some organizations block unsigned/custom add-ins, restrict trusted locations, or lock down `XLSTART`. If your company allows local add-ins, load the packed `.xll` and confirm the `MonteCarlo.XL` ribbon appears. If Excel blocks it, you will usually need a trusted location or IT approval.
 

@@ -1,0 +1,145 @@
+{
+  "allowCustomDataForDataTypeAny": true,
+  "functions": [
+    {
+      "id": "MC.NORMAL",
+      "name": "MC.Normal",
+      "description": "Normal distribution. Returns the mean in normal mode; samples during simulation.",
+      "parameters": [
+        { "name": "mean", "description": "Mean (mu)" },
+        { "name": "stdDev", "description": "Standard deviation (sigma), must be > 0" }
+      ],
+      "result": { "type": "number", "dimensionality": "scalar" }
+    },
+    {
+      "id": "MC.TRIANGULAR",
+      "name": "MC.Triangular",
+      "description": "Triangular distribution. Returns the mode in normal mode.",
+      "parameters": [
+        { "name": "min", "description": "Minimum value" },
+        { "name": "mode", "description": "Most likely value" },
+        { "name": "max", "description": "Maximum value" }
+      ],
+      "result": { "type": "number", "dimensionality": "scalar" }
+    },
+    {
+      "id": "MC.PERT",
+      "name": "MC.PERT",
+      "description": "PERT distribution. Returns the mode in normal mode.",
+      "parameters": [
+        { "name": "min", "description": "Minimum value" },
+        { "name": "mode", "description": "Most likely value" },
+        { "name": "max", "description": "Maximum value" }
+      ],
+      "result": { "type": "number", "dimensionality": "scalar" }
+    },
+    {
+      "id": "MC.LOGNORMAL",
+      "name": "MC.Lognormal",
+      "description": "Lognormal distribution. Returns exp(mu + sigma^2 / 2) in normal mode.",
+      "parameters": [
+        { "name": "mu", "description": "Mean of the underlying normal distribution (mu)" },
+        { "name": "sigma", "description": "Std dev of the underlying normal distribution (sigma), must be > 0" }
+      ],
+      "result": { "type": "number", "dimensionality": "scalar" }
+    },
+    {
+      "id": "MC.UNIFORM",
+      "name": "MC.Uniform",
+      "description": "Uniform distribution. Returns the midpoint in normal mode.",
+      "parameters": [
+        { "name": "min", "description": "Minimum value" },
+        { "name": "max", "description": "Maximum value" }
+      ],
+      "result": { "type": "number", "dimensionality": "scalar" }
+    },
+    {
+      "id": "MC.BETA",
+      "name": "MC.Beta",
+      "description": "Beta distribution [0,1]. Returns alpha/(alpha+beta) in normal mode.",
+      "parameters": [
+        { "name": "alpha", "description": "Shape parameter alpha, must be > 0" },
+        { "name": "beta", "description": "Shape parameter beta, must be > 0" }
+      ],
+      "result": { "type": "number", "dimensionality": "scalar" }
+    },
+    {
+      "id": "MC.WEIBULL",
+      "name": "MC.Weibull",
+      "description": "Weibull distribution. Returns scale * Gamma(1 + 1/shape) in normal mode.",
+      "parameters": [
+        { "name": "shape", "description": "Shape parameter (k), must be > 0" },
+        { "name": "scale", "description": "Scale parameter (lambda), must be > 0" }
+      ],
+      "result": { "type": "number", "dimensionality": "scalar" }
+    },
+    {
+      "id": "MC.EXPONENTIAL",
+      "name": "MC.Exponential",
+      "description": "Exponential distribution. Returns 1/rate in normal mode.",
+      "parameters": [
+        { "name": "rate", "description": "Rate parameter (lambda), must be > 0" }
+      ],
+      "result": { "type": "number", "dimensionality": "scalar" }
+    },
+    {
+      "id": "MC.POISSON",
+      "name": "MC.Poisson",
+      "description": "Poisson distribution. Returns lambda in normal mode.",
+      "parameters": [
+        { "name": "lambda", "description": "Expected event count (lambda), must be > 0" }
+      ],
+      "result": { "type": "number", "dimensionality": "scalar" }
+    },
+    {
+      "id": "MC.GAMMA",
+      "name": "MC.Gamma",
+      "description": "Gamma distribution. Returns shape/rate in normal mode.",
+      "parameters": [
+        { "name": "shape", "description": "Shape parameter (alpha), must be > 0" },
+        { "name": "rate", "description": "Rate parameter (beta), must be > 0" }
+      ],
+      "result": { "type": "number", "dimensionality": "scalar" }
+    },
+    {
+      "id": "MC.LOGISTIC",
+      "name": "MC.Logistic",
+      "description": "Logistic distribution. Returns mu in normal mode.",
+      "parameters": [
+        { "name": "mu", "description": "Location parameter (mu)" },
+        { "name": "s", "description": "Scale parameter (s), must be > 0" }
+      ],
+      "result": { "type": "number", "dimensionality": "scalar" }
+    },
+    {
+      "id": "MC.GEV",
+      "name": "MC.GEV",
+      "description": "Generalized Extreme Value distribution. Returns expected value in normal mode.",
+      "parameters": [
+        { "name": "mu", "description": "Location parameter (mu)" },
+        { "name": "sigma", "description": "Scale parameter (sigma), must be > 0" },
+        { "name": "xi", "description": "Shape parameter (xi)" }
+      ],
+      "result": { "type": "number", "dimensionality": "scalar" }
+    },
+    {
+      "id": "MC.BINOMIAL",
+      "name": "MC.Binomial",
+      "description": "Binomial distribution. Returns n*p in normal mode.",
+      "parameters": [
+        { "name": "n", "description": "Number of trials, must be > 0" },
+        { "name": "p", "description": "Probability of success, must be in [0,1]" }
+      ],
+      "result": { "type": "number", "dimensionality": "scalar" }
+    },
+    {
+      "id": "MC.GEOMETRIC",
+      "name": "MC.Geometric",
+      "description": "Geometric distribution. Returns 1/p in normal mode.",
+      "parameters": [
+        { "name": "p", "description": "Probability of success, must be in (0,1]" }
+      ],
+      "result": { "type": "number", "dimensionality": "scalar" }
+    }
+  ]
+}

@@ -1,0 +1,203 @@
+:root {
+  color-scheme: light dark;
+  font-family: "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+body {
+  margin: 0;
+  min-width: 340px;
+  background: #f4f7fb;
+  color: #1f2937;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+.app-shell {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.app-loading {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+}
+
+.hero {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 18px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #0f6cbd, #0f8c6d);
+  color: white;
+}
+
+.hero h1 {
+  margin: 4px 0 8px;
+  font-size: 26px;
+}
+
+.hero p {
+  margin: 0;
+  max-width: 60ch;
+}
+
+.eyebrow {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  opacity: 0.8;
+}
+
+.hero-actions {
+  min-width: 220px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 12px;
+}
+
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 16px;
+}
+
+.panel,
+.chart-card,
+.stat-card {
+  background: white;
+  border: 1px solid #d1d9e0;
+  border-radius: 8px;
+}
+
+.panel {
+  padding: 16px;
+}
+
+.panel h2 {
+  margin-top: 0;
+  margin-bottom: 12px;
+}
+
+.subpanel + .subpanel {
+  margin-top: 16px;
+}
+
+.counts {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 12px;
+}
+
+.counts > div {
+  display: grid;
+  gap: 4px;
+}
+
+.counts strong {
+  font-size: 24px;
+}
+
+.form-grid {
+  display: grid;
+  gap: 12px;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 12px;
+}
+
+.stat-card {
+  padding: 12px;
+  display: grid;
+  gap: 6px;
+}
+
+.stat-card span {
+  font-size: 12px;
+  color: #4b5563;
+  text-transform: uppercase;
+}
+
+.stat-card strong {
+  font-size: 18px;
+}
+
+.chart-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+}
+
+.chart-card {
+  padding: 12px;
+}
+
+.chart-card h3 {
+  margin: 0 0 8px;
+}
+
+.chart-body {
+  min-height: 280px;
+}
+
+.guide-list details {
+  border-top: 1px solid #e5e7eb;
+  padding: 10px 0;
+}
+
+.guide-list details:first-child {
+  border-top: 0;
+}
+
+.guide-list summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th,
+td {
+  padding: 8px 6px;
+  text-align: left;
+  border-bottom: 1px solid #e5e7eb;
+  vertical-align: top;
+}
+
+.progress-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+progress {
+  width: 100%;
+  height: 12px;
+}
+
+@media (min-width: 1080px) {
+  .chart-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}

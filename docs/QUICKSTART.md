@@ -1,6 +1,6 @@
 # MonteCarlo.XL Quickstart
 
-This guide gets a local build loaded into Excel and runs a first simulation from the included smoke workbook.
+This guide gets a local build loaded into Excel and runs a first simulation from the included smoke workbook. The production path is still the packed x64 `.xll`; an experimental Office.js plus WebAssembly host now exists separately for ARM-oriented testing.
 
 ## 1. Build And Install The Add-In
 
@@ -122,3 +122,29 @@ Common fixes:
 - Use `MonteCarlo.XL` > `Benchmark` to add a sheet comparing active-workbook recalculation time with synthetic simulation-engine throughput plus synthetic summary/raw export timing.
 
 See [Local Excel Debug Path](LOCAL_EXCEL_DEBUG.md) for more detailed developer notes.
+
+## 8. Experimental ARM / Office.js Host
+
+If you are testing native Windows ARM Excel, do **not** use the `install-local-addin.ps1` flow above as your main path. The current ARM track is the new Office.js host:
+
+```powershell
+cd src\MonteCarlo.OfficeAddin
+npm install
+npm run dev
+```
+
+Then sideload `src\MonteCarlo.OfficeAddin\manifest.xml` into desktop Excel and let it connect to `https://localhost:3000`.
+
+What works today:
+
+- the task pane builds and loads from the Office host foundation
+- `MC.*` custom functions are bundled for the Office host
+- the shared WebAssembly bridge can validate profiles, generate input samples, analyze results, and benchmark
+- the Office task pane can scan formulas, add selected inputs and outputs, run a simulation, and export a summary sheet with native Excel charts
+
+What still needs real ARM verification:
+
+- manual Surface Pro acceptance
+- deeper ribbon parity
+- broader persistence and reopen testing
+- richer task-pane workflows such as the full settings, sharing, and goal-seek experience

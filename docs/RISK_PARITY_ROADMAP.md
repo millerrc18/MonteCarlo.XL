@@ -37,7 +37,10 @@ This roadmap tracks the 12 robustness and @RISK-like initiatives identified afte
 ## Current Implementation Notes
 
 - Core Excel add-in workflow is implemented with Excel-DNA, WPF task pane, ribbon, packed 64-bit XLL deployment, and startup diagnostics.
-- Native ARM64 Excel support is not shipped. The current host stack depends on Excel-DNA XLL loaders for x86/x64 Excel, so Windows ARM support requires either an ARM-capable XLL host or a different add-in host strategy.
+- Native ARM64 Excel support is not shipped in a supported form. The current Excel-DNA host stack still depends on x86/x64 XLL loaders, but the repository now also contains an active Office.js dual-host foundation:
+  - `src/MonteCarlo.Shared` for shared formula, parser, config, and bridge contracts
+  - `src/MonteCarlo.Engine.Wasm` for browser-hosted `[JSExport]` engine methods
+  - `src/MonteCarlo.OfficeAddin` for a React plus Fluent UI task pane, Office custom functions, workbook scanning, simulation execution, benchmark calls, and native Excel chart export
 - Summary export now creates a foundation report with workbook/run metadata, histogram, CDF, optional tornado chart, target analysis, scenario analysis, input assumptions, correlation assumptions, and unique worksheets by default.
 - Light/dark/system theme switching is implemented and persisted.
 - Settings now persist export worksheet behavior, default iterations, random vs fixed seed defaults, prompt-at-run seed mode, sampling method, convergence auto-stop, Excel calculation behavior, screen/event suspension, whether Model Check warnings pause a run, and default percentile lists used by summary exports.
@@ -56,6 +59,33 @@ This roadmap tracks the 12 robustness and @RISK-like initiatives identified afte
 - Model Check now validates the setup profile before run, blocks missing/invalid inputs and outputs, detects duplicate/conflicting cells, validates distribution parameters, checks correlation matrix shape/validity, warns about very small/large runs, adds Excel-aware checks for active workbook context, calculation/events/screen updating state, workbook protection, missing sheets/cells, protected input cells, formula errors, non-numeric outputs, and static output cells, and can pause runs on warning-only reports when enabled in Settings.
 - The Setup view now includes a Model Manager section for reviewing inputs and outputs, editing through the existing add/edit forms, copying entries, jumping to cells, refreshing highlights, and bulk-clearing inputs or outputs.
 - Stop/cancel is available through task pane, keyboard shortcut, and ribbon callback.
+
+## Platform Track: Native ARM / Office.js Dual Host
+
+Status: Foundation
+
+Why it matters:
+
+- Native Windows ARM Excel cannot load the existing x64 `.xll`.
+- The product needs a credible path for Surface Pro and other ARM work deployments.
+
+Shipped foundation:
+
+- Shared formula catalog, parser, and deterministic normal-mode evaluator now back both host strategies.
+- Shared bridge contracts let the browser host request validation, sampling, result analysis, goal-seek metric evaluation, and benchmarks from the same engine logic.
+- The Office host can be built locally, publishes the `.NET` WebAssembly bridge, bundles a sideloadable manifest, and produces a task-pane UI with charts plus summary-sheet export.
+
+Definition of done:
+
+- A native ARM Excel user can sideload/install MonteCarlo.XL, see the ribbon/task pane, add inputs and outputs, run simulations, export reports, persist workbook config, reopen the workbook, and trust the workflow without needing the x64 `.xll`.
+
+Open work:
+
+- Manually validate the Office host on real ARM hardware with native desktop Excel.
+- Expand the current command surface from foundation buttons to richer parity with the Excel-DNA ribbon.
+- Carry over the remaining workflow features: workbook-scoped settings editing, richer goal seek, shareable copy, formula replace/restore, stress analysis, and deeper report options.
+- Harden workbook persistence compatibility across Custom XML and hidden-sheet fallback.
+- Move from localhost sideload development hosting to a deliberate deployment story for work machines.
 
 ## Unfinished Work Register
 

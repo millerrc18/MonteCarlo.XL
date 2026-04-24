@@ -3,6 +3,7 @@ using System.Text;
 using System.Xml;
 using ExcelDna.Integration;
 using MonteCarlo.Engine.Simulation;
+using MonteCarlo.Shared.Constants;
 using MonteCarlo.UI.Services;
 using Microsoft.Office.Interop.Excel;
 
@@ -16,9 +17,9 @@ namespace MonteCarlo.Addin.Excel;
 /// </summary>
 public class ConfigPersistence
 {
-    private const string CustomXmlNamespace = "urn:montecarlo-xl:config:v1";
-    private const string HiddenSheetName = "__MC_Config";
-    private const string ConfigCellAddress = "A1";
+    private const string CustomXmlNamespace = WorkbookConfigConstants.CustomXmlNamespace;
+    private const string HiddenSheetName = WorkbookConfigConstants.HiddenSheetName;
+    private const string ConfigCellAddress = WorkbookConfigConstants.HiddenSheetCellAddress;
 
     private static readonly JsonSerializerOptions JsonOptions = new()
     {

@@ -17,6 +17,7 @@
   <ItemGroup>
     <ProjectReference Include="..\MonteCarlo.Charts\MonteCarlo.Charts.csproj" />
     <ProjectReference Include="..\MonteCarlo.Engine\MonteCarlo.Engine.csproj" />
+    <ProjectReference Include="..\MonteCarlo.Shared\MonteCarlo.Shared.csproj" />
     <ProjectReference Include="..\MonteCarlo.UI\MonteCarlo.UI.csproj" />
   </ItemGroup>
 

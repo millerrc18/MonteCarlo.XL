@@ -1,0 +1,267 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<OfficeApp
+  xmlns="http://schemas.microsoft.com/office/appforoffice/1.1"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xmlns:bt="http://schemas.microsoft.com/office/officeappbasictypes/1.0"
+  xmlns:ov="http://schemas.microsoft.com/office/taskpaneappversionoverrides"
+  xsi:type="TaskPaneApp">
+  <Id>7b4e2cb1-340b-46cb-b5ef-bfed6bc65d69</Id>
+  <Version>1.0.0.0</Version>
+  <ProviderName>MonteCarlo.XL</ProviderName>
+  <DefaultLocale>en-US</DefaultLocale>
+  <DisplayName DefaultValue="MonteCarlo.XL Office Host"/>
+  <Description DefaultValue="Office.js and WebAssembly host for MonteCarlo.XL on native ARM Excel."/>
+  <IconUrl DefaultValue="https://localhost:3000/assets/icon-32.png"/>
+  <HighResolutionIconUrl DefaultValue="https://localhost:3000/assets/icon-80.png"/>
+  <SupportUrl DefaultValue="https://localhost:3000/taskpane.html"/>
+  <AppDomains>
+    <AppDomain>https://localhost:3000</AppDomain>
+  </AppDomains>
+  <Hosts>
+    <Host Name="Workbook"/>
+  </Hosts>
+  <DefaultSettings>
+    <SourceLocation DefaultValue="https://localhost:3000/taskpane.html"/>
+  </DefaultSettings>
+  <Permissions>ReadWriteDocument</Permissions>
+
+  <VersionOverrides xsi:type="VersionOverridesV1_1" xmlns="http://schemas.microsoft.com/office/taskpaneappversionoverrides">
+    <Hosts>
+      <Host xsi:type="Workbook">
+        <DesktopFormFactor>
+          <GetStarted>
+            <Title resid="GetStarted.Title"/>
+            <Description resid="GetStarted.Description"/>
+            <LearnMoreUrl resid="GetStarted.LearnMoreUrl"/>
+          </GetStarted>
+          <FunctionFile resid="Taskpane.Url"/>
+          <ExtensionPoint xsi:type="PrimaryCommandSurface">
+            <OfficeTab id="TabHome">
+              <Group id="MonteCarlo.SetupGroup">
+                <Label resid="SetupGroup.Label"/>
+                <Icon>
+                  <bt:Image size="16" resid="Icon.16"/>
+                  <bt:Image size="32" resid="Icon.32"/>
+                  <bt:Image size="80" resid="Icon.80"/>
+                </Icon>
+                <Control xsi:type="Button" id="MonteCarlo.OpenPane">
+                  <Label resid="OpenPane.Label"/>
+                  <Supertip>
+                    <Title resid="OpenPane.Label"/>
+                    <Description resid="OpenPane.Description"/>
+                  </Supertip>
+                  <Icon>
+                    <bt:Image size="16" resid="Icon.16"/>
+                    <bt:Image size="32" resid="Icon.32"/>
+                    <bt:Image size="80" resid="Icon.80"/>
+                  </Icon>
+                  <Action xsi:type="ShowTaskpane">
+                    <TaskpaneId>ButtonId1</TaskpaneId>
+                    <SourceLocation resid="Taskpane.Url"/>
+                  </Action>
+                </Control>
+                <Control xsi:type="Button" id="MonteCarlo.Scan">
+                  <Label resid="Scan.Label"/>
+                  <Supertip>
+                    <Title resid="Scan.Label"/>
+                    <Description resid="Scan.Description"/>
+                  </Supertip>
+                  <Icon>
+                    <bt:Image size="16" resid="Icon.16"/>
+                    <bt:Image size="32" resid="Icon.32"/>
+                    <bt:Image size="80" resid="Icon.80"/>
+                  </Icon>
+                  <Action xsi:type="ShowTaskpane">
+                    <TaskpaneId>ButtonId2</TaskpaneId>
+                    <SourceLocation resid="Taskpane.Url"/>
+                  </Action>
+                </Control>
+                <Control xsi:type="Button" id="MonteCarlo.AddInput">
+                  <Label resid="AddInput.Label"/>
+                  <Supertip>
+                    <Title resid="AddInput.Label"/>
+                    <Description resid="AddInput.Description"/>
+                  </Supertip>
+                  <Icon>
+                    <bt:Image size="16" resid="Icon.16"/>
+                    <bt:Image size="32" resid="Icon.32"/>
+                    <bt:Image size="80" resid="Icon.80"/>
+                  </Icon>
+                  <Action xsi:type="ShowTaskpane">
+                    <TaskpaneId>ButtonId3</TaskpaneId>
+                    <SourceLocation resid="Taskpane.Url"/>
+                  </Action>
+                </Control>
+                <Control xsi:type="Button" id="MonteCarlo.AddOutput">
+                  <Label resid="AddOutput.Label"/>
+                  <Supertip>
+                    <Title resid="AddOutput.Label"/>
+                    <Description resid="AddOutput.Description"/>
+                  </Supertip>
+                  <Icon>
+                    <bt:Image size="16" resid="Icon.16"/>
+                    <bt:Image size="32" resid="Icon.32"/>
+                    <bt:Image size="80" resid="Icon.80"/>
+                  </Icon>
+                  <Action xsi:type="ShowTaskpane">
+                    <TaskpaneId>ButtonId4</TaskpaneId>
+                    <SourceLocation resid="Taskpane.Url"/>
+                  </Action>
+                </Control>
+              </Group>
+              <Group id="MonteCarlo.RunGroup">
+                <Label resid="RunGroup.Label"/>
+                <Icon>
+                  <bt:Image size="16" resid="Icon.16"/>
+                  <bt:Image size="32" resid="Icon.32"/>
+                  <bt:Image size="80" resid="Icon.80"/>
+                </Icon>
+                <Control xsi:type="Button" id="MonteCarlo.Run">
+                  <Label resid="Run.Label"/>
+                  <Supertip>
+                    <Title resid="Run.Label"/>
+                    <Description resid="Run.Description"/>
+                  </Supertip>
+                  <Icon>
+                    <bt:Image size="16" resid="Icon.16"/>
+                    <bt:Image size="32" resid="Icon.32"/>
+                    <bt:Image size="80" resid="Icon.80"/>
+                  </Icon>
+                  <Action xsi:type="ShowTaskpane">
+                    <TaskpaneId>ButtonId5</TaskpaneId>
+                    <SourceLocation resid="Taskpane.Url"/>
+                  </Action>
+                </Control>
+                <Control xsi:type="Button" id="MonteCarlo.Export">
+                  <Label resid="Export.Label"/>
+                  <Supertip>
+                    <Title resid="Export.Label"/>
+                    <Description resid="Export.Description"/>
+                  </Supertip>
+                  <Icon>
+                    <bt:Image size="16" resid="Icon.16"/>
+                    <bt:Image size="32" resid="Icon.32"/>
+                    <bt:Image size="80" resid="Icon.80"/>
+                  </Icon>
+                  <Action xsi:type="ShowTaskpane">
+                    <TaskpaneId>ButtonId6</TaskpaneId>
+                    <SourceLocation resid="Taskpane.Url"/>
+                  </Action>
+                </Control>
+                <Control xsi:type="Button" id="MonteCarlo.Benchmark">
+                  <Label resid="Benchmark.Label"/>
+                  <Supertip>
+                    <Title resid="Benchmark.Label"/>
+                    <Description resid="Benchmark.Description"/>
+                  </Supertip>
+                  <Icon>
+                    <bt:Image size="16" resid="Icon.16"/>
+                    <bt:Image size="32" resid="Icon.32"/>
+                    <bt:Image size="80" resid="Icon.80"/>
+                  </Icon>
+                  <Action xsi:type="ShowTaskpane">
+                    <TaskpaneId>ButtonId7</TaskpaneId>
+                    <SourceLocation resid="Taskpane.Url"/>
+                  </Action>
+                </Control>
+              </Group>
+              <Group id="MonteCarlo.HelpGroup">
+                <Label resid="HelpGroup.Label"/>
+                <Icon>
+                  <bt:Image size="16" resid="Icon.16"/>
+                  <bt:Image size="32" resid="Icon.32"/>
+                  <bt:Image size="80" resid="Icon.80"/>
+                </Icon>
+                <Control xsi:type="Button" id="MonteCarlo.Docs">
+                  <Label resid="Docs.Label"/>
+                  <Supertip>
+                    <Title resid="Docs.Label"/>
+                    <Description resid="Docs.Description"/>
+                  </Supertip>
+                  <Icon>
+                    <bt:Image size="16" resid="Icon.16"/>
+                    <bt:Image size="32" resid="Icon.32"/>
+                    <bt:Image size="80" resid="Icon.80"/>
+                  </Icon>
+                  <Action xsi:type="ShowTaskpane">
+                    <TaskpaneId>ButtonId8</TaskpaneId>
+                    <SourceLocation resid="Taskpane.Url"/>
+                  </Action>
+                </Control>
+                <Control xsi:type="Button" id="MonteCarlo.Tools">
+                  <Label resid="Tools.Label"/>
+                  <Supertip>
+                    <Title resid="Tools.Label"/>
+                    <Description resid="Tools.Description"/>
+                  </Supertip>
+                  <Icon>
+                    <bt:Image size="16" resid="Icon.16"/>
+                    <bt:Image size="32" resid="Icon.32"/>
+                    <bt:Image size="80" resid="Icon.80"/>
+                  </Icon>
+                  <Action xsi:type="ShowTaskpane">
+                    <TaskpaneId>ButtonId9</TaskpaneId>
+                    <SourceLocation resid="Taskpane.Url"/>
+                  </Action>
+                </Control>
+              </Group>
+            </OfficeTab>
+          </ExtensionPoint>
+          <ExtensionPoint xsi:type="CustomFunctions">
+            <Script>
+              <SourceLocation resid="CustomFunctions.Script"/>
+            </Script>
+            <Page>
+              <SourceLocation resid="Taskpane.Url"/>
+            </Page>
+            <Metadata>
+              <SourceLocation resid="CustomFunctions.Metadata"/>
+            </Metadata>
+            <Namespace resid="CustomFunctions.Namespace"/>
+          </ExtensionPoint>
+        </DesktopFormFactor>
+      </Host>
+    </Hosts>
+    <Resources>
+      <bt:Images>
+        <bt:Image id="Icon.16" DefaultValue="https://localhost:3000/assets/icon-16.png"/>
+        <bt:Image id="Icon.32" DefaultValue="https://localhost:3000/assets/icon-32.png"/>
+        <bt:Image id="Icon.80" DefaultValue="https://localhost:3000/assets/icon-80.png"/>
+      </bt:Images>
+      <bt:Urls>
+        <bt:Url id="Taskpane.Url" DefaultValue="https://localhost:3000/taskpane.html"/>
+        <bt:Url id="CustomFunctions.Script" DefaultValue="https://localhost:3000/assets/custom-functions.js"/>
+        <bt:Url id="CustomFunctions.Metadata" DefaultValue="https://localhost:3000/custom-functions.json"/>
+        <bt:Url id="GetStarted.LearnMoreUrl" DefaultValue="https://localhost:3000/taskpane.html"/>
+      </bt:Urls>
+      <bt:ShortStrings>
+        <bt:String id="GetStarted.Title" DefaultValue="MonteCarlo.XL"/>
+        <bt:String id="SetupGroup.Label" DefaultValue="Setup"/>
+        <bt:String id="RunGroup.Label" DefaultValue="Simulation"/>
+        <bt:String id="HelpGroup.Label" DefaultValue="Help"/>
+        <bt:String id="OpenPane.Label" DefaultValue="Open"/>
+        <bt:String id="Scan.Label" DefaultValue="Scan"/>
+        <bt:String id="AddInput.Label" DefaultValue="Add Input"/>
+        <bt:String id="AddOutput.Label" DefaultValue="Add Output"/>
+        <bt:String id="Run.Label" DefaultValue="Run"/>
+        <bt:String id="Export.Label" DefaultValue="Export"/>
+        <bt:String id="Benchmark.Label" DefaultValue="Benchmark"/>
+        <bt:String id="Docs.Label" DefaultValue="Docs"/>
+        <bt:String id="Tools.Label" DefaultValue="Tools"/>
+        <bt:String id="CustomFunctions.Namespace" DefaultValue="MC"/>
+      </bt:ShortStrings>
+      <bt:LongStrings>
+        <bt:String id="GetStarted.Description" DefaultValue="Open the MonteCarlo.XL task pane to configure inputs, run simulations, and export results."/>
+        <bt:String id="OpenPane.Description" DefaultValue="Open the MonteCarlo.XL ARM-capable task pane."/>
+        <bt:String id="Scan.Description" DefaultValue="Open the task pane and scan the active worksheet for MC formulas."/>
+        <bt:String id="AddInput.Description" DefaultValue="Open the task pane and add the selected cell as an input."/>
+        <bt:String id="AddOutput.Description" DefaultValue="Open the task pane and add the selected cell as an output."/>
+        <bt:String id="Run.Description" DefaultValue="Open run controls, validation, and progress views."/>
+        <bt:String id="Export.Description" DefaultValue="Open summary export tools and results charts."/>
+        <bt:String id="Benchmark.Description" DefaultValue="Open benchmark and diagnostic tools for the Office host."/>
+        <bt:String id="Docs.Description" DefaultValue="Open distribution explanations and workflow guidance in the task pane."/>
+        <bt:String id="Tools.Description" DefaultValue="Open settings, documentation, and workbook utilities."/>
+      </bt:LongStrings>
+    </Resources>
+  </VersionOverrides>
+</OfficeApp>

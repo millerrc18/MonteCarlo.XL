@@ -1,0 +1,30 @@
+{
+  "name": "montecarlo.officeaddin",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "prepare:wasm": "dotnet publish ../MonteCarlo.Engine.Wasm/MonteCarlo.Engine.Wasm.csproj -c Release -o public/wasm",
+    "dev": "npm run prepare:wasm && vite",
+    "build": "npm run prepare:wasm && vite build",
+    "preview": "vite preview"
+  },
+  "license": "MIT",
+  "description": "Office.js host for MonteCarlo.XL",
+  "dependencies": {
+    "@fluentui/react-components": "^9.73.8",
+    "plotly.js-dist-min": "^3.5.0",
+    "react": "^19.2.5",
+    "react-dom": "^19.2.5",
+    "react-plotly.js": "^2.6.0"
+  },
+  "devDependencies": {
+    "@types/office-js": "^1.0.589",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-basic-ssl": "^2.3.0",
+    "@vitejs/plugin-react": "^6.0.1",
+    "typescript": "^6.0.3",
+    "vite": "^8.0.10"
+  }
+}

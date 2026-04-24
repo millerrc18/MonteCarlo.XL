@@ -1,9 +1,8 @@
-
+﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
-
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{A1B2C3D4-0001-0001-0001-000000000001}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{A1B2C3D4-0001-0001-0001-000000000002}"
@@ -17,6 +16,12 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MonteCarlo.Addin", "src\MonteCarlo.Addin\MonteCarlo.Addin.csproj", "{B1000001-0000-0000-0000-000000000004}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MonteCarlo.Engine.Tests", "tests\MonteCarlo.Engine.Tests\MonteCarlo.Engine.Tests.csproj", "{B1000001-0000-0000-0000-000000000005}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MonteCarlo.Shared", "src\MonteCarlo.Shared\MonteCarlo.Shared.csproj", "{C5B6F592-D681-411D-9952-ED7D084B0060}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MonteCarlo.Engine.Wasm", "src\MonteCarlo.Engine.Wasm\MonteCarlo.Engine.Wasm.csproj", "{F53828E8-7418-4DC0-B6BE-644A0460B9F0}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MonteCarlo.Shared.Tests", "tests\MonteCarlo.Shared.Tests\MonteCarlo.Shared.Tests.csproj", "{15FC2880-9DF4-41E5-9953-B8FEA0203D0F}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -44,6 +49,18 @@ Global
 		{B1000001-0000-0000-0000-000000000005}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B1000001-0000-0000-0000-000000000005}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B1000001-0000-0000-0000-000000000005}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C5B6F592-D681-411D-9952-ED7D084B0060}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C5B6F592-D681-411D-9952-ED7D084B0060}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C5B6F592-D681-411D-9952-ED7D084B0060}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C5B6F592-D681-411D-9952-ED7D084B0060}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F53828E8-7418-4DC0-B6BE-644A0460B9F0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F53828E8-7418-4DC0-B6BE-644A0460B9F0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F53828E8-7418-4DC0-B6BE-644A0460B9F0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F53828E8-7418-4DC0-B6BE-644A0460B9F0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{15FC2880-9DF4-41E5-9953-B8FEA0203D0F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{15FC2880-9DF4-41E5-9953-B8FEA0203D0F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{15FC2880-9DF4-41E5-9953-B8FEA0203D0F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{15FC2880-9DF4-41E5-9953-B8FEA0203D0F}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -54,5 +71,8 @@ Global
 		{B1000001-0000-0000-0000-000000000003} = {A1B2C3D4-0001-0001-0001-000000000001}
 		{B1000001-0000-0000-0000-000000000004} = {A1B2C3D4-0001-0001-0001-000000000001}
 		{B1000001-0000-0000-0000-000000000005} = {A1B2C3D4-0001-0001-0001-000000000002}
+		{C5B6F592-D681-411D-9952-ED7D084B0060} = {A1B2C3D4-0001-0001-0001-000000000001}
+		{F53828E8-7418-4DC0-B6BE-644A0460B9F0} = {A1B2C3D4-0001-0001-0001-000000000001}
+		{15FC2880-9DF4-41E5-9953-B8FEA0203D0F} = {A1B2C3D4-0001-0001-0001-000000000002}
 	EndGlobalSection
 EndGlobal

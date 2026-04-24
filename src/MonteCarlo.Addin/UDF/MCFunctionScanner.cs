@@ -1,5 +1,5 @@
-using System.Text.RegularExpressions;
 using MonteCarlo.Addin.Excel;
+using MonteCarlo.Shared.Formula;
 
 namespace MonteCarlo.Addin.UDF;
 
@@ -9,32 +9,6 @@ namespace MonteCarlo.Addin.UDF;
 /// </summary>
 public class MCFunctionScanner
 {
-    // Matches =MC.FunctionName(args...) in formulas
-    private static readonly Regex MCFormulaPattern = new(
-        @"^=MC\.(\w+)\((.+)\)$",
-        RegexOptions.Compiled | RegexOptions.IgnoreCase);
-
-    /// <summary>
-    /// Maps MC function names to their parameter names (positional).
-    /// </summary>
-    private static readonly Dictionary<string, string[]> ParameterMapping = new(StringComparer.OrdinalIgnoreCase)
-    {
-        { "Normal", new[] { "mean", "stdDev" } },
-        { "Triangular", new[] { "min", "mode", "max" } },
-        { "PERT", new[] { "min", "mode", "max" } },
-        { "Lognormal", new[] { "mu", "sigma" } },
-        { "Uniform", new[] { "min", "max" } },
-        { "Beta", new[] { "alpha", "beta" } },
-        { "Weibull", new[] { "shape", "scale" } },
-        { "Exponential", new[] { "rate" } },
-        { "Poisson", new[] { "lambda" } },
-        { "Gamma", new[] { "shape", "rate" } },
-        { "Logistic", new[] { "mu", "s" } },
-        { "GEV", new[] { "mu", "sigma", "xi" } },
-        { "Binomial", new[] { "n", "p" } },
-        { "Geometric", new[] { "p" } }
-    };
-
     /// <summary>
     /// Scans a worksheet's used range for MC.* formulas.
     /// </summary>
@@ -58,15 +32,14 @@ public class MCFunctionScanner
                         string formula = cell.Formula?.ToString() ?? string.Empty;
                         if (formula.StartsWith("=MC.", StringComparison.OrdinalIgnoreCase))
                         {
-                            var parsed = ParseFormula(formula);
-                            if (parsed != null)
+                            if (McFormulaParser.TryParse(formula, out var parsed) && parsed != null)
                             {
                                 string address = cell.Address.ToString().Replace("$", "");
                                 results.Add(new DetectedMCFunction
                                 {
                                     Cell = new CellReference { SheetName = sheet.Name, CellAddress = address },
                                     DistributionName = parsed.DistributionName,
-                                    ParameterNames = parsed.ParameterNames,
+                                    ParameterNames = parsed.Arguments.Select(argument => argument.Name).ToArray(),
                                     Formula = formula
                                 });
                             }
@@ -100,11 +73,10 @@ public class MCFunctionScanner
         try
         {
             // Parse the formula arguments
-            var match = MCFormulaPattern.Match(function.Formula);
-            if (!match.Success) return null;
+            if (!McFormulaParser.TryParse(function.Formula, out var parsed) || parsed == null)
+                return null;
 
-            string argsStr = match.Groups[2].Value;
-            var argParts = SplitArguments(argsStr);
+            var argParts = parsed.RawArguments;
 
             if (argParts.Count != function.ParameterNames.Length)
                 return null;
@@ -113,7 +85,7 @@ public class MCFunctionScanner
 
             for (int i = 0; i < argParts.Count; i++)
             {
-                string arg = argParts[i].Trim();
+                    string arg = argParts[i].Trim();
 
                 // Try to parse as a literal number
                 if (double.TryParse(arg, System.Globalization.NumberStyles.Float,
@@ -130,8 +102,8 @@ public class MCFunctionScanner
                         object? val = refCell.Value2;
                         if (val is double d)
                             parameters[function.ParameterNames[i]] = d;
-                        else if (val != null && double.TryParse(val.ToString(), out double parsed))
-                            parameters[function.ParameterNames[i]] = parsed;
+                        else if (val != null && double.TryParse(val.ToString(), out double parsedValue))
+                            parameters[function.ParameterNames[i]] = parsedValue;
                         else
                             return null; // Can't resolve
                     }
@@ -150,55 +122,6 @@ public class MCFunctionScanner
         }
     }
 
-    private static ParsedFormula? ParseFormula(string formula)
-    {
-        var match = MCFormulaPattern.Match(formula);
-        if (!match.Success) return null;
-
-        string funcName = match.Groups[1].Value;
-
-        if (!ParameterMapping.TryGetValue(funcName, out var paramNames))
-            return null;
-
-        return new ParsedFormula
-        {
-            DistributionName = funcName,
-            ParameterNames = paramNames
-        };
-    }
-
-    /// <summary>
-    /// Splits function arguments, respecting nested parentheses.
-    /// </summary>
-    private static List<string> SplitArguments(string argsStr)
-    {
-        var args = new List<string>();
-        int depth = 0;
-        int start = 0;
-
-        for (int i = 0; i < argsStr.Length; i++)
-        {
-            char c = argsStr[i];
-            if (c == '(') depth++;
-            else if (c == ')') depth--;
-            else if (c == ',' && depth == 0)
-            {
-                args.Add(argsStr[start..i]);
-                start = i + 1;
-            }
-        }
-
-        if (start < argsStr.Length)
-            args.Add(argsStr[start..]);
-
-        return args;
-    }
-
-    private class ParsedFormula
-    {
-        public required string DistributionName { get; init; }
-        public required string[] ParameterNames { get; init; }
-    }
 }
 
 /// <summary>

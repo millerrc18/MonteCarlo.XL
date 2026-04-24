@@ -1,4 +1,5 @@
 using ExcelDna.Integration;
+using MonteCarlo.Shared.Formula;
 
 namespace MonteCarlo.Addin.UDF;
 
@@ -16,12 +17,7 @@ public static class MonteCarloFunctions
     public static object MCNormal(
         [ExcelArgument(Name = "mean", Description = "Mean (μ)")] double mean,
         [ExcelArgument(Name = "stdDev", Description = "Standard deviation (σ), must be > 0")] double stdDev)
-    {
-        if (stdDev <= 0)
-            return ExcelError.ExcelErrorValue;
-
-        return mean;
-    }
+        => Evaluate("Normal", mean, stdDev);
 
     [ExcelFunction(
         Name = "MC.Triangular",
@@ -31,12 +27,7 @@ public static class MonteCarloFunctions
         [ExcelArgument(Name = "min", Description = "Minimum value")] double min,
         [ExcelArgument(Name = "mode", Description = "Most likely value")] double mode,
         [ExcelArgument(Name = "max", Description = "Maximum value")] double max)
-    {
-        if (min >= max || mode < min || mode > max)
-            return ExcelError.ExcelErrorValue;
-
-        return mode;
-    }
+        => Evaluate("Triangular", min, mode, max);
 
     [ExcelFunction(
         Name = "MC.PERT",
@@ -46,12 +37,7 @@ public static class MonteCarloFunctions
         [ExcelArgument(Name = "min", Description = "Minimum value")] double min,
         [ExcelArgument(Name = "mode", Description = "Most likely value")] double mode,
         [ExcelArgument(Name = "max", Description = "Maximum value")] double max)
-    {
-        if (min >= max || mode < min || mode > max)
-            return ExcelError.ExcelErrorValue;
-
-        return mode;
-    }
+        => Evaluate("PERT", min, mode, max);
 
     [ExcelFunction(
         Name = "MC.Lognormal",
@@ -60,13 +46,7 @@ public static class MonteCarloFunctions
     public static object MCLognormal(
         [ExcelArgument(Name = "mu", Description = "Mean of the underlying normal distribution (μ)")] double mu,
         [ExcelArgument(Name = "sigma", Description = "Std dev of the underlying normal distribution (σ), must be > 0")] double sigma)
-    {
-        if (sigma <= 0)
-            return ExcelError.ExcelErrorValue;
-
-        // Expected value of Lognormal = exp(μ + σ²/2)
-        return Math.Exp(mu + sigma * sigma / 2.0);
-    }
+        => Evaluate("Lognormal", mu, sigma);
 
     [ExcelFunction(
         Name = "MC.Uniform",
@@ -75,12 +55,7 @@ public static class MonteCarloFunctions
     public static object MCUniform(
         [ExcelArgument(Name = "min", Description = "Minimum value")] double min,
         [ExcelArgument(Name = "max", Description = "Maximum value")] double max)
-    {
-        if (min >= max)
-            return ExcelError.ExcelErrorValue;
-
-        return (min + max) / 2.0;
-    }
+        => Evaluate("Uniform", min, max);
 
     [ExcelFunction(
         Name = "MC.Beta",
@@ -89,12 +64,7 @@ public static class MonteCarloFunctions
     public static object MCBeta(
         [ExcelArgument(Name = "alpha", Description = "Shape parameter α, must be > 0")] double alpha,
         [ExcelArgument(Name = "beta", Description = "Shape parameter β, must be > 0")] double beta)
-    {
-        if (alpha <= 0 || beta <= 0)
-            return ExcelError.ExcelErrorValue;
-
-        return alpha / (alpha + beta);
-    }
+        => Evaluate("Beta", alpha, beta);
 
     [ExcelFunction(
         Name = "MC.Weibull",
@@ -103,13 +73,7 @@ public static class MonteCarloFunctions
     public static object MCWeibull(
         [ExcelArgument(Name = "shape", Description = "Shape parameter (k), must be > 0")] double shape,
         [ExcelArgument(Name = "scale", Description = "Scale parameter (λ), must be > 0")] double scale)
-    {
-        if (shape <= 0 || scale <= 0)
-            return ExcelError.ExcelErrorValue;
-
-        // Mean of Weibull = scale * Γ(1 + 1/shape)
-        return scale * SpecialFunctions.Gamma(1.0 + 1.0 / shape);
-    }
+        => Evaluate("Weibull", shape, scale);
 
     [ExcelFunction(
         Name = "MC.Exponential",
@@ -117,12 +81,7 @@ public static class MonteCarloFunctions
         Category = "MonteCarlo.XL")]
     public static object MCExponential(
         [ExcelArgument(Name = "rate", Description = "Rate parameter (λ), must be > 0")] double rate)
-    {
-        if (rate <= 0)
-            return ExcelError.ExcelErrorValue;
-
-        return 1.0 / rate;
-    }
+        => Evaluate("Exponential", rate);
 
     [ExcelFunction(
         Name = "MC.Poisson",
@@ -130,12 +89,7 @@ public static class MonteCarloFunctions
         Category = "MonteCarlo.XL")]
     public static object MCPoisson(
         [ExcelArgument(Name = "lambda", Description = "Expected event count (λ), must be > 0")] double lambda)
-    {
-        if (lambda <= 0)
-            return ExcelError.ExcelErrorValue;
-
-        return lambda;
-    }
+        => Evaluate("Poisson", lambda);
 
     [ExcelFunction(
         Name = "MC.Gamma",
@@ -144,12 +98,7 @@ public static class MonteCarloFunctions
     public static object MCGamma(
         [ExcelArgument(Name = "shape", Description = "Shape parameter (α), must be > 0")] double shape,
         [ExcelArgument(Name = "rate", Description = "Rate parameter (β), must be > 0")] double rate)
-    {
-        if (shape <= 0 || rate <= 0)
-            return ExcelError.ExcelErrorValue;
-
-        return shape / rate;
-    }
+        => Evaluate("Gamma", shape, rate);
 
     [ExcelFunction(
         Name = "MC.Logistic",
@@ -158,12 +107,7 @@ public static class MonteCarloFunctions
     public static object MCLogistic(
         [ExcelArgument(Name = "mu", Description = "Location parameter (μ)")] double mu,
         [ExcelArgument(Name = "s", Description = "Scale parameter (s), must be > 0")] double s)
-    {
-        if (s <= 0)
-            return ExcelError.ExcelErrorValue;
-
-        return mu;
-    }
+        => Evaluate("Logistic", mu, s);
 
     [ExcelFunction(
         Name = "MC.GEV",
@@ -173,18 +117,7 @@ public static class MonteCarloFunctions
         [ExcelArgument(Name = "mu", Description = "Location parameter (μ)")] double mu,
         [ExcelArgument(Name = "sigma", Description = "Scale parameter (σ), must be > 0")] double sigma,
         [ExcelArgument(Name = "xi", Description = "Shape parameter (ξ)")] double xi)
-    {
-        if (sigma <= 0)
-            return ExcelError.ExcelErrorValue;
-
-        if (Math.Abs(xi) < 1e-10)
-            return mu + sigma * 0.5772156649;
-
-        if (xi < 1.0)
-            return mu + sigma * (SpecialFunctions.Gamma(1.0 - xi) - 1.0) / xi;
-
-        return double.PositiveInfinity;
-    }
+        => Evaluate("GEV", mu, sigma, xi);
 
     [ExcelFunction(
         Name = "MC.Binomial",
@@ -193,12 +126,7 @@ public static class MonteCarloFunctions
     public static object MCBinomial(
         [ExcelArgument(Name = "n", Description = "Number of trials, must be > 0")] int n,
         [ExcelArgument(Name = "p", Description = "Probability of success, must be in [0,1]")] double p)
-    {
-        if (n <= 0 || p < 0 || p > 1)
-            return ExcelError.ExcelErrorValue;
-
-        return (double)(n * p);
-    }
+        => Evaluate("Binomial", n, p);
 
     [ExcelFunction(
         Name = "MC.Geometric",
@@ -206,26 +134,12 @@ public static class MonteCarloFunctions
         Category = "MonteCarlo.XL")]
     public static object MCGeometric(
         [ExcelArgument(Name = "p", Description = "Probability of success, must be in (0,1]")] double p)
-    {
-        if (p <= 0 || p > 1)
-            return ExcelError.ExcelErrorValue;
+        => Evaluate("Geometric", p);
 
-        return 1.0 / p;
-    }
-
-    /// <summary>
-    /// Simple gamma function implementation for Weibull expected value.
-    /// </summary>
-    private static class SpecialFunctions
+    private static object Evaluate(string functionName, params double[] arguments)
     {
-        /// <summary>
-        /// Computes the Gamma function using Stirling's approximation for large values
-        /// and the Lanczos approximation for general use.
-        /// </summary>
-        public static double Gamma(double x)
-        {
-            // Use MathNet if available at runtime, otherwise Lanczos approximation
-            return MathNet.Numerics.SpecialFunctions.Gamma(x);
-        }
+        return McNormalModeEvaluator.TryEvaluate(functionName, arguments, out var result)
+            ? result
+            : ExcelError.ExcelErrorValue;
     }
 }
