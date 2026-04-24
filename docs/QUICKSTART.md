@@ -119,6 +119,6 @@ Common fixes:
 - Put the `.xll` in a trusted location or unblock it if Excel blocks loading.
 - Rebuild after code changes before copying the packed add-in to `XLSTART`.
 - Use `MonteCarlo.XL` > `Recover Excel` if Excel appears stuck in manual calculation, disabled events, or a stale status-bar message after an interrupted run.
-- Use `MonteCarlo.XL` > `Benchmark` to add a sheet comparing active-workbook recalculation time with synthetic simulation-engine throughput.
+- Use `MonteCarlo.XL` > `Benchmark` to add a sheet comparing active-workbook recalculation time with synthetic simulation-engine throughput plus synthetic summary/raw export timing.
 
 See [Local Excel Debug Path](LOCAL_EXCEL_DEBUG.md) for more detailed developer notes.
