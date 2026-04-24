@@ -18,6 +18,11 @@ public partial class RunViewModel : ObservableObject
     [ObservableProperty] private string _estimatedRemaining = "—";
     [ObservableProperty] private string _iterationRate = "—";
     [ObservableProperty] private string _runModeSummary = "—";
+    [ObservableProperty] private string _settingsSourceSummary = "—";
+    [ObservableProperty] private string _samplingSummary = "—";
+    [ObservableProperty] private string _seedSummary = "—";
+    [ObservableProperty] private string _convergenceSummary = "—";
+    [ObservableProperty] private string _warningPauseSummary = "—";
 
     // Live stats (updated periodically)
     [ObservableProperty] private string _liveMean = "—";
@@ -153,7 +158,7 @@ public partial class RunViewModel : ObservableObject
     /// <summary>
     /// Reset the view model for a new run.
     /// </summary>
-    public void Reset(int totalIterations)
+    public void Reset(int totalIterations, RunSettingsSummary? settingsSummary = null)
     {
         TotalIterations = totalIterations;
         CompletedIterations = 0;
@@ -162,6 +167,11 @@ public partial class RunViewModel : ObservableObject
         EstimatedRemaining = "—";
         IterationRate = "—";
         RunModeSummary = GetRunModeSummary(totalIterations);
+        SettingsSourceSummary = settingsSummary?.SettingsSource ?? "—";
+        SamplingSummary = settingsSummary?.Sampling ?? "—";
+        SeedSummary = settingsSummary?.Seed ?? "—";
+        ConvergenceSummary = settingsSummary?.Convergence ?? "—";
+        WarningPauseSummary = settingsSummary?.WarningPause ?? "—";
         LiveMean = "—";
         LiveMedian = "—";
         LiveStdDev = "—";
@@ -201,6 +211,19 @@ public partial class RunViewModel : ObservableObject
             _ => "Deep"
         };
     }
+}
+
+public sealed class RunSettingsSummary
+{
+    public string SettingsSource { get; init; } = "—";
+
+    public string Sampling { get; init; } = "—";
+
+    public string Seed { get; init; } = "—";
+
+    public string Convergence { get; init; } = "—";
+
+    public string WarningPause { get; init; } = "—";
 }
 
 /// <summary>

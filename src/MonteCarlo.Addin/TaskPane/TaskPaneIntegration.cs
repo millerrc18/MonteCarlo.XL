@@ -34,6 +34,8 @@ internal sealed class TaskPaneIntegration : IDisposable
     private bool _isRunning;
     private bool _errorRaisedDuringRun;
     private bool _profileLoaded;
+    private bool _workbookSettingsLoaded;
+    private WorkbookUserSettingsOverrides? _workbookSettingsOverrides;
 
     public TaskPaneIntegration(
         TaskPaneController taskPane,
@@ -73,7 +75,8 @@ internal sealed class TaskPaneIntegration : IDisposable
         viewModel.PreflightReportProvider = profile =>
             ExcelModelPreflightValidator.Validate(profile, TryGetExcelApplication());
         viewModel.PauseOnPreflightWarningsProvider = () =>
-            new UserSettingsService().Load().PauseOnPreflightWarnings;
+            ResolveEffectiveUserSettings().Settings.PauseOnPreflightWarnings;
+        viewModel.RunSettingsProvider = BuildRunSettingsSummary;
         viewModel.RunSimulationRequested += OnRunSimulationRequested;
         viewModel.CancelSimulationRequested += OnCancelSimulationRequested;
         viewModel.CorrelationImportRequested += OnCorrelationImportRequested;
@@ -87,6 +90,8 @@ internal sealed class TaskPaneIntegration : IDisposable
         viewModel.SetupViewModel.CellActionRequested += OnCellActionRequested;
         viewModel.SetupViewModel.RefreshHighlightsRequested += OnRefreshHighlightsRequested;
         viewModel.SetupViewModel.DistributionFitRequested += OnDistributionFitRequested;
+        WorkbookSettingsBridge.LoadOverrides = LoadWorkbookSettingsOverrides;
+        WorkbookSettingsBridge.SaveOverrides = SaveWorkbookSettingsOverrides;
 
         LoadSavedProfile(viewModel);
     }
@@ -160,7 +165,8 @@ internal sealed class TaskPaneIntegration : IDisposable
 
         try
         {
-            var userSettings = new UserSettingsService().Load();
+            var effectiveSettings = ResolveEffectiveUserSettings();
+            var userSettings = effectiveSettings.Settings;
             var runSeed = viewModel.SetupViewModel.IsSeedLocked
                 ? viewModel.SetupViewModel.RandomSeed
                 : userSettings.SeedMode == SeedMode.Fixed
@@ -297,7 +303,8 @@ internal sealed class TaskPaneIntegration : IDisposable
 
         try
         {
-            var userSettings = new UserSettingsService().Load();
+            var effectiveSettings = ResolveEffectiveUserSettings();
+            var userSettings = effectiveSettings.Settings;
             var runSeed = viewModel.SetupViewModel.IsSeedLocked
                 ? viewModel.SetupViewModel.RandomSeed
                 : userSettings.SeedMode == SeedMode.Fixed
@@ -817,9 +824,10 @@ internal sealed class TaskPaneIntegration : IDisposable
         {
             var profile = _orchestrator.LoadConfig();
             var setup = viewModel.SetupViewModel;
+            var effectiveSettings = ResolveEffectiveUserSettings().Settings;
             if (profile == null)
             {
-                ApplyUserDefaults(setup);
+                ApplyUserDefaults(setup, effectiveSettings);
                 return;
             }
 
@@ -859,9 +867,8 @@ internal sealed class TaskPaneIntegration : IDisposable
         }
     }
 
-    private static void ApplyUserDefaults(SetupViewModel setup)
+    private static void ApplyUserDefaults(SetupViewModel setup, UserSettings settings)
     {
-        var settings = new UserSettingsService().Load();
         setup.IterationCount = settings.DefaultIterationCount;
 
         if (settings.SeedMode == SeedMode.Fixed)
@@ -955,7 +962,8 @@ internal sealed class TaskPaneIntegration : IDisposable
                     return;
 
                 var exporter = new ResultsExporter();
-                var userSettings = new UserSettingsService().Load();
+                var effectiveSettings = ResolveEffectiveUserSettings();
+                var userSettings = effectiveSettings.Settings;
                 if (exportRawData)
                 {
                     if (!ConfirmRawDataExport(result))
@@ -991,7 +999,9 @@ internal sealed class TaskPaneIntegration : IDisposable
                     outputIndex,
                     createNewSheet: userSettings.CreateNewWorksheetForExports,
                     percentiles: userSettings.GetDefaultPercentileFractions(),
-                    targetValue: resultsViewModel.TargetValueNumeric);
+                    targetValue: resultsViewModel.TargetValueNumeric,
+                    effectiveSettings: userSettings,
+                    usesWorkbookOverrides: effectiveSettings.UsesWorkbookOverrides);
 
                 StartupDiagnostics.Log($"Export summary completed for output '{selectedOutputId}'.");
             }
@@ -1032,6 +1042,74 @@ internal sealed class TaskPaneIntegration : IDisposable
             System.Windows.Forms.MessageBoxIcon.Warning);
 
         return confirm == System.Windows.Forms.DialogResult.Yes;
+    }
+
+    private WorkbookUserSettingsOverrides? LoadWorkbookSettingsOverrides()
+    {
+        if (_workbookSettingsLoaded)
+            return _workbookSettingsOverrides;
+
+        try
+        {
+            _workbookSettingsOverrides = _orchestrator.LoadWorkbookSettingsOverrides();
+            _workbookSettingsLoaded = true;
+            return _workbookSettingsOverrides;
+        }
+        catch (Exception ex)
+        {
+            StartupDiagnostics.LogException("Failed to load workbook settings overrides.", ex);
+            _workbookSettingsLoaded = true;
+            _workbookSettingsOverrides = null;
+            return null;
+        }
+    }
+
+    private void SaveWorkbookSettingsOverrides(WorkbookUserSettingsOverrides? workbookSettingsOverrides)
+    {
+        try
+        {
+            _workbookSettingsOverrides = workbookSettingsOverrides;
+            _workbookSettingsLoaded = true;
+            _orchestrator.SaveWorkbookSettingsOverrides(workbookSettingsOverrides);
+        }
+        catch (Exception ex)
+        {
+            StartupDiagnostics.LogException("Failed to save workbook settings overrides.", ex);
+            throw;
+        }
+    }
+
+    private EffectiveUserSettings ResolveEffectiveUserSettings()
+    {
+        var globalSettings = new UserSettingsService().Load();
+        return UserSettings.Resolve(globalSettings, LoadWorkbookSettingsOverrides());
+    }
+
+    private RunSettingsSummary BuildRunSettingsSummary()
+    {
+        var viewModel = _viewModel;
+        var setup = viewModel?.SetupViewModel;
+        if (setup == null)
+            return new RunSettingsSummary();
+
+        var effectiveSettings = ResolveEffectiveUserSettings();
+        var settings = effectiveSettings.Settings;
+        var actualSeed = setup.IsSeedLocked
+            ? setup.RandomSeed
+            : settings.SeedMode == SeedMode.Fixed
+                ? settings.FixedRandomSeed
+                : null;
+
+        return new RunSettingsSummary
+        {
+            SettingsSource = effectiveSettings.UsesWorkbookOverrides
+                ? "Workbook override"
+                : "Windows defaults",
+            Sampling = settings.SamplingMethod.ToString(),
+            Seed = actualSeed.HasValue ? $"Fixed {actualSeed.Value}" : "Random each run",
+            Convergence = settings.AutoStopOnConvergence ? "Auto-stop on" : "Auto-stop off",
+            WarningPause = settings.PauseOnPreflightWarnings ? "Pause on warnings" : "Run through warnings"
+        };
     }
 
     private void Dispatch(System.Action action)
@@ -1103,6 +1181,9 @@ internal sealed class TaskPaneIntegration : IDisposable
 
         if (_viewModel != null)
         {
+            WorkbookSettingsBridge.LoadOverrides = null;
+            WorkbookSettingsBridge.SaveOverrides = null;
+            _viewModel.RunSettingsProvider = null;
             _viewModel.RunSimulationRequested -= OnRunSimulationRequested;
             _viewModel.CancelSimulationRequested -= OnCancelSimulationRequested;
             _viewModel.CorrelationImportRequested -= OnCorrelationImportRequested;

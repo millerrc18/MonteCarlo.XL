@@ -7,6 +7,7 @@ using MonteCarlo.Engine.Analysis;
 using MonteCarlo.Engine.Correlation;
 using MonteCarlo.Engine.Distributions;
 using MonteCarlo.Engine.Simulation;
+using MonteCarlo.UI.Services;
 using Microsoft.Office.Interop.Excel;
 
 namespace MonteCarlo.Addin.Services;
@@ -347,6 +348,22 @@ public class SimulationOrchestrator
     public SimulationProfile? LoadConfig()
     {
         return _configPersistence.Load();
+    }
+
+    /// <summary>
+    /// Save workbook-specific UI defaults that should override Windows user defaults.
+    /// </summary>
+    public void SaveWorkbookSettingsOverrides(WorkbookUserSettingsOverrides? workbookSettingsOverrides)
+    {
+        _configPersistence.SaveWorkbookSettingsOverrides(workbookSettingsOverrides);
+    }
+
+    /// <summary>
+    /// Load workbook-specific UI defaults, if any.
+    /// </summary>
+    public WorkbookUserSettingsOverrides? LoadWorkbookSettingsOverrides()
+    {
+        return _configPersistence.LoadWorkbookSettingsOverrides();
     }
 
     private Func<Dictionary<string, double>, Dictionary<string, double>> BuildEvaluator(

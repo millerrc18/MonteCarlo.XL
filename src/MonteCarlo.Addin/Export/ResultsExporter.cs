@@ -2,6 +2,7 @@ using ExcelDna.Integration;
 using MonteCarlo.Addin.Excel;
 using MonteCarlo.Engine.Analysis;
 using MonteCarlo.Engine.Simulation;
+using MonteCarlo.UI.Services;
 using Microsoft.Office.Core;
 using Microsoft.Office.Interop.Excel;
 using ExcelAxisType = Microsoft.Office.Interop.Excel.XlAxisType;
@@ -32,7 +33,9 @@ public class ResultsExporter
         byte[]? tornadoImage = null,
         bool createNewSheet = true,
         IReadOnlyList<double>? percentiles = null,
-        double? targetValue = null)
+        double? targetValue = null,
+        UserSettings? effectiveSettings = null,
+        bool usesWorkbookOverrides = false)
     {
         var app = (Application)ExcelDnaUtil.Application;
         var workbook = app.ActiveWorkbook;
@@ -54,7 +57,16 @@ public class ResultsExporter
         row++;
 
         // Report metadata
-        row = WriteReportMetadata(sheet, row, workbook, output, result, profile, outputIndex);
+        row = WriteReportMetadata(
+            sheet,
+            row,
+            workbook,
+            output,
+            result,
+            profile,
+            outputIndex,
+            effectiveSettings,
+            usesWorkbookOverrides);
         row++;
 
         // Summary statistics
@@ -194,7 +206,9 @@ public class ResultsExporter
         SimulationOutput output,
         SimulationResult result,
         SimulationProfile profile,
-        int outputIndex)
+        int outputIndex,
+        UserSettings? effectiveSettings,
+        bool usesWorkbookOverrides)
     {
         WriteSectionHeader(sheet, row, "REPORT METADATA");
         row++;
@@ -222,6 +236,15 @@ public class ResultsExporter
         row = WriteMetadataRow(sheet, row, "Convergence auto-stop", result.Config.AutoStopOnConvergence
             ? $"On, minimum {result.Config.ConvergenceMinIterations:N0} iterations"
             : "Off");
+        if (effectiveSettings != null)
+        {
+            row = WriteMetadataRow(sheet, row, "Settings scope", usesWorkbookOverrides ? "Workbook override" : "Windows defaults");
+            row = WriteMetadataRow(sheet, row, "Pause on Model Check warnings", effectiveSettings.PauseOnPreflightWarnings ? "On" : "Off");
+            row = WriteMetadataRow(sheet, row, "Export default", effectiveSettings.CreateNewWorksheetForExports
+                ? "New worksheet per export"
+                : "Reuse export worksheet");
+            row = WriteMetadataRow(sheet, row, "Default percentiles", effectiveSettings.DefaultPercentiles);
+        }
         row = WriteMetadataRow(sheet, row, "Correlation", DescribeCorrelation(profile));
 
         return row;

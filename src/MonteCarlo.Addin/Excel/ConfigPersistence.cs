@@ -1,7 +1,9 @@
 using System.Text.Json;
+using System.Text;
 using System.Xml;
 using ExcelDna.Integration;
 using MonteCarlo.Engine.Simulation;
+using MonteCarlo.UI.Services;
 using Microsoft.Office.Interop.Excel;
 
 namespace MonteCarlo.Addin.Excel;
@@ -24,19 +26,18 @@ public class ConfigPersistence
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase
     };
 
+    private sealed record StoredConfigData(
+        SimulationProfile? Profile,
+        WorkbookUserSettingsOverrides? WorkbookSettingsOverrides);
+
     public void Save(SimulationProfile profile)
     {
         var app = (Application)ExcelDnaUtil.Application;
         var workbook = app.ActiveWorkbook;
         if (workbook == null) return;
 
-        string json = JsonSerializer.Serialize(profile, JsonOptions);
-        string xml = WrapInXml(json, profile.Name);
-
-        RemoveExistingPart(workbook);
-
-        dynamic parts = workbook.CustomXMLParts;
-        parts.Add(xml);
+        var existing = LoadStoredConfig(workbook);
+        SaveStoredConfig(workbook, profile, existing.WorkbookSettingsOverrides);
     }
 
     public SimulationProfile? Load()
@@ -45,10 +46,29 @@ public class ConfigPersistence
         var workbook = app.ActiveWorkbook;
         if (workbook == null) return null;
 
-        var profile = LoadFromCustomXml(workbook);
+        var profile = LoadStoredConfig(workbook).Profile;
         if (profile != null) return profile;
 
         return LoadFromHiddenSheet(workbook);
+    }
+
+    public void SaveWorkbookSettingsOverrides(WorkbookUserSettingsOverrides? workbookSettingsOverrides)
+    {
+        var app = (Application)ExcelDnaUtil.Application;
+        var workbook = app.ActiveWorkbook;
+        if (workbook == null) return;
+
+        var existing = LoadStoredConfig(workbook);
+        SaveStoredConfig(workbook, existing.Profile, workbookSettingsOverrides);
+    }
+
+    public WorkbookUserSettingsOverrides? LoadWorkbookSettingsOverrides()
+    {
+        var app = (Application)ExcelDnaUtil.Application;
+        var workbook = app.ActiveWorkbook;
+        if (workbook == null) return null;
+
+        return LoadStoredConfig(workbook).WorkbookSettingsOverrides;
     }
 
     public void Clear()
@@ -68,19 +88,45 @@ public class ConfigPersistence
         return new List<string> { profile.Name };
     }
 
-    private static string WrapInXml(string json, string profileName)
+    private static string WrapInXml(
+        SimulationProfile? profile,
+        WorkbookUserSettingsOverrides? workbookSettingsOverrides)
     {
-        string safeJson = json.Replace("]]>", "]]]]><![CDATA[>");
+        var builder = new StringBuilder();
+        builder.AppendLine("""<?xml version="1.0" encoding="utf-8"?>""");
+        builder.AppendLine($"""<MonteCarloConfig xmlns="{CustomXmlNamespace}">""");
 
-        return $"""
-            <?xml version="1.0" encoding="utf-8"?>
-            <MonteCarloConfig xmlns="{CustomXmlNamespace}">
-              <Profile name="{System.Security.SecurityElement.Escape(profileName)}"><![CDATA[{safeJson}]]></Profile>
-            </MonteCarloConfig>
-            """;
+        if (profile != null)
+        {
+            var profileJson = JsonSerializer.Serialize(profile, JsonOptions);
+            builder.AppendLine(
+                $"""  <Profile name="{System.Security.SecurityElement.Escape(profile.Name)}"><![CDATA[{EscapeCData(profileJson)}]]></Profile>""");
+        }
+
+        if (workbookSettingsOverrides != null && workbookSettingsOverrides.HasAnyValues)
+        {
+            var settingsJson = JsonSerializer.Serialize(workbookSettingsOverrides, JsonOptions);
+            builder.AppendLine(
+                $"""  <WorkbookSettings><![CDATA[{EscapeCData(settingsJson)}]]></WorkbookSettings>""");
+        }
+
+        builder.AppendLine("""</MonteCarloConfig>""");
+        return builder.ToString();
     }
 
-    private static SimulationProfile? LoadFromCustomXml(Workbook workbook)
+    private static string EscapeCData(string text) =>
+        text.Replace("]]>", "]]]]><![CDATA[>");
+
+    private static StoredConfigData LoadStoredConfig(Workbook workbook)
+    {
+        var config = LoadFromCustomXml(workbook);
+        if (config.Profile != null || config.WorkbookSettingsOverrides != null)
+            return config;
+
+        return new StoredConfigData(LoadFromHiddenSheet(workbook), null);
+    }
+
+    private static StoredConfigData LoadFromCustomXml(Workbook workbook)
     {
         dynamic parts = workbook.CustomXMLParts;
         int count = parts.Count;
@@ -100,19 +146,32 @@ public class ConfigPersistence
                 var nsManager = new XmlNamespaceManager(doc.NameTable);
                 nsManager.AddNamespace("mc", CustomXmlNamespace);
 
+                SimulationProfile? profile = null;
                 var profileNode = doc.SelectSingleNode("//mc:Profile", nsManager);
-                if (profileNode == null) continue;
-
-                string json = profileNode.InnerText;
-                return JsonSerializer.Deserialize<SimulationProfile>(json, new JsonSerializerOptions
+                if (profileNode != null && !string.IsNullOrWhiteSpace(profileNode.InnerText))
                 {
-                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-                });
+                    profile = JsonSerializer.Deserialize<SimulationProfile>(profileNode.InnerText, new JsonSerializerOptions
+                    {
+                        PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+                    });
+                }
+
+                WorkbookUserSettingsOverrides? workbookSettings = null;
+                var settingsNode = doc.SelectSingleNode("//mc:WorkbookSettings", nsManager);
+                if (settingsNode != null && !string.IsNullOrWhiteSpace(settingsNode.InnerText))
+                {
+                    workbookSettings = JsonSerializer.Deserialize<WorkbookUserSettingsOverrides>(settingsNode.InnerText, new JsonSerializerOptions
+                    {
+                        PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+                    });
+                }
+
+                return new StoredConfigData(profile, workbookSettings);
             }
             catch { }
         }
 
-        return null;
+        return new StoredConfigData(null, null);
     }
 
     private static SimulationProfile? LoadFromHiddenSheet(Workbook workbook)
@@ -144,6 +203,26 @@ public class ConfigPersistence
         {
             return null;
         }
+    }
+
+    private static void SaveStoredConfig(
+        Workbook workbook,
+        SimulationProfile? profile,
+        WorkbookUserSettingsOverrides? workbookSettingsOverrides)
+    {
+        RemoveExistingPart(workbook);
+
+        if (profile == null && (workbookSettingsOverrides == null || !workbookSettingsOverrides.HasAnyValues))
+        {
+            RemoveHiddenSheet(workbook);
+            return;
+        }
+
+        string xml = WrapInXml(profile, workbookSettingsOverrides);
+
+        dynamic parts = workbook.CustomXMLParts;
+        parts.Add(xml);
+        RemoveHiddenSheet(workbook);
     }
 
     private static void RemoveExistingPart(Workbook workbook)

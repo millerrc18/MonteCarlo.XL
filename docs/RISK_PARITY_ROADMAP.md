@@ -41,6 +41,7 @@ This roadmap tracks the 12 robustness and @RISK-like initiatives identified afte
 - Summary export now creates a foundation report with workbook/run metadata, histogram, CDF, optional tornado chart, target analysis, scenario analysis, input assumptions, correlation assumptions, and unique worksheets by default.
 - Light/dark/system theme switching is implemented and persisted.
 - Settings now persist export worksheet behavior, default iterations, random vs fixed seed defaults, sampling method, convergence auto-stop, whether Model Check warnings pause a run, and default percentile lists used by summary exports.
+- Settings can now be edited in two scopes: Windows-user defaults or workbook-specific overrides stored in the active workbook. Runs, exports, and Model Check warning pauses resolve against the effective merged settings, and the Run view plus summary export metadata now show which settings were applied.
 - The task pane supports 15 distributions; worksheet UDFs exist for all except Discrete.
 - The add-input flow includes a guided distribution helper with category, complexity, and search filters plus plain-English starting points for all supported distributions.
 - The add-input helper can open a dedicated Excel range picker, fit candidate distributions from the selected numeric data, and apply the selected fit to the parameter editor.
@@ -82,8 +83,6 @@ Open work:
 
 - Add prompt-at-run seed mode; current modes are random and fixed.
 - Expose Excel recalc/state behavior once state-safety work is centralized.
-- Add workbook-specific settings overrides; current settings are global Windows-user preferences.
-- Surface current effective run settings in the Run view and exported metadata.
 
 ### 4. Distribution Palette / Wizard
 

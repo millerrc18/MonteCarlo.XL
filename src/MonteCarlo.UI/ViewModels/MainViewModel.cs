@@ -26,6 +26,7 @@ public partial class MainViewModel : ObservableObject
     private RunView? _runView;
     private ResultsView? _resultsView;
     private PreflightView? _preflightView;
+    private SettingsView? _settingsView;
 
     /// <summary>The persistent SetupView instance.</summary>
     public SetupView SetupView => _setupView ??= new SetupView();
@@ -38,6 +39,9 @@ public partial class MainViewModel : ObservableObject
 
     /// <summary>The persistent PreflightView instance.</summary>
     public PreflightView PreflightView => _preflightView ??= CreatePreflightView();
+
+    /// <summary>The persistent SettingsView instance.</summary>
+    public SettingsView SettingsView => _settingsView ??= new SettingsView();
 
     /// <summary>Convenience accessor for the SetupViewModel.</summary>
     public SetupViewModel SetupViewModel => SetupView.ViewModel;
@@ -68,6 +72,11 @@ public partial class MainViewModel : ObservableObject
     /// Optional host-supplied setting that controls whether warning-only reports pause a run.
     /// </summary>
     public Func<bool>? PauseOnPreflightWarningsProvider { get; set; }
+
+    /// <summary>
+    /// Optional host-supplied summary builder for the run screen.
+    /// </summary>
+    public Func<RunSettingsSummary>? RunSettingsProvider { get; set; }
 
     /// <summary>
     /// Event raised when the correlation editor requests an Excel range import.
@@ -125,7 +134,7 @@ public partial class MainViewModel : ObservableObject
     private void StartSimulationRun()
     {
         NavigateToRun();
-        RunViewModel.Reset(SetupViewModel.IterationCount);
+        RunViewModel.Reset(SetupViewModel.IterationCount, RunSettingsProvider?.Invoke());
         RunSimulationRequested?.Invoke(this, EventArgs.Empty);
     }
 
@@ -224,7 +233,7 @@ public partial class MainViewModel : ObservableObject
     [RelayCommand]
     private void NavigateToSettings()
     {
-        CurrentView = new SettingsView();
+        CurrentView = SettingsView;
         CurrentViewName = "Settings";
     }
 

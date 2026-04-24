@@ -60,6 +60,35 @@
                     </StackPanel>
                 </Border>
 
+                <!-- Scope section -->
+                <Border Style="{StaticResource Card}" Margin="0,0,0,16">
+                    <StackPanel>
+                        <TextBlock Text="Settings scope"
+                                   Style="{StaticResource HeadlineSmall}"
+                                   Margin="0,0,0,12"/>
+
+                        <RadioButton x:Name="GlobalScopeRadio"
+                                     Content="Windows user defaults"
+                                     GroupName="SettingsScope"
+                                     Margin="0,0,0,6"
+                                     Foreground="{DynamicResource TextPrimaryBrush}"
+                                     FontFamily="{StaticResource DefaultFont}"
+                                     FontSize="13"
+                                     Checked="OnSettingsScopeChanged"/>
+                        <RadioButton x:Name="WorkbookScopeRadio"
+                                     Content="Current workbook overrides"
+                                     GroupName="SettingsScope"
+                                     Margin="0,0,0,8"
+                                     Foreground="{DynamicResource TextPrimaryBrush}"
+                                     FontFamily="{StaticResource DefaultFont}"
+                                     FontSize="13"
+                                     Checked="OnSettingsScopeChanged"/>
+                        <TextBlock x:Name="SettingsScopeSummaryText"
+                                   Style="{StaticResource CaptionText}"
+                                   TextWrapping="Wrap"/>
+                    </StackPanel>
+                </Border>
+
                 <!-- Simulation defaults section -->
                 <Border Style="{StaticResource Card}" Margin="0,0,0,16">
                     <StackPanel>
@@ -145,24 +174,7 @@
                         <TextBlock Text="Comma-separated values used as the report-builder default list."
                                    Style="{StaticResource CaptionText}"
                                    TextWrapping="Wrap"
-                                   Margin="0,0,0,12"/>
-
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
-                            <TextBlock x:Name="SettingsSavedText"
-                                       Grid.Column="0"
-                                       Style="{StaticResource CaptionText}"
-                                       Foreground="{StaticResource Emerald500Brush}"
-                                       VerticalAlignment="Center"/>
-                            <Button Grid.Column="1"
-                                    Content="Save Defaults"
-                                    Style="{StaticResource PrimaryButton}"
-                                    Click="OnSaveDefaultsClicked"
-                                    Padding="12,6"/>
-                        </Grid>
+                                   Margin="0,0,0,0"/>
                     </StackPanel>
                 </Border>
 
@@ -178,12 +190,37 @@
                                   Margin="0,0,0,6"
                                   Foreground="{DynamicResource TextPrimaryBrush}"
                                   FontFamily="{StaticResource DefaultFont}"
-                                  FontSize="13"
-                                  Checked="OnExportSettingsChanged"
-                                  Unchecked="OnExportSettingsChanged"/>
+                                  FontSize="13"/>
                         <TextBlock Text="Keeps prior result summaries instead of replacing the existing export sheet."
                                    Style="{StaticResource CaptionText}"
-                                   TextWrapping="Wrap"/>
+                                   TextWrapping="Wrap"
+                                   Margin="0,0,0,12"/>
+
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock x:Name="SettingsSavedText"
+                                       Grid.Column="0"
+                                       Style="{StaticResource CaptionText}"
+                                       Foreground="{StaticResource Emerald500Brush}"
+                                       VerticalAlignment="Center"/>
+                            <Button x:Name="ClearWorkbookOverridesButton"
+                                    Grid.Column="1"
+                                    Content="Clear Workbook Overrides"
+                                    Style="{StaticResource SecondaryButton}"
+                                    Click="OnClearWorkbookOverridesClicked"
+                                    Padding="12,6"
+                                    Margin="0,0,8,0"/>
+                            <Button x:Name="SaveSettingsButton"
+                                    Grid.Column="2"
+                                    Content="Save Defaults"
+                                    Style="{StaticResource PrimaryButton}"
+                                    Click="OnSaveDefaultsClicked"
+                                    Padding="12,6"/>
+                        </Grid>
                     </StackPanel>
                 </Border>
 

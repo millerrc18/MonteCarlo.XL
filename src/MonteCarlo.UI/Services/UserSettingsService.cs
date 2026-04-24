@@ -155,6 +155,37 @@ public enum SeedMode
     Fixed
 }
 
+public sealed class WorkbookUserSettingsOverrides
+{
+    public bool? CreateNewWorksheetForExports { get; set; }
+
+    public int? DefaultIterationCount { get; set; }
+
+    public SeedMode? SeedMode { get; set; }
+
+    public int? FixedRandomSeed { get; set; }
+
+    public SamplingMethod? SamplingMethod { get; set; }
+
+    public bool? AutoStopOnConvergence { get; set; }
+
+    public bool? PauseOnPreflightWarnings { get; set; }
+
+    public string? DefaultPercentiles { get; set; }
+
+    public bool HasAnyValues =>
+        CreateNewWorksheetForExports.HasValue
+        || DefaultIterationCount.HasValue
+        || SeedMode.HasValue
+        || FixedRandomSeed.HasValue
+        || SamplingMethod.HasValue
+        || AutoStopOnConvergence.HasValue
+        || PauseOnPreflightWarnings.HasValue
+        || !string.IsNullOrWhiteSpace(DefaultPercentiles);
+}
+
+public sealed record EffectiveUserSettings(UserSettings Settings, bool UsesWorkbookOverrides);
+
 public class UserSettings
 {
     public static UserSettings Default => new()
@@ -199,6 +230,80 @@ public class UserSettings
     public IReadOnlyList<double> GetDefaultPercentileFractions() =>
         ParsePercentileFractions(DefaultPercentiles);
 
+    public static EffectiveUserSettings Resolve(
+        UserSettings globalSettings,
+        WorkbookUserSettingsOverrides? workbookOverrides)
+    {
+        var usesWorkbookOverrides = workbookOverrides?.HasAnyValues == true;
+        return new EffectiveUserSettings(
+            ApplyOverrides(globalSettings, workbookOverrides),
+            usesWorkbookOverrides);
+    }
+
+    public static UserSettings ApplyOverrides(
+        UserSettings globalSettings,
+        WorkbookUserSettingsOverrides? workbookOverrides)
+    {
+        if (workbookOverrides == null || !workbookOverrides.HasAnyValues)
+            return globalSettings;
+
+        return new UserSettings
+        {
+            CreateNewWorksheetForExports = workbookOverrides.CreateNewWorksheetForExports
+                ?? globalSettings.CreateNewWorksheetForExports,
+            DefaultIterationCount = workbookOverrides.DefaultIterationCount
+                ?? globalSettings.DefaultIterationCount,
+            SeedMode = workbookOverrides.SeedMode
+                ?? globalSettings.SeedMode,
+            FixedRandomSeed = workbookOverrides.FixedRandomSeed
+                ?? globalSettings.FixedRandomSeed,
+            SamplingMethod = workbookOverrides.SamplingMethod
+                ?? globalSettings.SamplingMethod,
+            AutoStopOnConvergence = workbookOverrides.AutoStopOnConvergence
+                ?? globalSettings.AutoStopOnConvergence,
+            PauseOnPreflightWarnings = workbookOverrides.PauseOnPreflightWarnings
+                ?? globalSettings.PauseOnPreflightWarnings,
+            DefaultPercentiles = string.IsNullOrWhiteSpace(workbookOverrides.DefaultPercentiles)
+                ? globalSettings.DefaultPercentiles
+                : workbookOverrides.DefaultPercentiles
+        };
+    }
+
+    public static WorkbookUserSettingsOverrides? BuildOverrides(
+        UserSettings globalSettings,
+        UserSettings workbookSettings)
+    {
+        var overrides = new WorkbookUserSettingsOverrides
+        {
+            CreateNewWorksheetForExports = workbookSettings.CreateNewWorksheetForExports != globalSettings.CreateNewWorksheetForExports
+                ? workbookSettings.CreateNewWorksheetForExports
+                : null,
+            DefaultIterationCount = workbookSettings.DefaultIterationCount != globalSettings.DefaultIterationCount
+                ? workbookSettings.DefaultIterationCount
+                : null,
+            SeedMode = workbookSettings.SeedMode != globalSettings.SeedMode
+                ? workbookSettings.SeedMode
+                : null,
+            FixedRandomSeed = workbookSettings.FixedRandomSeed != globalSettings.FixedRandomSeed
+                ? workbookSettings.FixedRandomSeed
+                : null,
+            SamplingMethod = workbookSettings.SamplingMethod != globalSettings.SamplingMethod
+                ? workbookSettings.SamplingMethod
+                : null,
+            AutoStopOnConvergence = workbookSettings.AutoStopOnConvergence != globalSettings.AutoStopOnConvergence
+                ? workbookSettings.AutoStopOnConvergence
+                : null,
+            PauseOnPreflightWarnings = workbookSettings.PauseOnPreflightWarnings != globalSettings.PauseOnPreflightWarnings
+                ? workbookSettings.PauseOnPreflightWarnings
+                : null,
+            DefaultPercentiles = NormalizePercentileList(workbookSettings.DefaultPercentiles) != NormalizePercentileList(globalSettings.DefaultPercentiles)
+                ? workbookSettings.DefaultPercentiles
+                : null
+        };
+
+        return overrides.HasAnyValues ? overrides : null;
+    }
+
     public static IReadOnlyList<double> ParsePercentileFractions(string text)
     {
         var percentiles = new List<double>();
@@ -216,4 +321,10 @@ public class UserSettings
             ? Default.DefaultPercentiles.Split(',').Select(p => double.Parse(p, CultureInfo.InvariantCulture) / 100.0).ToArray()
             : percentiles;
     }
+
+    private static string NormalizePercentileList(string text) =>
+        string.Join(
+            ",",
+            text.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .Select(part => part.Trim()));
 }
