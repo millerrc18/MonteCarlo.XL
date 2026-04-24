@@ -48,7 +48,7 @@ This roadmap tracks the 12 robustness and @RISK-like initiatives identified afte
 - Rank correlation engine and matrix editor exist. The editor is reachable from Setup and ribbon, imports numeric n by n ranges, exports and re-imports labeled templates, warns about high/fragile matrices, clearly shows the independent-input state, persists workbook correlation config, and passes correlations into simulation runs.
 - Results now include a Scenario Analysis card for worst-tail, best-tail, at-or-below-target, and above-target filters. It shows conditional input summaries so users can see which assumptions changed most in the selected cases.
 - Summary export now includes scenario-analysis sections comparing worst, best, and target-hit input means against all runs when a target threshold is entered before export.
-- Goal Seek now has a ribbon workflow for monotonic decision cells: select a deterministic decision cell, choose an output, probability target, bounds, run budget, and tolerance, then MonteCarlo.XL reruns simulations, restores the decision cell, and writes a solver-history report sheet. The engine solver also supports mean, percentile, P(output > target), and P(output <= target) metrics for future UI expansion.
+- Goal Seek now has a ribbon workflow for monotonic decision cells: select a deterministic decision cell, choose an output, metric, bounds, run budget, and tolerance, then MonteCarlo.XL reruns simulations, restores the decision cell, and writes a solver-history report sheet. The ribbon dialog now supports mean, percentile, P(output > target), and P(output <= target) targets.
 - Excel state capture/restore is centralized for simulation runs, goal seek trials, summary/raw exports, workbook writes, highlight refresh, hidden-sheet cleanup, and cell-selection status messages. Restore failures are logged with phase-specific diagnostics.
 - The Support ribbon includes a `Recover Excel` command that restores automatic calculation, events, screen updating, alerts, and the status bar after an interrupted run or external automation failure, then logs before/after Excel state snapshots.
 - The ribbon now includes workbook-sharing commands to save a separate shareable value-only copy, replace `MC.*` formulas with current values in the active workbook, and later restore them from a workbook custom-XML map.
@@ -130,7 +130,6 @@ Open work:
 Open work:
 
 - Expand the current probability-above-target ribbon dialog into a richer task-pane workflow.
-- Expose mean, percentile, and probability-at-or-below metrics in the UI; the engine already supports them.
 - Add progress/cancel UI for repeated simulations.
 - Add confidence guidance around the found decision value.
 - Add manual Excel verification with an example workbook and known monotonic decision target.

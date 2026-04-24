@@ -68,9 +68,10 @@ internal sealed class GoalSeekWorkflowService
         {
             LowerBound = runOptions.LowerBound,
             UpperBound = runOptions.UpperBound,
-            Metric = GoalSeekMetric.ProbabilityAboveTarget,
-            OutputTarget = runOptions.OutputTarget,
-            DesiredMetricValue = runOptions.DesiredProbability,
+            Metric = runOptions.Metric,
+            OutputTarget = runOptions.OutputTarget ?? 0,
+            DesiredMetricValue = runOptions.DesiredMetricValue,
+            Percentile = runOptions.Percentile ?? 0.5,
             MaxIterations = runOptions.MaxSolverIterations,
             MetricTolerance = runOptions.Tolerance,
             HigherDecisionIncreasesMetric = runOptions.HigherDecisionIncreasesMetric
@@ -165,10 +166,10 @@ internal sealed class GoalSeekWorkflowService
 
         row = WriteLabelValue(sheet, row, "Decision cell", decisionReference.FullReference);
         row = WriteLabelValue(sheet, row, "Output", options.OutputLabel);
-        row = WriteLabelValue(sheet, row, "Target metric", $"P(output > {options.OutputTarget:G6})");
-        row = WriteLabelValue(sheet, row, "Desired probability", options.DesiredProbability.ToString("0.0%"));
+        row = WriteLabelValue(sheet, row, "Target metric", DescribeMetric(options));
+        row = WriteLabelValue(sheet, row, "Desired value", FormatMetricValue(options, options.DesiredMetricValue));
         row = WriteLabelValue(sheet, row, "Best decision value", result.BestDecisionValue.ToString("G10"));
-        row = WriteLabelValue(sheet, row, "Best probability", result.BestMetricValue.ToString("0.0%"));
+        row = WriteLabelValue(sheet, row, "Best metric value", FormatMetricValue(options, result.BestMetricValue));
         row = WriteLabelValue(sheet, row, "Error", result.Error.ToString("0.0000"));
         row = WriteLabelValue(sheet, row, "Status", result.Status.ToString());
         row = WriteLabelValue(sheet, row, "Iterations per trial", options.IterationsPerTrial.ToString("N0"));
@@ -180,7 +181,7 @@ internal sealed class GoalSeekWorkflowService
 
         sheet.Cells[row, 1].Value2 = "Step";
         sheet.Cells[row, 2].Value2 = "Decision Value";
-        sheet.Cells[row, 3].Value2 = "Probability";
+        sheet.Cells[row, 3].Value2 = "Metric Value";
         sheet.Cells[row, 4].Value2 = "Error";
         var header = sheet.Range[sheet.Cells[row, 1], sheet.Cells[row, 4]];
         header.Font.Bold = true;
@@ -192,7 +193,7 @@ internal sealed class GoalSeekWorkflowService
             sheet.Cells[row, 1].Value2 = item.Iteration;
             sheet.Cells[row, 2].Value2 = item.DecisionValue;
             sheet.Cells[row, 3].Value2 = item.MetricValue;
-            sheet.Cells[row, 3].NumberFormat = "0.0%";
+            sheet.Cells[row, 3].NumberFormat = GetMetricNumberFormat(options);
             sheet.Cells[row, 4].Value2 = item.Error;
             sheet.Cells[row, 4].NumberFormat = "0.0000";
             row++;
@@ -213,9 +214,29 @@ internal sealed class GoalSeekWorkflowService
     private static string FormatCompletionMessage(GoalSeekResult result, GoalSeekRunOptions options) =>
         $"Goal Seek finished with status: {result.Status}\r\n\r\n" +
         $"Best decision value: {result.BestDecisionValue:G10}\r\n" +
-        $"Best P(output > {options.OutputTarget:G6}): {result.BestMetricValue:P1}\r\n" +
-        $"Desired probability: {options.DesiredProbability:P1}\r\n\r\n" +
+        $"Best {DescribeMetric(options)}: {FormatMetricValue(options, result.BestMetricValue)}\r\n" +
+        $"Desired value: {FormatMetricValue(options, options.DesiredMetricValue)}\r\n\r\n" +
         "A Goal Seek report sheet was added to the workbook.";
+
+    private static string DescribeMetric(GoalSeekRunOptions options) =>
+        options.Metric switch
+        {
+            GoalSeekMetric.Mean => "Mean(output)",
+            GoalSeekMetric.ProbabilityAboveTarget => $"P(output > {options.OutputTarget:G6})",
+            GoalSeekMetric.ProbabilityAtOrBelowTarget => $"P(output <= {options.OutputTarget:G6})",
+            GoalSeekMetric.Percentile => $"P{((options.Percentile ?? 0.5) * 100.0):0.#}(output)",
+            _ => options.Metric.ToString()
+        };
+
+    private static string FormatMetricValue(GoalSeekRunOptions options, double value) =>
+        options.Metric is GoalSeekMetric.ProbabilityAboveTarget or GoalSeekMetric.ProbabilityAtOrBelowTarget
+            ? value.ToString("P1")
+            : value.ToString("G10");
+
+    private static string GetMetricNumberFormat(GoalSeekRunOptions options) =>
+        options.Metric is GoalSeekMetric.ProbabilityAboveTarget or GoalSeekMetric.ProbabilityAtOrBelowTarget
+            ? "0.0%"
+            : "0.0000";
 
     private static Task RunOnExcelThreadAsync(Action action, CancellationToken cancellationToken)
     {
@@ -284,8 +305,10 @@ internal sealed record GoalSeekRunOptions(
     string OutputLabel,
     double LowerBound,
     double UpperBound,
-    double OutputTarget,
-    double DesiredProbability,
+    GoalSeekMetric Metric,
+    double DesiredMetricValue,
+    double? OutputTarget,
+    double? Percentile,
     int IterationsPerTrial,
     int MaxSolverIterations,
     double Tolerance,
@@ -294,16 +317,22 @@ internal sealed record GoalSeekRunOptions(
 internal sealed class GoalSeekOptionsDialog : WinForms.Form
 {
     private readonly WinForms.ComboBox _outputComboBox = new();
+    private readonly WinForms.ComboBox _metricComboBox = new();
     private readonly WinForms.TextBox _lowerBoundTextBox = new() { Text = "0" };
     private readonly WinForms.TextBox _upperBoundTextBox = new() { Text = "100" };
     private readonly WinForms.TextBox _outputTargetTextBox = new();
-    private readonly WinForms.TextBox _desiredProbabilityTextBox = new() { Text = "0.8" };
+    private readonly WinForms.TextBox _percentileTextBox = new() { Text = "90" };
+    private readonly WinForms.TextBox _desiredMetricTextBox = new() { Text = "0.8" };
     private readonly WinForms.TextBox _iterationsTextBox = new() { Text = "1000" };
     private readonly WinForms.TextBox _maxIterationsTextBox = new() { Text = "12" };
     private readonly WinForms.TextBox _toleranceTextBox = new() { Text = "0.005" };
+    private readonly WinForms.Label _outputTargetLabel = CreateRowLabel("Output target");
+    private readonly WinForms.Label _percentileLabel = CreateRowLabel("Percentile (0-100)");
+    private readonly WinForms.Label _desiredMetricLabel = CreateRowLabel("Desired probability");
+    private readonly WinForms.Label _toleranceLabel = CreateRowLabel("Probability tolerance");
     private readonly WinForms.CheckBox _increasingCheckBox = new()
     {
-        Text = "Higher decision value increases the probability metric",
+        Text = "Higher decision value increases the selected metric",
         Checked = true,
         AutoSize = true
     };
@@ -325,20 +354,22 @@ internal sealed class GoalSeekOptionsDialog : WinForms.Form
             Dock = WinForms.DockStyle.Fill,
             Padding = new WinForms.Padding(14),
             ColumnCount = 2,
-            RowCount = 11
+            RowCount = 13
         };
         panel.ColumnStyles.Add(new WinForms.ColumnStyle(WinForms.SizeType.Percent, 42));
         panel.ColumnStyles.Add(new WinForms.ColumnStyle(WinForms.SizeType.Percent, 58));
 
         AddReadOnlyRow(panel, "Decision cell", decisionReference.FullReference);
-        AddComboRow(panel, "Output", _outputComboBox);
-        AddTextRow(panel, "Lower decision bound", _lowerBoundTextBox);
-        AddTextRow(panel, "Upper decision bound", _upperBoundTextBox);
-        AddTextRow(panel, "Output target", _outputTargetTextBox);
-        AddTextRow(panel, "Desired probability", _desiredProbabilityTextBox);
-        AddTextRow(panel, "Iterations per trial", _iterationsTextBox);
-        AddTextRow(panel, "Max solver steps", _maxIterationsTextBox);
-        AddTextRow(panel, "Probability tolerance", _toleranceTextBox);
+        AddControlRow(panel, "Output", _outputComboBox);
+        AddControlRow(panel, "Metric", _metricComboBox);
+        AddControlRow(panel, "Lower decision bound", _lowerBoundTextBox);
+        AddControlRow(panel, "Upper decision bound", _upperBoundTextBox);
+        AddControlRow(panel, _outputTargetLabel, _outputTargetTextBox);
+        AddControlRow(panel, _percentileLabel, _percentileTextBox);
+        AddControlRow(panel, _desiredMetricLabel, _desiredMetricTextBox);
+        AddControlRow(panel, "Iterations per trial", _iterationsTextBox);
+        AddControlRow(panel, "Max solver steps", _maxIterationsTextBox);
+        AddControlRow(panel, _toleranceLabel, _toleranceTextBox);
 
         panel.Controls.Add(new WinForms.Label());
         panel.Controls.Add(_increasingCheckBox);
@@ -365,6 +396,13 @@ internal sealed class GoalSeekOptionsDialog : WinForms.Form
         if (_outputComboBox.Items.Count > 0)
             _outputComboBox.SelectedIndex = 0;
 
+        foreach (var metric in MetricOption.All)
+            _metricComboBox.Items.Add(metric);
+
+        _metricComboBox.SelectedItem = MetricOption.Default;
+        _metricComboBox.SelectedIndexChanged += (_, _) => UpdateMetricControls();
+        UpdateMetricControls();
+
         okButton.Click += (_, _) =>
         {
             if (!TryReadOptions(out var options, out var error))
@@ -389,11 +427,13 @@ internal sealed class GoalSeekOptionsDialog : WinForms.Form
             return false;
         }
 
+        var metric = _metricComboBox.SelectedItem is MetricOption metricOption
+            ? metricOption.Metric
+            : GoalSeekMetric.ProbabilityAboveTarget;
+
         if (!TryParseDouble(_lowerBoundTextBox.Text, "lower decision bound", out var lower, out error)
             || !TryParseDouble(_upperBoundTextBox.Text, "upper decision bound", out var upper, out error)
-            || !TryParseDouble(_outputTargetTextBox.Text, "output target", out var outputTarget, out error)
-            || !TryParseDouble(_desiredProbabilityTextBox.Text, "desired probability", out var desiredProbability, out error)
-            || !TryParseDouble(_toleranceTextBox.Text, "probability tolerance", out var tolerance, out error))
+            || !TryParseDouble(_toleranceTextBox.Text, "metric tolerance", out var tolerance, out error))
         {
             return false;
         }
@@ -404,15 +444,9 @@ internal sealed class GoalSeekOptionsDialog : WinForms.Form
             return false;
         }
 
-        if (desiredProbability < 0 || desiredProbability > 1)
-        {
-            error = "Desired probability must be between 0 and 1.";
-            return false;
-        }
-
         if (tolerance <= 0)
         {
-            error = "Probability tolerance must be greater than zero.";
+            error = "Metric tolerance must be greater than zero.";
             return false;
         }
 
@@ -428,18 +462,103 @@ internal sealed class GoalSeekOptionsDialog : WinForms.Form
             return false;
         }
 
+        double? outputTarget = null;
+        if (metric is GoalSeekMetric.ProbabilityAboveTarget or GoalSeekMetric.ProbabilityAtOrBelowTarget)
+        {
+            if (!TryParseDouble(_outputTargetTextBox.Text, "output target", out var parsedOutputTarget, out error))
+                return false;
+
+            outputTarget = parsedOutputTarget;
+        }
+
+        double? percentile = null;
+        if (metric == GoalSeekMetric.Percentile)
+        {
+            if (!TryParseDouble(_percentileTextBox.Text, "percentile", out var percentilePercent, out error))
+                return false;
+
+            if (percentilePercent < 0 || percentilePercent > 100)
+            {
+                error = "Percentile must be between 0 and 100.";
+                return false;
+            }
+
+            percentile = percentilePercent / 100.0;
+        }
+
+        if (!TryParseDouble(
+                _desiredMetricTextBox.Text,
+                metric is GoalSeekMetric.ProbabilityAboveTarget or GoalSeekMetric.ProbabilityAtOrBelowTarget
+                    ? "desired probability"
+                    : "desired metric value",
+                out var desiredMetricValue,
+                out error))
+        {
+            return false;
+        }
+
+        if (metric is GoalSeekMetric.ProbabilityAboveTarget or GoalSeekMetric.ProbabilityAtOrBelowTarget
+            && (desiredMetricValue < 0 || desiredMetricValue > 1))
+        {
+            error = "Desired probability must be between 0 and 1.";
+            return false;
+        }
+
         options = new GoalSeekRunOptions(
             output.Output.Cell.FullReference,
             output.Output.Label,
             lower,
             upper,
+            metric,
+            desiredMetricValue,
             outputTarget,
-            desiredProbability,
+            percentile,
             iterations,
             maxIterations,
             tolerance,
             _increasingCheckBox.Checked);
         return true;
+    }
+
+    private void UpdateMetricControls()
+    {
+        var metric = _metricComboBox.SelectedItem is MetricOption metricOption
+            ? metricOption.Metric
+            : GoalSeekMetric.ProbabilityAboveTarget;
+
+        var usesTarget = metric is GoalSeekMetric.ProbabilityAboveTarget or GoalSeekMetric.ProbabilityAtOrBelowTarget;
+        var usesPercentile = metric == GoalSeekMetric.Percentile;
+
+        _outputTargetLabel.Enabled = usesTarget;
+        _outputTargetTextBox.Enabled = usesTarget;
+        _percentileLabel.Enabled = usesPercentile;
+        _percentileTextBox.Enabled = usesPercentile;
+
+        switch (metric)
+        {
+            case GoalSeekMetric.Mean:
+                _desiredMetricLabel.Text = "Desired mean";
+                _desiredMetricTextBox.Text = "100";
+                _toleranceLabel.Text = "Metric tolerance";
+                _toleranceTextBox.Text = "0.5";
+                break;
+
+            case GoalSeekMetric.Percentile:
+                _desiredMetricLabel.Text = "Desired percentile value";
+                _desiredMetricTextBox.Text = "100";
+                _toleranceLabel.Text = "Metric tolerance";
+                _toleranceTextBox.Text = "0.5";
+                if (string.IsNullOrWhiteSpace(_percentileTextBox.Text))
+                    _percentileTextBox.Text = "90";
+                break;
+
+            default:
+                _desiredMetricLabel.Text = "Desired probability";
+                _desiredMetricTextBox.Text = "0.8";
+                _toleranceLabel.Text = "Probability tolerance";
+                _toleranceTextBox.Text = "0.005";
+                break;
+        }
     }
 
     private static bool TryParseDouble(string text, string label, out double value, out string error)
@@ -461,24 +580,28 @@ internal sealed class GoalSeekOptionsDialog : WinForms.Form
 
     private static void AddReadOnlyRow(WinForms.TableLayoutPanel panel, string label, string value)
     {
-        panel.Controls.Add(new WinForms.Label { Text = label, AutoSize = true, Anchor = WinForms.AnchorStyles.Left });
+        panel.Controls.Add(CreateRowLabel(label));
         panel.Controls.Add(new WinForms.Label { Text = value, AutoSize = true, Anchor = WinForms.AnchorStyles.Left });
     }
 
-    private static void AddComboRow(WinForms.TableLayoutPanel panel, string label, WinForms.ComboBox comboBox)
+    private static void AddControlRow(WinForms.TableLayoutPanel panel, string label, WinForms.Control control) =>
+        AddControlRow(panel, CreateRowLabel(label), control);
+
+    private static void AddControlRow(WinForms.TableLayoutPanel panel, WinForms.Label label, WinForms.Control control)
     {
-        panel.Controls.Add(new WinForms.Label { Text = label, AutoSize = true, Anchor = WinForms.AnchorStyles.Left });
-        comboBox.DropDownStyle = WinForms.ComboBoxStyle.DropDownList;
-        comboBox.Dock = WinForms.DockStyle.Fill;
-        panel.Controls.Add(comboBox);
+        panel.Controls.Add(label);
+        if (control is WinForms.ComboBox comboBox)
+            comboBox.DropDownStyle = WinForms.ComboBoxStyle.DropDownList;
+        control.Dock = WinForms.DockStyle.Fill;
+        panel.Controls.Add(control);
     }
 
-    private static void AddTextRow(WinForms.TableLayoutPanel panel, string label, WinForms.TextBox textBox)
+    private static WinForms.Label CreateRowLabel(string label) => new()
     {
-        panel.Controls.Add(new WinForms.Label { Text = label, AutoSize = true, Anchor = WinForms.AnchorStyles.Left });
-        textBox.Dock = WinForms.DockStyle.Fill;
-        panel.Controls.Add(textBox);
-    }
+        Text = label,
+        AutoSize = true,
+        Anchor = WinForms.AnchorStyles.Left
+    };
 
     private sealed class OutputOption
     {
@@ -490,5 +613,30 @@ internal sealed class GoalSeekOptionsDialog : WinForms.Form
         public TaggedOutput Output { get; }
 
         public override string ToString() => $"{Output.Label} ({Output.Cell.FullReference})";
+    }
+
+    private sealed class MetricOption
+    {
+        public static IReadOnlyList<MetricOption> All { get; } =
+        [
+            new MetricOption(GoalSeekMetric.ProbabilityAboveTarget, "Probability above target"),
+            new MetricOption(GoalSeekMetric.ProbabilityAtOrBelowTarget, "Probability at or below target"),
+            new MetricOption(GoalSeekMetric.Mean, "Mean"),
+            new MetricOption(GoalSeekMetric.Percentile, "Percentile")
+        ];
+
+        public static MetricOption Default => All[0];
+
+        private MetricOption(GoalSeekMetric metric, string label)
+        {
+            Metric = metric;
+            Label = label;
+        }
+
+        public GoalSeekMetric Metric { get; }
+
+        public string Label { get; }
+
+        public override string ToString() => Label;
     }
 }
