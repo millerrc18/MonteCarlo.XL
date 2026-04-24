@@ -21,6 +21,7 @@ public partial class RunViewModel : ObservableObject
     [ObservableProperty] private string _settingsSourceSummary = "—";
     [ObservableProperty] private string _samplingSummary = "—";
     [ObservableProperty] private string _seedSummary = "—";
+    [ObservableProperty] private string _excelBehaviorSummary = "—";
     [ObservableProperty] private string _convergenceSummary = "—";
     [ObservableProperty] private string _warningPauseSummary = "—";
 
@@ -167,11 +168,7 @@ public partial class RunViewModel : ObservableObject
         EstimatedRemaining = "—";
         IterationRate = "—";
         RunModeSummary = GetRunModeSummary(totalIterations);
-        SettingsSourceSummary = settingsSummary?.SettingsSource ?? "—";
-        SamplingSummary = settingsSummary?.Sampling ?? "—";
-        SeedSummary = settingsSummary?.Seed ?? "—";
-        ConvergenceSummary = settingsSummary?.Convergence ?? "—";
-        WarningPauseSummary = settingsSummary?.WarningPause ?? "—";
+        ApplySettingsSummary(settingsSummary);
         LiveMean = "—";
         LiveMedian = "—";
         LiveStdDev = "—";
@@ -181,6 +178,16 @@ public partial class RunViewModel : ObservableObject
         LiveHistogramData = null;
         IsRunning = true;
         HasError = false;
+    }
+
+    public void ApplySettingsSummary(RunSettingsSummary? settingsSummary)
+    {
+        SettingsSourceSummary = settingsSummary?.SettingsSource ?? "—";
+        SamplingSummary = settingsSummary?.Sampling ?? "—";
+        SeedSummary = settingsSummary?.Seed ?? "—";
+        ExcelBehaviorSummary = settingsSummary?.ExcelBehavior ?? "—";
+        ConvergenceSummary = settingsSummary?.Convergence ?? "—";
+        WarningPauseSummary = settingsSummary?.WarningPause ?? "—";
     }
 
     private static string FormatTimeSpan(TimeSpan ts)
@@ -220,6 +227,8 @@ public sealed class RunSettingsSummary
     public string Sampling { get; init; } = "—";
 
     public string Seed { get; init; } = "—";
+
+    public string ExcelBehavior { get; init; } = "—";
 
     public string Convergence { get; init; } = "—";
 

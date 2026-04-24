@@ -67,6 +67,6 @@ The most common work blocker is corporate policy rather than Excel itself. Some 
 
 Open `MonteCarlo.XL > Settings` in the ribbon/task pane to choose Light, Dark, or System theme. The settings page also includes a results-export option. By default, each export creates a new worksheet so earlier summaries remain available; turn that off if you prefer to replace the prior export sheet.
 
-Simulation and export defaults can now be edited either as Windows-user defaults or as workbook-specific overrides stored inside the active workbook. The Run view and exported summary metadata show the effective settings source used for the run.
+Simulation and export defaults can now be edited either as Windows-user defaults or as workbook-specific overrides stored inside the active workbook. That includes random, fixed, or prompt-at-run seed behavior plus Excel execution defaults such as calculation mode, screen updating, and events during runs. The Run view and exported summary metadata show the effective settings source used for the run.
 
 `Export Summary` creates an Excel report sheet with workbook/run metadata, statistics, percentiles, target analysis, scenario analysis, assumptions, correlations, and summary charts. Enter a target threshold in the Results view before exporting if you want the report to include probability-above and probability-below calculations for that target.

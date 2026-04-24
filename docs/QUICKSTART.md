@@ -64,7 +64,7 @@ By default, each export creates a new worksheet so prior summaries are preserved
 
 Raw-data export can create very large worksheets. MonteCarlo.XL warns before large exports and blocks exports that exceed Excel's worksheet row limit.
 
-Settings also lets you choose defaults for new workbook setups: run preset or custom iteration count, random versus fixed seed, sampling method, convergence auto-stop, whether warning-only Model Check reports pause before a run, and the percentile list used in summary exports.
+Settings also lets you choose defaults for new workbook setups: run preset or custom iteration count, random versus fixed versus prompt-at-run seed behavior, sampling method, convergence auto-stop, Excel calculation behavior during runs, whether to suspend screen updating and events, whether warning-only Model Check reports pause before a run, and the percentile list used in summary exports.
 
 Use the Settings scope toggle if you want those defaults to apply only to the active workbook. Workbook overrides are saved inside the workbook and take precedence over your Windows-user defaults for that workbook only.
 

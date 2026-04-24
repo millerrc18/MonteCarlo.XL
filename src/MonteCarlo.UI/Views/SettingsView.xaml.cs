@@ -29,6 +29,7 @@ public partial class SettingsView : UserControl
         InitializeComponent();
         DefaultRunPresetComboBox.ItemsSource = RunPresetOption.Defaults;
         SamplingMethodComboBox.ItemsSource = Enum.GetValues<SamplingMethod>();
+        ExcelCalculationBehaviorComboBox.ItemsSource = Enum.GetValues<ExcelCalculationBehavior>();
         Loaded += OnLoaded;
     }
 
@@ -113,6 +114,13 @@ public partial class SettingsView : UserControl
             DefaultRunPresetComboBox.SelectedItem = null;
     }
 
+    private void OnSeedModeChanged(object sender, RoutedEventArgs e)
+    {
+        if (_isInitializing) return;
+
+        UpdateSeedModeControls();
+    }
+
     private void OnSaveDefaultsClicked(object sender, RoutedEventArgs e)
     {
         if (!TryReadSettingsFromControls(out var settings, out var error))
@@ -188,12 +196,21 @@ public partial class SettingsView : UserControl
         {
             CreateNewWorksheetForExports = CreateNewExportSheetCheckBox.IsChecked == true,
             DefaultIterationCount = defaultIterations,
-            SeedMode = FixedSeedRadio.IsChecked == true ? SeedMode.Fixed : SeedMode.Random,
+            SeedMode = PromptSeedRadio.IsChecked == true
+                ? SeedMode.Prompt
+                : FixedSeedRadio.IsChecked == true
+                    ? SeedMode.Fixed
+                    : SeedMode.Random,
             FixedRandomSeed = fixedSeed,
             SamplingMethod = SamplingMethodComboBox.SelectedItem is SamplingMethod method
                 ? method
                 : UserSettings.Default.SamplingMethod,
             AutoStopOnConvergence = AutoStopOnConvergenceCheckBox.IsChecked == true,
+            ExcelCalculationBehavior = ExcelCalculationBehaviorComboBox.SelectedItem is ExcelCalculationBehavior behavior
+                ? behavior
+                : UserSettings.Default.ExcelCalculationBehavior,
+            SuspendScreenUpdating = SuspendScreenUpdatingCheckBox.IsChecked == true,
+            SuspendEvents = SuspendEventsCheckBox.IsChecked == true,
             PauseOnPreflightWarnings = PauseOnPreflightWarningsCheckBox.IsChecked == true,
             DefaultPercentiles = percentiles
         };
@@ -262,11 +279,16 @@ public partial class SettingsView : UserControl
         DefaultIterationsTextBox.Text = settings.DefaultIterationCount.ToString();
         RandomSeedRadio.IsChecked = settings.SeedMode == SeedMode.Random;
         FixedSeedRadio.IsChecked = settings.SeedMode == SeedMode.Fixed;
+        PromptSeedRadio.IsChecked = settings.SeedMode == SeedMode.Prompt;
         FixedSeedTextBox.Text = settings.FixedRandomSeed.ToString();
         SamplingMethodComboBox.SelectedItem = settings.SamplingMethod;
         AutoStopOnConvergenceCheckBox.IsChecked = settings.AutoStopOnConvergence;
+        ExcelCalculationBehaviorComboBox.SelectedItem = settings.ExcelCalculationBehavior;
+        SuspendScreenUpdatingCheckBox.IsChecked = settings.SuspendScreenUpdating;
+        SuspendEventsCheckBox.IsChecked = settings.SuspendEvents;
         PauseOnPreflightWarningsCheckBox.IsChecked = settings.PauseOnPreflightWarnings;
         DefaultPercentilesTextBox.Text = settings.DefaultPercentiles;
+        UpdateSeedModeControls();
     }
 
     private void UpdateScopePresentation()
@@ -294,5 +316,10 @@ public partial class SettingsView : UserControl
             : "No workbook override is saved yet. Saving here stores only the values that differ from the Windows defaults.";
         SaveSettingsButton.Content = hasWorkbookOverrides ? "Save Workbook Overrides" : "Save Workbook Settings";
         ClearWorkbookOverridesButton.IsEnabled = hasWorkbookOverrides;
+    }
+
+    private void UpdateSeedModeControls()
+    {
+        FixedSeedTextBox.IsEnabled = FixedSeedRadio.IsChecked == true || PromptSeedRadio.IsChecked == true;
     }
 }

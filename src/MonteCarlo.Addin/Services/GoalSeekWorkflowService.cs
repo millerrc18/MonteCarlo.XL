@@ -2,7 +2,9 @@ using ExcelDna.Integration;
 using MonteCarlo.Addin.Excel;
 using MonteCarlo.Engine.Analysis;
 using MonteCarlo.Engine.Simulation;
+using MonteCarlo.UI.Services;
 using ExcelApplication = Microsoft.Office.Interop.Excel.Application;
+using ExcelCalculation = Microsoft.Office.Interop.Excel.XlCalculation;
 using ExcelWorkbook = Microsoft.Office.Interop.Excel.Workbook;
 using ExcelRange = Microsoft.Office.Interop.Excel.Range;
 using ExcelWorksheet = Microsoft.Office.Interop.Excel.Worksheet;
@@ -23,7 +25,8 @@ internal sealed class GoalSeekWorkflowService
         IReadOnlyList<TaggedOutput> outputs,
         double[,]? correlationMatrix,
         SamplingMethod samplingMethod,
-        int? randomSeed)
+        int? randomSeed,
+        ExcelExecutionOptions? executionOptions = null)
     {
         if (outputs.Count == 0)
         {
@@ -74,11 +77,18 @@ internal sealed class GoalSeekWorkflowService
         };
 
         using var excelState = ExcelStateScope.Capture(app, "Goal seek", restoreSelection: true);
+        var execution = executionOptions ?? ExcelExecutionOptions.Default;
         try
         {
             excelState.Apply(
-                screenUpdating: false,
-                enableEvents: false,
+                screenUpdating: execution.SuspendScreenUpdating ? false : null,
+                enableEvents: execution.SuspendEvents ? false : null,
+                calculation: execution.CalculationBehavior switch
+                {
+                    ExcelCalculationBehavior.Automatic => ExcelCalculation.xlCalculationAutomatic,
+                    ExcelCalculationBehavior.Manual => ExcelCalculation.xlCalculationManual,
+                    _ => null
+                },
                 statusBar: "MonteCarlo.XL: running Goal Seek...");
 
             var result = await GoalSeekUnderUncertainty.SolveAsync(
@@ -99,7 +109,8 @@ internal sealed class GoalSeekWorkflowService
                         randomSeed,
                         samplingMethod,
                         autoStopOnConvergence: false,
-                        correlationMatrix).ConfigureAwait(false);
+                        correlationMatrix,
+                        execution).ConfigureAwait(false);
 
                     var simulationResult = orchestrator.LastResult
                         ?? throw new InvalidOperationException("Goal Seek simulation did not produce results.");

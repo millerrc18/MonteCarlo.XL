@@ -83,6 +83,10 @@
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="4"/>
                             <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="4"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="4"/>
+                            <RowDefinition Height="Auto"/>
                         </Grid.RowDefinitions>
 
                         <TextBlock Grid.Row="0" Grid.Column="0" Text="Mode:"
@@ -125,17 +129,26 @@
                                    FontFamily="{StaticResource MonoFont}"
                                    HorizontalAlignment="Right"/>
 
-                        <TextBlock Grid.Row="10" Grid.Column="0" Text="Warnings:"
+                        <TextBlock Grid.Row="10" Grid.Column="0" Text="Excel:"
                                    Style="{StaticResource CaptionText}" VerticalAlignment="Center"/>
-                        <TextBlock Grid.Row="10" Grid.Column="1" Text="{Binding WarningPauseSummary}"
+                        <TextBlock Grid.Row="10" Grid.Column="1" Text="{Binding ExcelBehaviorSummary}"
+                                   Style="{StaticResource BodyText}"
+                                   Foreground="{DynamicResource TextPrimaryBrush}"
+                                   FontFamily="{StaticResource MonoFont}"
+                                   HorizontalAlignment="Right"
+                                   TextWrapping="Wrap"/>
+
+                        <TextBlock Grid.Row="12" Grid.Column="0" Text="Warnings:"
+                                   Style="{StaticResource CaptionText}" VerticalAlignment="Center"/>
+                        <TextBlock Grid.Row="12" Grid.Column="1" Text="{Binding WarningPauseSummary}"
                                    Style="{StaticResource BodyText}"
                                    Foreground="{DynamicResource TextPrimaryBrush}"
                                    FontFamily="{StaticResource MonoFont}"
                                    HorizontalAlignment="Right"/>
 
-                        <TextBlock Grid.Row="12" Grid.Column="0" Text="Iterations:"
+                        <TextBlock Grid.Row="14" Grid.Column="0" Text="Iterations:"
                                    Style="{StaticResource CaptionText}" VerticalAlignment="Center"/>
-                        <TextBlock Grid.Row="12" Grid.Column="1"
+                        <TextBlock Grid.Row="14" Grid.Column="1"
                                    Style="{StaticResource BodyText}"
                                    Foreground="{DynamicResource TextPrimaryBrush}"
                                    FontFamily="{StaticResource MonoFont}"
@@ -145,26 +158,26 @@
                             <Run Text="{Binding TotalIterations, StringFormat='{}{0:N0}', Mode=OneWay}"/>
                         </TextBlock>
 
-                        <TextBlock Grid.Row="14" Grid.Column="0" Text="Speed:"
+                        <TextBlock Grid.Row="16" Grid.Column="0" Text="Speed:"
                                    Style="{StaticResource CaptionText}" VerticalAlignment="Center"/>
-                        <TextBlock Grid.Row="14" Grid.Column="1"
+                        <TextBlock Grid.Row="16" Grid.Column="1"
                                    Text="{Binding IterationRate}"
                                    Style="{StaticResource BodyText}"
                                    Foreground="{DynamicResource TextPrimaryBrush}"
                                    FontFamily="{StaticResource MonoFont}"
                                    HorizontalAlignment="Right"/>
 
-                        <TextBlock Grid.Row="16" Grid.Column="0" Text="Elapsed:"
+                        <TextBlock Grid.Row="18" Grid.Column="0" Text="Elapsed:"
                                    Style="{StaticResource CaptionText}" VerticalAlignment="Center"/>
-                        <TextBlock Grid.Row="16" Grid.Column="1" Text="{Binding ElapsedTime}"
+                        <TextBlock Grid.Row="18" Grid.Column="1" Text="{Binding ElapsedTime}"
                                    Style="{StaticResource BodyText}"
                                    Foreground="{DynamicResource TextPrimaryBrush}"
                                    FontFamily="{StaticResource MonoFont}"
                                    HorizontalAlignment="Right"/>
 
-                        <TextBlock Grid.Row="18" Grid.Column="0" Text="Remaining:"
+                        <TextBlock Grid.Row="20" Grid.Column="0" Text="Remaining:"
                                    Style="{StaticResource CaptionText}" VerticalAlignment="Center"/>
-                        <TextBlock Grid.Row="18" Grid.Column="1" Text="{Binding EstimatedRemaining}"
+                        <TextBlock Grid.Row="20" Grid.Column="1" Text="{Binding EstimatedRemaining}"
                                    Style="{StaticResource BodyText}"
                                    Foreground="{DynamicResource TextPrimaryBrush}"
                                    FontFamily="{StaticResource MonoFont}"

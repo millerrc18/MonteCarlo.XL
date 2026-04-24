@@ -167,11 +167,15 @@ internal sealed class TaskPaneIntegration : IDisposable
         {
             var effectiveSettings = ResolveEffectiveUserSettings();
             var userSettings = effectiveSettings.Settings;
-            var runSeed = viewModel.SetupViewModel.IsSeedLocked
-                ? viewModel.SetupViewModel.RandomSeed
-                : userSettings.SeedMode == SeedMode.Fixed
-                    ? userSettings.FixedRandomSeed
-                    : null;
+            var runSeedSelection = ResolveRunSeedSelection(
+                viewModel.SetupViewModel,
+                userSettings,
+                workflowName: "Goal Seek");
+            if (runSeedSelection == null)
+            {
+                Dispatch(() => viewModel.OnSimulationCancelled());
+                return;
+            }
 
             SyncManagersFromSetup(viewModel.SetupViewModel, clearExistingHighlights: true);
             SaveCurrentProfile();
@@ -183,7 +187,8 @@ internal sealed class TaskPaneIntegration : IDisposable
                 _outputManager.GetAllOutputs(),
                 viewModel.SetupViewModel.CorrelationMatrixValues,
                 userSettings.SamplingMethod,
-                runSeed);
+                runSeedSelection.RandomSeed,
+                userSettings.GetExcelExecutionOptions());
         }
         catch (Exception ex)
         {
@@ -305,20 +310,31 @@ internal sealed class TaskPaneIntegration : IDisposable
         {
             var effectiveSettings = ResolveEffectiveUserSettings();
             var userSettings = effectiveSettings.Settings;
-            var runSeed = viewModel.SetupViewModel.IsSeedLocked
-                ? viewModel.SetupViewModel.RandomSeed
-                : userSettings.SeedMode == SeedMode.Fixed
-                    ? userSettings.FixedRandomSeed
-                    : null;
+            var runSeedSelection = ResolveRunSeedSelection(
+                viewModel.SetupViewModel,
+                userSettings,
+                workflowName: "the simulation");
+            if (runSeedSelection == null)
+            {
+                Dispatch(() => viewModel.OnSimulationCancelled());
+                return;
+            }
+
+            Dispatch(() => viewModel.RunViewModel.ApplySettingsSummary(
+                BuildRunSettingsSummary(
+                    effectiveSettings,
+                    viewModel.SetupViewModel,
+                    runSeedSelection)));
 
             SyncManagersFromSetup(viewModel.SetupViewModel, clearExistingHighlights: true);
             SaveCurrentProfile();
             await _orchestrator.RunSimulationAsync(
                 viewModel.SetupViewModel.IterationCount,
-                runSeed,
+                runSeedSelection.RandomSeed,
                 userSettings.SamplingMethod,
                 userSettings.AutoStopOnConvergence,
-                viewModel.SetupViewModel.CorrelationMatrixValues);
+                viewModel.SetupViewModel.CorrelationMatrixValues,
+                userSettings.GetExcelExecutionOptions());
         }
         catch (OperationCanceledException)
         {
@@ -1093,12 +1109,16 @@ internal sealed class TaskPaneIntegration : IDisposable
             return new RunSettingsSummary();
 
         var effectiveSettings = ResolveEffectiveUserSettings();
+        return BuildRunSettingsSummary(effectiveSettings, setup);
+    }
+
+    private static RunSettingsSummary BuildRunSettingsSummary(
+        EffectiveUserSettings effectiveSettings,
+        SetupViewModel setup,
+        RunSeedSelection? resolvedSeedSelection = null)
+    {
         var settings = effectiveSettings.Settings;
-        var actualSeed = setup.IsSeedLocked
-            ? setup.RandomSeed
-            : settings.SeedMode == SeedMode.Fixed
-                ? settings.FixedRandomSeed
-                : null;
+        var seedSummary = resolvedSeedSelection?.Description ?? DescribeConfiguredSeed(setup, settings);
 
         return new RunSettingsSummary
         {
@@ -1106,10 +1126,68 @@ internal sealed class TaskPaneIntegration : IDisposable
                 ? "Workbook override"
                 : "Windows defaults",
             Sampling = settings.SamplingMethod.ToString(),
-            Seed = actualSeed.HasValue ? $"Fixed {actualSeed.Value}" : "Random each run",
+            Seed = seedSummary,
+            ExcelBehavior = DescribeExcelBehavior(settings),
             Convergence = settings.AutoStopOnConvergence ? "Auto-stop on" : "Auto-stop off",
             WarningPause = settings.PauseOnPreflightWarnings ? "Pause on warnings" : "Run through warnings"
         };
+    }
+
+    private static string DescribeConfiguredSeed(SetupViewModel setup, UserSettings settings)
+    {
+        if (setup.IsSeedLocked)
+            return setup.RandomSeed.HasValue ? $"Fixed {setup.RandomSeed.Value}" : "Random each run";
+
+        return settings.SeedMode switch
+        {
+            SeedMode.Fixed => $"Fixed {settings.FixedRandomSeed}",
+            SeedMode.Prompt => $"Prompt at run time (default {settings.FixedRandomSeed})",
+            _ => "Random each run"
+        };
+    }
+
+    private static string DescribeExcelBehavior(UserSettings settings)
+    {
+        var calculation = settings.ExcelCalculationBehavior switch
+        {
+            ExcelCalculationBehavior.Automatic => "calc auto",
+            ExcelCalculationBehavior.Manual => "calc manual",
+            _ => "calc keep current"
+        };
+
+        var screen = settings.SuspendScreenUpdating ? "screen paused" : "screen live";
+        var events = settings.SuspendEvents ? "events paused" : "events live";
+        return $"{calculation}; {screen}; {events}";
+    }
+
+    private static RunSeedSelection? ResolveRunSeedSelection(
+        SetupViewModel setup,
+        UserSettings settings,
+        string workflowName)
+    {
+        if (setup.IsSeedLocked)
+        {
+            return setup.RandomSeed.HasValue
+                ? new RunSeedSelection(setup.RandomSeed.Value, $"Fixed {setup.RandomSeed.Value}")
+                : new RunSeedSelection(null, "Random each run");
+        }
+
+        switch (settings.SeedMode)
+        {
+            case SeedMode.Fixed:
+                return new RunSeedSelection(settings.FixedRandomSeed, $"Fixed {settings.FixedRandomSeed}");
+
+            case SeedMode.Prompt:
+                using (var dialog = new RunSeedPromptDialog(workflowName, settings.FixedRandomSeed))
+                {
+                    return dialog.ShowDialog() == System.Windows.Forms.DialogResult.OK
+                        ? dialog.Selection
+                        : null;
+                }
+
+            default:
+                return new RunSeedSelection(null, "Random each run");
+        }
     }
 
     private void Dispatch(System.Action action)

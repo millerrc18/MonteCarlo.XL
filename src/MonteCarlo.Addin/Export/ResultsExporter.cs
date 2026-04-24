@@ -239,10 +239,14 @@ public class ResultsExporter
         if (effectiveSettings != null)
         {
             row = WriteMetadataRow(sheet, row, "Settings scope", usesWorkbookOverrides ? "Workbook override" : "Windows defaults");
+            row = WriteMetadataRow(sheet, row, "Seed preference", DescribeSeedPreference(effectiveSettings));
             row = WriteMetadataRow(sheet, row, "Pause on Model Check warnings", effectiveSettings.PauseOnPreflightWarnings ? "On" : "Off");
             row = WriteMetadataRow(sheet, row, "Export default", effectiveSettings.CreateNewWorksheetForExports
                 ? "New worksheet per export"
                 : "Reuse export worksheet");
+            row = WriteMetadataRow(sheet, row, "Excel calculation", DescribeExcelCalculation(effectiveSettings.ExcelCalculationBehavior));
+            row = WriteMetadataRow(sheet, row, "Suspend screen updating", effectiveSettings.SuspendScreenUpdating ? "Yes" : "No");
+            row = WriteMetadataRow(sheet, row, "Suspend Excel events", effectiveSettings.SuspendEvents ? "Yes" : "No");
             row = WriteMetadataRow(sheet, row, "Default percentiles", effectiveSettings.DefaultPercentiles);
         }
         row = WriteMetadataRow(sheet, row, "Correlation", DescribeCorrelation(profile));
@@ -283,6 +287,22 @@ public class ResultsExporter
 
         return row;
     }
+
+    private static string DescribeSeedPreference(UserSettings settings) =>
+        settings.SeedMode switch
+        {
+            SeedMode.Fixed => $"Fixed {settings.FixedRandomSeed}",
+            SeedMode.Prompt => $"Prompt at run time (default {settings.FixedRandomSeed})",
+            _ => "Random each run"
+        };
+
+    private static string DescribeExcelCalculation(ExcelCalculationBehavior behavior) =>
+        behavior switch
+        {
+            ExcelCalculationBehavior.Automatic => "Automatic",
+            ExcelCalculationBehavior.Manual => "Manual",
+            _ => "Keep current"
+        };
 
     private static int WritePercentiles(
         Worksheet sheet,

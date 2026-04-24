@@ -62,11 +62,13 @@ public class SimulationOrchestrator
         int? randomSeed,
         SamplingMethod samplingMethod = SamplingMethod.LatinHypercube,
         bool autoStopOnConvergence = false,
-        double[,]? correlationMatrix = null)
+        double[,]? correlationMatrix = null,
+        ExcelExecutionOptions? executionOptions = null)
     {
         _cts = new CancellationTokenSource();
         _convergenceChecker.Reset();
         var app = (Application)ExcelDnaUtil.Application;
+        var execution = executionOptions ?? ExcelExecutionOptions.Default;
 
         // 1. Build inputs from GUI-tagged cells
         var taggedInputs = new List<TaggedInput>(_inputManager.GetAllInputs());
@@ -200,9 +202,14 @@ public class SimulationOrchestrator
         try
         {
             excelState.Apply(
-                screenUpdating: false,
-                enableEvents: false,
-                calculation: XlCalculation.xlCalculationManual,
+                screenUpdating: execution.SuspendScreenUpdating ? false : null,
+                enableEvents: execution.SuspendEvents ? false : null,
+                calculation: execution.CalculationBehavior switch
+                {
+                    ExcelCalculationBehavior.Automatic => XlCalculation.xlCalculationAutomatic,
+                    ExcelCalculationBehavior.Manual => XlCalculation.xlCalculationManual,
+                    _ => null
+                },
                 statusBar: "MonteCarlo.XL: running simulation...");
 
             var result = await engine.RunAsync(config, evaluator, _cts.Token);

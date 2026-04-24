@@ -126,14 +126,27 @@
                                      Margin="0,0,0,6"
                                      Foreground="{DynamicResource TextPrimaryBrush}"
                                      FontFamily="{StaticResource DefaultFont}"
-                                     FontSize="13"/>
+                                     FontSize="13"
+                                     Checked="OnSeedModeChanged"/>
                         <RadioButton x:Name="FixedSeedRadio"
                                      Content="Fixed seed by default"
                                      GroupName="SeedMode"
                                      Margin="0,0,0,6"
                                      Foreground="{DynamicResource TextPrimaryBrush}"
                                      FontFamily="{StaticResource DefaultFont}"
-                                     FontSize="13"/>
+                                     FontSize="13"
+                                     Checked="OnSeedModeChanged"/>
+                        <RadioButton x:Name="PromptSeedRadio"
+                                     Content="Prompt for random or fixed seed at run time"
+                                     GroupName="SeedMode"
+                                     Margin="0,0,0,6"
+                                     Foreground="{DynamicResource TextPrimaryBrush}"
+                                     FontFamily="{StaticResource DefaultFont}"
+                                     FontSize="13"
+                                     Checked="OnSeedModeChanged"/>
+                        <TextBlock Text="Fixed seed value"
+                                   Style="{StaticResource CaptionText}"
+                                   Margin="0,0,0,4"/>
                         <TextBox x:Name="FixedSeedTextBox"
                                  Margin="18,0,0,10"
                                  Padding="8,6"
@@ -141,6 +154,10 @@
                                  FontSize="13"
                                  BorderBrush="{DynamicResource BorderBrush}"
                                  BorderThickness="1"/>
+                        <TextBlock Text="Used for Fixed mode and as the default suggestion when Prompt mode is selected."
+                                   Style="{StaticResource CaptionText}"
+                                   TextWrapping="Wrap"
+                                   Margin="18,0,0,10"/>
 
                         <TextBlock Text="Sampling method" Style="{StaticResource CaptionText}" Margin="0,0,0,4"/>
                         <ComboBox x:Name="SamplingMethodComboBox"
@@ -155,6 +172,31 @@
                                   Foreground="{DynamicResource TextPrimaryBrush}"
                                   FontFamily="{StaticResource DefaultFont}"
                                   FontSize="13"/>
+
+                        <TextBlock Text="Excel execution during runs" Style="{StaticResource CaptionText}" Margin="0,0,0,4"/>
+                        <ComboBox x:Name="ExcelCalculationBehaviorComboBox"
+                                  Margin="0,0,0,10"
+                                  Padding="8,6"
+                                  FontFamily="{StaticResource DefaultFont}"
+                                  FontSize="13"/>
+
+                        <CheckBox x:Name="SuspendScreenUpdatingCheckBox"
+                                  Content="Suspend screen updating during runs"
+                                  Margin="0,0,0,6"
+                                  Foreground="{DynamicResource TextPrimaryBrush}"
+                                  FontFamily="{StaticResource DefaultFont}"
+                                  FontSize="13"/>
+
+                        <CheckBox x:Name="SuspendEventsCheckBox"
+                                  Content="Suspend Excel events during runs"
+                                  Margin="0,0,0,10"
+                                  Foreground="{DynamicResource TextPrimaryBrush}"
+                                  FontFamily="{StaticResource DefaultFont}"
+                                  FontSize="13"/>
+                        <TextBlock Text="These settings are restored after the run completes or fails."
+                                   Style="{StaticResource CaptionText}"
+                                   TextWrapping="Wrap"
+                                   Margin="0,0,0,10"/>
 
                         <CheckBox x:Name="PauseOnPreflightWarningsCheckBox"
                                   Content="Pause before running when Model Check finds warnings"

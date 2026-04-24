@@ -18,6 +18,9 @@ public class UserSettingsService
     private const string AutoStopOnConvergenceValue = "AutoStopOnConvergence";
     private const string PauseOnPreflightWarningsValue = "PauseOnPreflightWarnings";
     private const string DefaultPercentilesValue = "DefaultPercentiles";
+    private const string ExcelCalculationBehaviorValue = "ExcelCalculationBehavior";
+    private const string SuspendScreenUpdatingValue = "SuspendScreenUpdating";
+    private const string SuspendEventsValue = "SuspendEvents";
 
     public UserSettings Load()
     {
@@ -52,6 +55,18 @@ public class UserSettingsService
                     key,
                     AutoStopOnConvergenceValue,
                     UserSettings.Default.AutoStopOnConvergence),
+                ExcelCalculationBehavior = ReadEnum(
+                    key,
+                    ExcelCalculationBehaviorValue,
+                    UserSettings.Default.ExcelCalculationBehavior),
+                SuspendScreenUpdating = ReadBool(
+                    key,
+                    SuspendScreenUpdatingValue,
+                    UserSettings.Default.SuspendScreenUpdating),
+                SuspendEvents = ReadBool(
+                    key,
+                    SuspendEventsValue,
+                    UserSettings.Default.SuspendEvents),
                 PauseOnPreflightWarnings = ReadBool(
                     key,
                     PauseOnPreflightWarningsValue,
@@ -96,6 +111,18 @@ public class UserSettingsService
             key.SetValue(
                 AutoStopOnConvergenceValue,
                 settings.AutoStopOnConvergence ? 1 : 0,
+                RegistryValueKind.DWord);
+            key.SetValue(
+                ExcelCalculationBehaviorValue,
+                settings.ExcelCalculationBehavior.ToString(),
+                RegistryValueKind.String);
+            key.SetValue(
+                SuspendScreenUpdatingValue,
+                settings.SuspendScreenUpdating ? 1 : 0,
+                RegistryValueKind.DWord);
+            key.SetValue(
+                SuspendEventsValue,
+                settings.SuspendEvents ? 1 : 0,
                 RegistryValueKind.DWord);
             key.SetValue(
                 PauseOnPreflightWarningsValue,
@@ -152,7 +179,26 @@ public class UserSettingsService
 public enum SeedMode
 {
     Random,
-    Fixed
+    Fixed,
+    Prompt
+}
+
+public enum ExcelCalculationBehavior
+{
+    KeepCurrent,
+    Manual,
+    Automatic
+}
+
+public sealed class ExcelExecutionOptions
+{
+    public static ExcelExecutionOptions Default => new();
+
+    public ExcelCalculationBehavior CalculationBehavior { get; init; } = ExcelCalculationBehavior.Manual;
+
+    public bool SuspendScreenUpdating { get; init; } = true;
+
+    public bool SuspendEvents { get; init; } = true;
 }
 
 public sealed class WorkbookUserSettingsOverrides
@@ -169,6 +215,12 @@ public sealed class WorkbookUserSettingsOverrides
 
     public bool? AutoStopOnConvergence { get; set; }
 
+    public ExcelCalculationBehavior? ExcelCalculationBehavior { get; set; }
+
+    public bool? SuspendScreenUpdating { get; set; }
+
+    public bool? SuspendEvents { get; set; }
+
     public bool? PauseOnPreflightWarnings { get; set; }
 
     public string? DefaultPercentiles { get; set; }
@@ -180,6 +232,9 @@ public sealed class WorkbookUserSettingsOverrides
         || FixedRandomSeed.HasValue
         || SamplingMethod.HasValue
         || AutoStopOnConvergence.HasValue
+        || ExcelCalculationBehavior.HasValue
+        || SuspendScreenUpdating.HasValue
+        || SuspendEvents.HasValue
         || PauseOnPreflightWarnings.HasValue
         || !string.IsNullOrWhiteSpace(DefaultPercentiles);
 }
@@ -196,6 +251,9 @@ public class UserSettings
         FixedRandomSeed = 42,
         SamplingMethod = SamplingMethod.LatinHypercube,
         AutoStopOnConvergence = false,
+        ExcelCalculationBehavior = ExcelCalculationBehavior.Manual,
+        SuspendScreenUpdating = true,
+        SuspendEvents = true,
         PauseOnPreflightWarnings = true,
         DefaultPercentiles = "1,5,10,25,50,75,90,95,99"
     };
@@ -220,6 +278,15 @@ public class UserSettings
     /// <summary>Whether simulations should request convergence auto-stop from the engine.</summary>
     public bool AutoStopOnConvergence { get; init; }
 
+    /// <summary>How simulation workflows should set Excel calculation during runs.</summary>
+    public ExcelCalculationBehavior ExcelCalculationBehavior { get; init; }
+
+    /// <summary>Whether simulation workflows should temporarily suspend screen updating.</summary>
+    public bool SuspendScreenUpdating { get; init; }
+
+    /// <summary>Whether simulation workflows should temporarily suspend Excel events.</summary>
+    public bool SuspendEvents { get; init; }
+
     /// <summary>Whether warnings from Model Check should pause before starting a run.</summary>
     public bool PauseOnPreflightWarnings { get; init; }
 
@@ -229,6 +296,13 @@ public class UserSettings
     /// <summary>Parsed percentile fractions in the 0.0 to 1.0 range.</summary>
     public IReadOnlyList<double> GetDefaultPercentileFractions() =>
         ParsePercentileFractions(DefaultPercentiles);
+
+    public ExcelExecutionOptions GetExcelExecutionOptions() => new()
+    {
+        CalculationBehavior = ExcelCalculationBehavior,
+        SuspendScreenUpdating = SuspendScreenUpdating,
+        SuspendEvents = SuspendEvents
+    };
 
     public static EffectiveUserSettings Resolve(
         UserSettings globalSettings,
@@ -261,6 +335,12 @@ public class UserSettings
                 ?? globalSettings.SamplingMethod,
             AutoStopOnConvergence = workbookOverrides.AutoStopOnConvergence
                 ?? globalSettings.AutoStopOnConvergence,
+            ExcelCalculationBehavior = workbookOverrides.ExcelCalculationBehavior
+                ?? globalSettings.ExcelCalculationBehavior,
+            SuspendScreenUpdating = workbookOverrides.SuspendScreenUpdating
+                ?? globalSettings.SuspendScreenUpdating,
+            SuspendEvents = workbookOverrides.SuspendEvents
+                ?? globalSettings.SuspendEvents,
             PauseOnPreflightWarnings = workbookOverrides.PauseOnPreflightWarnings
                 ?? globalSettings.PauseOnPreflightWarnings,
             DefaultPercentiles = string.IsNullOrWhiteSpace(workbookOverrides.DefaultPercentiles)
@@ -292,6 +372,15 @@ public class UserSettings
                 : null,
             AutoStopOnConvergence = workbookSettings.AutoStopOnConvergence != globalSettings.AutoStopOnConvergence
                 ? workbookSettings.AutoStopOnConvergence
+                : null,
+            ExcelCalculationBehavior = workbookSettings.ExcelCalculationBehavior != globalSettings.ExcelCalculationBehavior
+                ? workbookSettings.ExcelCalculationBehavior
+                : null,
+            SuspendScreenUpdating = workbookSettings.SuspendScreenUpdating != globalSettings.SuspendScreenUpdating
+                ? workbookSettings.SuspendScreenUpdating
+                : null,
+            SuspendEvents = workbookSettings.SuspendEvents != globalSettings.SuspendEvents
+                ? workbookSettings.SuspendEvents
                 : null,
             PauseOnPreflightWarnings = workbookSettings.PauseOnPreflightWarnings != globalSettings.PauseOnPreflightWarnings
                 ? workbookSettings.PauseOnPreflightWarnings
