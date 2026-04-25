@@ -23,7 +23,7 @@ Start here if you want to try the add-in in Excel:
 
 ## Supported Distributions
 
-The task pane supports Normal, Triangular, PERT, Lognormal, Uniform, Discrete, Beta, Weibull, Exponential, Poisson, Gamma, Logistic, GEV, Binomial, and Geometric distributions. Worksheet UDFs are available for all except Discrete; see the [distribution guide](docs/DISTRIBUTION_GUIDE.md) for details and usage examples.
+The task pane supports Normal, Triangular, PERT, Lognormal, Uniform, Discrete, Beta, Weibull, Exponential, Poisson, Gamma, Logistic, GEV, Binomial, and Geometric distributions. Worksheet UDFs are available for all except Discrete; see the [distribution guide](docs/DISTRIBUTION_GUIDE.md) for details and usage examples. Historical fitting now previews the sampled histogram against the candidate curve and flags weaker fits before you apply them.
 
 When not running a simulation, `MC.*` worksheet functions return an expected or representative value so the workbook stays usable as a normal deterministic model. During simulation, MonteCarlo.XL replaces those input cells with sampled values and records the selected output cells.
 

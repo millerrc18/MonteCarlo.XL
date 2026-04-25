@@ -1,0 +1,12 @@
+<UserControl x:Class="MonteCarlo.UI.Views.DistributionFitPreviewControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             Height="84" Width="280">
+    <Border Background="{DynamicResource BackgroundBrush}"
+            BorderBrush="{DynamicResource BorderBrush}"
+            BorderThickness="1"
+            CornerRadius="4"
+            ClipToBounds="True">
+        <Canvas x:Name="PreviewCanvas"/>
+    </Border>
+</UserControl>

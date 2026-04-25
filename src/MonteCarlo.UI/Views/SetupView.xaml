@@ -257,6 +257,23 @@
                                            TextWrapping="Wrap"
                                            Margin="0,0,0,6"
                                            Visibility="{Binding SelectedDistributionFitResult, Converter={StaticResource NullToCollapsed}}"/>
+                                <TextBlock Text="{Binding SelectedDistributionFitResult.ScoreSummary}"
+                                           Style="{StaticResource CaptionText}"
+                                           TextWrapping="Wrap"
+                                           Margin="0,0,0,6"
+                                           Visibility="{Binding SelectedDistributionFitResult, Converter={StaticResource NullToCollapsed}}"/>
+                                <views:DistributionFitPreviewControl HistogramBars="{Binding DistributionFitPreviewBars}"
+                                                                     CurvePoints="{Binding DistributionFitPreviewCurvePoints}"
+                                                                     Margin="0,0,0,6"
+                                                                     Height="84"
+                                                                     HorizontalAlignment="Stretch"
+                                                                     Visibility="{Binding SelectedDistributionFitResult, Converter={StaticResource NullToCollapsed}}"/>
+                                <TextBlock Text="{Binding DistributionFitWarning}"
+                                           Style="{StaticResource CaptionText}"
+                                           Foreground="{StaticResource Amber500Brush}"
+                                           TextWrapping="Wrap"
+                                           Margin="0,0,0,6"
+                                           Visibility="{Binding DistributionFitWarning, Converter={StaticResource NullToCollapsed}}"/>
                                 <Grid>
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*"/>

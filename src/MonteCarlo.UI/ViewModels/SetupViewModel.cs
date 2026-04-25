@@ -198,6 +198,18 @@ public partial class SetupViewModel : ObservableObject
     [ObservableProperty]
     private string? _distributionFitStatus;
 
+    /// <summary>Histogram bars for the selected fit preview.</summary>
+    [ObservableProperty]
+    private IReadOnlyList<DistributionFitHistogramBar> _distributionFitPreviewBars = Array.Empty<DistributionFitHistogramBar>();
+
+    /// <summary>Distribution curve points for the selected fit preview.</summary>
+    [ObservableProperty]
+    private IReadOnlyList<(double X, double Y)>? _distributionFitPreviewCurvePoints;
+
+    /// <summary>Confidence or caution text for the selected fit.</summary>
+    [ObservableProperty]
+    private string? _distributionFitWarning;
+
     /// <summary>Available distribution names.</summary>
     public IReadOnlyList<string> AvailableDistributions { get; } = DistributionFactory.AvailableDistributions;
 
@@ -241,6 +253,7 @@ public partial class SetupViewModel : ObservableObject
     private OutputCardViewModel? _editingOutput;
     private readonly HashSet<InputCardViewModel> _observedInputs = new();
     private readonly HashSet<OutputCardViewModel> _observedOutputs = new();
+    private double[] _distributionFitSourceSamples = Array.Empty<double>();
 
     partial void OnIterationCountChanged(int value)
     {
@@ -263,6 +276,9 @@ public partial class SetupViewModel : ObservableObject
 
     partial void OnDistributionSuggestionSearchTextChanged(string value) =>
         RefreshDistributionSuggestions();
+
+    partial void OnSelectedDistributionFitResultChanged(DistributionFitResultViewModel? value) =>
+        UpdateDistributionFitPreview();
 
     partial void OnInputManagerSearchTextChanged(string value) =>
         RefreshInputManagerView();
@@ -381,14 +397,21 @@ public partial class SetupViewModel : ObservableObject
         DistributionFitStatus = $"Applied {fit.DistributionName} fit.";
     }
 
-    public void LoadDistributionFitResults(IReadOnlyList<DistributionFitResult> results, string sourceAddress)
+    public void LoadDistributionFitResults(
+        IReadOnlyList<DistributionFitResult> results,
+        string sourceAddress,
+        IReadOnlyList<double>? sourceSamples = null)
     {
+        _distributionFitSourceSamples = sourceSamples?
+            .Where(double.IsFinite)
+            .ToArray() ?? Array.Empty<double>();
         DistributionFitResults = new ObservableCollection<DistributionFitResultViewModel>(
             results.Select(result => new DistributionFitResultViewModel(result)));
         SelectedDistributionFitResult = DistributionFitResults.FirstOrDefault();
         DistributionFitStatus = DistributionFitResults.Count == 0
             ? $"No supported fits were found for {sourceAddress}."
             : $"Fitted {DistributionFitResults.Count} candidates from {sourceAddress}.";
+        UpdateDistributionFitPreview();
     }
 
     public void ShowDistributionFitError(string message)
@@ -396,6 +419,10 @@ public partial class SetupViewModel : ObservableObject
         DistributionFitResults.Clear();
         SelectedDistributionFitResult = null;
         DistributionFitStatus = message;
+        DistributionFitPreviewBars = Array.Empty<DistributionFitHistogramBar>();
+        DistributionFitPreviewCurvePoints = null;
+        DistributionFitWarning = null;
+        _distributionFitSourceSamples = Array.Empty<double>();
     }
 
     [RelayCommand]
@@ -434,6 +461,108 @@ public partial class SetupViewModel : ObservableObject
             EditorPreviewPoints = null;
             InputValidationError = ex.Message;
         }
+    }
+
+    private void UpdateDistributionFitPreview()
+    {
+        var fit = SelectedDistributionFitResult;
+        if (fit == null || _distributionFitSourceSamples.Length < 3)
+        {
+            DistributionFitPreviewBars = Array.Empty<DistributionFitHistogramBar>();
+            DistributionFitPreviewCurvePoints = null;
+            DistributionFitWarning = null;
+            return;
+        }
+
+        try
+        {
+            var distribution = DistributionFactory.Create(fit.DistributionName, fit.Parameters);
+            DistributionFitPreviewCurvePoints = InputCardViewModel.ComputePreviewPointsStatic(distribution);
+            DistributionFitPreviewBars = BuildDistributionFitHistogram(_distributionFitSourceSamples);
+            DistributionFitWarning = BuildDistributionFitWarning(fit, _distributionFitSourceSamples.Length);
+        }
+        catch (Exception ex)
+        {
+            DistributionFitPreviewBars = Array.Empty<DistributionFitHistogramBar>();
+            DistributionFitPreviewCurvePoints = null;
+            DistributionFitWarning = $"Preview unavailable: {ex.Message}";
+        }
+    }
+
+    private static IReadOnlyList<DistributionFitHistogramBar> BuildDistributionFitHistogram(IReadOnlyList<double> samples)
+    {
+        if (samples.Count == 0)
+            return Array.Empty<DistributionFitHistogramBar>();
+
+        var sorted = samples
+            .Where(double.IsFinite)
+            .OrderBy(value => value)
+            .ToArray();
+        if (sorted.Length == 0)
+            return Array.Empty<DistributionFitHistogramBar>();
+
+        var min = sorted[0];
+        var max = sorted[^1];
+        var distinctCount = sorted.Distinct().Count();
+        if (sorted.All(value => Math.Abs(value - Math.Round(value)) < 1e-9) && distinctCount <= 20)
+        {
+            return sorted
+                .GroupBy(value => value)
+                .OrderBy(group => group.Key)
+                .Select(group => new DistributionFitHistogramBar(
+                    group.Key,
+                    0.4,
+                    group.Count() / (double)sorted.Length))
+                .ToArray();
+        }
+
+        if (max <= min)
+        {
+            return new[]
+            {
+                new DistributionFitHistogramBar(min, 0.5, 1.0)
+            };
+        }
+
+        var binCount = Math.Clamp((int)Math.Round(Math.Sqrt(sorted.Length)), 8, 20);
+        var width = (max - min) / binCount;
+        if (width <= 0)
+            width = 1;
+
+        var counts = new int[binCount];
+        foreach (var value in sorted)
+        {
+            var index = (int)Math.Floor((value - min) / width);
+            index = Math.Clamp(index, 0, binCount - 1);
+            counts[index]++;
+        }
+
+        var bars = new List<DistributionFitHistogramBar>(binCount);
+        for (var i = 0; i < binCount; i++)
+        {
+            var center = min + width * (i + 0.5);
+            var height = counts[i] / (sorted.Length * width);
+            bars.Add(new DistributionFitHistogramBar(center, width / 2, height));
+        }
+
+        return bars;
+    }
+
+    private static string? BuildDistributionFitWarning(DistributionFitResultViewModel fit, int sampleCount)
+    {
+        if (sampleCount < 12)
+            return $"Only {sampleCount} samples were fitted. Treat this as a rough starting point and sanity-check the tails.";
+
+        if (fit.Score >= 0.20)
+            return $"The best KS distance is {fit.Score:0.000}, which is weak. Review the overlay before using this fit.";
+
+        if (fit.Score >= 0.12)
+            return $"The best KS distance is {fit.Score:0.000}. Use caution and compare the curve to your historical shape.";
+
+        if (sampleCount < 30)
+            return $"The fit looks reasonable, but it is based on only {sampleCount} samples.";
+
+        return null;
     }
 
     [RelayCommand]
@@ -1381,7 +1510,10 @@ public sealed class DistributionFitResultViewModel
     public double Score { get; }
     public string ParameterSummary { get; }
     public string DisplayName => $"{DistributionName} fit (KS {Score:0.000})";
+    public string ScoreSummary => $"KS distance {Score:0.000}";
 }
+
+public sealed record DistributionFitHistogramBar(double Center, double HalfWidth, double Height);
 
 public sealed class RunPresetOption
 {

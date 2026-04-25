@@ -130,7 +130,6 @@ Open work:
 
 - Expand candidate fitting for GEV and other advanced distributions.
 - Add goodness-of-fit details beyond the current KS-style score.
-- Add histogram/fit overlay previews and confidence warnings before applying a fit.
 
 ### 6. Correlation Workflow Polish
 

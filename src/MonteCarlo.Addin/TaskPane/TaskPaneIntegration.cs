@@ -554,7 +554,7 @@ internal sealed class TaskPaneIntegration : IDisposable
             var address = $"{worksheet.Name}!{selection.Address[RowAbsolute: false, ColumnAbsolute: false]}";
             var results = DistributionFitService.Fit(values);
 
-            Dispatch(() => _viewModel?.SetupViewModel.LoadDistributionFitResults(results, address));
+            Dispatch(() => _viewModel?.SetupViewModel.LoadDistributionFitResults(results, address, values));
         }
         catch (Exception ex)
         {
