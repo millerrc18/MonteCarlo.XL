@@ -118,6 +118,8 @@ Simulation and export defaults can now be edited either as Windows-user defaults
 
 `Stress Analysis` on the ribbon now runs the current model twice with the same comparison seed, once baseline and once stressed, using fixed-value, additive-shift, or range-scale rules on selected configured inputs. The workflow writes a comparison sheet with stressed assumptions, output impact ranking, and primary-output histogram/CDF comparison charts, and it can optionally add baseline and stressed raw-data sheets for the primary output when you need iteration-level audit detail.
 
+`Goal Seek` now writes confidence guidance into its report sheet and completion message so you can see whether the found decision value was cleanly bracketed, close to a search bound, or better treated as an approximation that needs another pass.
+
 The correlation editor now goes beyond a generic PSD warning. If a matrix is invalid, it lists the exact pairwise correlations that should be reduced or adjusted toward the nearest valid matrix, and Model Check carries the first recommendation into its suggested action text.
 
 The Setup view's Model Manager now uses searchable, sortable input and output tables instead of stacked rows. Labels can be edited inline there, while jump, edit, copy, highlight, remove, and bulk-clear actions stay available for each configured cell.

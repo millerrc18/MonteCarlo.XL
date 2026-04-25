@@ -175,6 +175,9 @@ internal sealed class GoalSeekWorkflowService
         row = WriteLabelValue(sheet, row, "Iterations per trial", options.IterationsPerTrial.ToString("N0"));
         row++;
 
+        row = WriteConfidenceGuidance(sheet, row, options, result);
+        row++;
+
         sheet.Cells[row, 1].Value2 = "Solver History";
         sheet.Cells[row, 1].Font.Bold = true;
         row++;
@@ -211,11 +214,36 @@ internal sealed class GoalSeekWorkflowService
         return row + 1;
     }
 
+    private static int WriteConfidenceGuidance(
+        ExcelWorksheet sheet,
+        int row,
+        GoalSeekRunOptions options,
+        GoalSeekResult result)
+    {
+        var assessment = AssessConfidence(options, result);
+        sheet.Cells[row, 1].Value2 = "Confidence Guidance";
+        sheet.Cells[row, 1].Font.Bold = true;
+        row++;
+
+        row = WriteLabelValue(sheet, row, "Assessment", assessment.Headline);
+        row = WriteLabelValue(sheet, row, "Why", assessment.Why);
+        row = WriteLabelValue(sheet, row, "Bounds context", assessment.BoundsContext);
+        row = WriteLabelValue(sheet, row, "Recommendation", assessment.Recommendation);
+        return row;
+    }
+
     private static string FormatCompletionMessage(GoalSeekResult result, GoalSeekRunOptions options) =>
+        FormatCompletionMessage(result, options, AssessConfidence(options, result));
+
+    private static string FormatCompletionMessage(
+        GoalSeekResult result,
+        GoalSeekRunOptions options,
+        GoalSeekConfidenceAssessment assessment) =>
         $"Goal Seek finished with status: {result.Status}\r\n\r\n" +
         $"Best decision value: {result.BestDecisionValue:G10}\r\n" +
         $"Best {DescribeMetric(options)}: {FormatMetricValue(options, result.BestMetricValue)}\r\n" +
-        $"Desired value: {FormatMetricValue(options, options.DesiredMetricValue)}\r\n\r\n" +
+        $"Desired value: {FormatMetricValue(options, options.DesiredMetricValue)}\r\n" +
+        $"Confidence: {assessment.Headline}\r\n\r\n" +
         "A Goal Seek report sheet was added to the workbook.";
 
     private static string DescribeMetric(GoalSeekRunOptions options) =>
@@ -237,6 +265,70 @@ internal sealed class GoalSeekWorkflowService
         options.Metric is GoalSeekMetric.ProbabilityAboveTarget or GoalSeekMetric.ProbabilityAtOrBelowTarget
             ? "0.0%"
             : "0.0000";
+
+    private static GoalSeekConfidenceAssessment AssessConfidence(GoalSeekRunOptions options, GoalSeekResult result)
+    {
+        var absoluteError = Math.Abs(result.Error);
+        var decisionSpan = Math.Abs(options.UpperBound - options.LowerBound);
+        var nearestBoundDistance = Math.Min(
+            Math.Abs(result.BestDecisionValue - options.LowerBound),
+            Math.Abs(options.UpperBound - result.BestDecisionValue));
+        var nearestBoundFraction = decisionSpan <= 0 ? 0 : nearestBoundDistance / decisionSpan;
+        var testedBothSides = result.History.Any(item => item.Error <= 0) && result.History.Any(item => item.Error >= 0);
+
+        var nearbyPoints = result.History
+            .OrderBy(item => Math.Abs(item.DecisionValue - result.BestDecisionValue))
+            .Take(3)
+            .ToList();
+        var localMetricSpread = nearbyPoints.Count >= 2
+            ? nearbyPoints.Max(item => item.MetricValue) - nearbyPoints.Min(item => item.MetricValue)
+            : 0;
+
+        var errorText = FormatMetricValue(options, absoluteError);
+        var toleranceText = FormatMetricValue(options, options.Tolerance);
+        var boundsText = nearestBoundFraction switch
+        {
+            <= 0.05 => $"Best value sits very close to a search bound ({nearestBoundFraction:P0} of the range from the nearest edge).",
+            <= 0.15 => $"Best value sits somewhat close to a search bound ({nearestBoundFraction:P0} of the range from the nearest edge).",
+            _ => $"Best value stays comfortably inside the tested range ({nearestBoundFraction:P0} of the range from the nearest edge)."
+        };
+
+        if (result.Status == GoalSeekStatus.TargetNotBracketed)
+        {
+            return new GoalSeekConfidenceAssessment(
+                "Low - target not bracketed",
+                "The requested metric was outside the values reached at the lower and upper decision bounds, so the solver could only return the closer edge.",
+                boundsText,
+                "Widen or reposition the decision bounds, then rerun Goal Seek.");
+        }
+
+        if (result.Status == GoalSeekStatus.Converged
+            && absoluteError <= options.Tolerance * 0.5
+            && nearestBoundFraction >= 0.10
+            && testedBothSides)
+        {
+            return new GoalSeekConfidenceAssessment(
+                "High - clean bracket and low residual",
+                $"Residual error {errorText} is comfortably inside the tolerance {toleranceText}, and the solver tested both sides of the target near the chosen value.",
+                boundsText,
+                $"Use the report value as a strong starting point. Nearby tested metric spread was {FormatMetricValue(options, localMetricSpread)}.");
+        }
+
+        if (result.Status == GoalSeekStatus.Converged || absoluteError <= options.Tolerance * 1.5)
+        {
+            return new GoalSeekConfidenceAssessment(
+                "Medium - usable, but worth a spot check",
+                $"Residual error {errorText} is near the requested tolerance {toleranceText}. The solver found a workable answer, but it is closer to the edge or the local response is still moving.",
+                boundsText,
+                "Sanity-check the workbook around the reported decision value with one or two nearby manual trials before using it in a final recommendation.");
+        }
+
+        return new GoalSeekConfidenceAssessment(
+            "Low - approximate only",
+            $"Residual error {errorText} stayed above the requested tolerance {toleranceText}, so the solver stopped with the best value it had rather than a clean hit.",
+            boundsText,
+            "Increase solver steps or iterations per trial, and consider widening the decision bounds before rerunning.");
+    }
 
     private static Task RunOnExcelThreadAsync(Action action, CancellationToken cancellationToken)
     {
@@ -313,6 +405,12 @@ internal sealed record GoalSeekRunOptions(
     int MaxSolverIterations,
     double Tolerance,
     bool HigherDecisionIncreasesMetric);
+
+internal sealed record GoalSeekConfidenceAssessment(
+    string Headline,
+    string Why,
+    string BoundsContext,
+    string Recommendation);
 
 internal sealed class GoalSeekOptionsDialog : WinForms.Form
 {

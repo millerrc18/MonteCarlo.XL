@@ -54,7 +54,7 @@ An item is not considered truly closed until it has survived a live Excel stress
 - Results now include a Scenario Analysis card for worst-tail, best-tail, at-or-below-target, and above-target filters. It shows conditional input summaries so users can see which assumptions changed most in the selected cases.
 - Summary export now includes scenario-analysis sections comparing worst, best, and target-hit input means against all runs when a target threshold is entered before export.
 - The Results ribbon now includes a Stress Analysis workflow for configured inputs: choose one or more fixed-value, additive-shift, or range-scale rules, rerun the model with the same comparison seed for baseline and stressed runs, add a comparison sheet with stressed assumptions, output impact ranking, and primary-output histogram/CDF comparison charts, and optionally export baseline and stressed raw-data sheets for the primary output.
-- Goal Seek now has a ribbon workflow for monotonic decision cells: select a deterministic decision cell, choose an output, metric, bounds, run budget, and tolerance, then MonteCarlo.XL reruns simulations, restores the decision cell, and writes a solver-history report sheet. The ribbon dialog now supports mean, percentile, P(output > target), and P(output <= target) targets.
+- Goal Seek now has a ribbon workflow for monotonic decision cells: select a deterministic decision cell, choose an output, metric, bounds, run budget, and tolerance, then MonteCarlo.XL reruns simulations, restores the decision cell, and writes a solver-history report sheet with confidence guidance. The ribbon dialog now supports mean, percentile, P(output > target), and P(output <= target) targets.
 - Excel state capture/restore is centralized for simulation runs, goal seek trials, summary/raw exports, workbook writes, highlight refresh, hidden-sheet cleanup, and cell-selection status messages. Restore failures are logged with phase-specific diagnostics.
 - The Support ribbon includes a `Recover Excel` command that restores automatic calculation, events, screen updating, alerts, and the status bar after an interrupted run or external automation failure, then logs before/after Excel state snapshots.
 - The ribbon now includes workbook-sharing commands to save a separate shareable value-only copy, replace `MC.*` formulas with current values in the active workbook, and later restore them from a workbook custom-XML map.
@@ -159,7 +159,6 @@ Open work:
 
 - Expand the current probability-above-target ribbon dialog into a richer task-pane workflow.
 - Add progress/cancel UI for repeated simulations.
-- Add confidence guidance around the found decision value.
 - Add manual Excel verification with an example workbook and known monotonic decision target.
 
 ### 10. Excel State Safety

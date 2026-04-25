@@ -77,9 +77,9 @@ Use `Goal Seek` when you want to find the deterministic decision value needed to
 1. Select a deterministic decision cell in Excel. Do not select a Monte Carlo input cell.
 2. Click `Goal Seek` on the `MonteCarlo.XL` ribbon.
 3. Choose the output, metric, lower and upper decision bounds, any target or percentile inputs required by that metric, the desired metric value, iterations per trial, and solver tolerance.
-4. Run the workflow. MonteCarlo.XL tests decision values across the bounds, restores the original decision cell value, and adds a `MC Goal Seek` report sheet with the solver history.
+4. Run the workflow. MonteCarlo.XL tests decision values across the bounds, restores the original decision cell value, and adds a `MC Goal Seek` report sheet with solver history plus confidence guidance.
 
-The ribbon dialog now supports `P(output > target)`, `P(output <= target)`, mean, and percentile metrics. A richer task-pane workflow, progress UI, and confidence guidance remain on the roadmap.
+The ribbon dialog now supports `P(output > target)`, `P(output <= target)`, mean, and percentile metrics. The report now explains whether the found value looks cleanly bracketed or whether it is close enough to a bound that you should widen the search and rerun. A richer task-pane workflow and progress UI remain on the roadmap.
 
 ## 6. Stress Analysis
 
