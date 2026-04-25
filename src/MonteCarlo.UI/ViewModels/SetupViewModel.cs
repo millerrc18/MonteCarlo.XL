@@ -186,6 +186,22 @@ public partial class SetupViewModel : ObservableObject
     [ObservableProperty]
     private string _distributionSuggestionStatus = string.Empty;
 
+    /// <summary>Prompt answer for the primary kind of uncertainty.</summary>
+    [ObservableProperty]
+    private string _selectedDistributionWizardDomain = "Any";
+
+    /// <summary>Prompt answer for what information the analyst already has.</summary>
+    [ObservableProperty]
+    private string _selectedDistributionWizardEvidence = "Any";
+
+    /// <summary>Prompt answer for the expected shape.</summary>
+    [ObservableProperty]
+    private string _selectedDistributionWizardShape = "Any";
+
+    /// <summary>Status text for the guided distribution helper prompts.</summary>
+    [ObservableProperty]
+    private string _distributionWizardStatus = "Answer the prompts to rank good starting points.";
+
     /// <summary>Distribution fits computed from a selected Excel range.</summary>
     [ObservableProperty]
     private ObservableCollection<DistributionFitResultViewModel> _distributionFitResults = new();
@@ -224,6 +240,18 @@ public partial class SetupViewModel : ObservableObject
     /// <summary>Distribution helper complexity filters.</summary>
     public IReadOnlyList<string> DistributionSuggestionComplexities { get; } =
         DistributionSuggestionViewModel.Complexities;
+
+    /// <summary>Guided prompt choices for the type of uncertainty being modeled.</summary>
+    public IReadOnlyList<string> DistributionWizardDomains { get; } =
+        DistributionSuggestionViewModel.WizardDomains;
+
+    /// <summary>Guided prompt choices for what evidence is available.</summary>
+    public IReadOnlyList<string> DistributionWizardEvidenceOptions { get; } =
+        DistributionSuggestionViewModel.WizardEvidenceOptions;
+
+    /// <summary>Guided prompt choices for the expected shape.</summary>
+    public IReadOnlyList<string> DistributionWizardShapes { get; } =
+        DistributionSuggestionViewModel.WizardShapes;
 
     /// <summary>Common iteration count presets.</summary>
     public IReadOnlyList<int> IterationPresets { get; } = new[] { 1000, 5000, 10000, 25000, 50000 };
@@ -275,6 +303,15 @@ public partial class SetupViewModel : ObservableObject
         RefreshDistributionSuggestions();
 
     partial void OnDistributionSuggestionSearchTextChanged(string value) =>
+        RefreshDistributionSuggestions();
+
+    partial void OnSelectedDistributionWizardDomainChanged(string value) =>
+        RefreshDistributionSuggestions();
+
+    partial void OnSelectedDistributionWizardEvidenceChanged(string value) =>
+        RefreshDistributionSuggestions();
+
+    partial void OnSelectedDistributionWizardShapeChanged(string value) =>
         RefreshDistributionSuggestions();
 
     partial void OnSelectedDistributionFitResultChanged(DistributionFitResultViewModel? value) =>
@@ -374,6 +411,14 @@ public partial class SetupViewModel : ObservableObject
             ? suggestion.LabelExample
             : NewInputLabel;
         ApplyDetectedDistribution(suggestion.DistributionName, new Dictionary<string, double>(suggestion.Parameters));
+    }
+
+    [RelayCommand]
+    private void ResetDistributionWizard()
+    {
+        SelectedDistributionWizardDomain = "Any";
+        SelectedDistributionWizardEvidence = "Any";
+        SelectedDistributionWizardShape = "Any";
     }
 
     [RelayCommand]
@@ -1243,6 +1288,56 @@ public partial class SetupViewModel : ObservableObject
         }
 
         var filtered = suggestions.ToList();
+        var wizardActive =
+            !string.Equals(SelectedDistributionWizardDomain, "Any", StringComparison.OrdinalIgnoreCase) ||
+            !string.Equals(SelectedDistributionWizardEvidence, "Any", StringComparison.OrdinalIgnoreCase) ||
+            !string.Equals(SelectedDistributionWizardShape, "Any", StringComparison.OrdinalIgnoreCase);
+
+        if (filtered.Count == 0)
+        {
+            DistributionWizardStatus = "No starting points match the current filters.";
+        }
+        else if (wizardActive)
+        {
+            var ranked = filtered
+                .Select(suggestion => new
+                {
+                    Suggestion = suggestion,
+                    Score = suggestion.GetWizardScore(
+                        SelectedDistributionWizardDomain,
+                        SelectedDistributionWizardEvidence,
+                        SelectedDistributionWizardShape)
+                })
+                .ToList();
+
+            var matched = ranked
+                .Where(item => item.Score > 0)
+                .OrderByDescending(item => item.Score)
+                .ThenBy(item => item.Suggestion.DisplayName, StringComparer.OrdinalIgnoreCase)
+                .Select(item => item.Suggestion)
+                .ToList();
+
+            if (matched.Count > 0)
+            {
+                filtered = matched;
+                DistributionWizardStatus = matched.Count == 1
+                    ? "1 guided starting point matches your answers."
+                    : $"{matched.Count} guided starting points match your answers.";
+            }
+            else
+            {
+                filtered = ranked
+                    .OrderBy(item => item.Suggestion.DisplayName, StringComparer.OrdinalIgnoreCase)
+                    .Select(item => item.Suggestion)
+                    .ToList();
+                DistributionWizardStatus = "No exact guided match yet, so the full list is shown.";
+            }
+        }
+        else
+        {
+            DistributionWizardStatus = "Answer the prompts to rank good starting points.";
+        }
+
         FilteredDistributionSuggestions = new ObservableCollection<DistributionSuggestionViewModel>(filtered);
         DistributionSuggestionStatus = filtered.Count == 1
             ? "1 starting point matches."
@@ -1280,7 +1375,10 @@ public sealed class DistributionSuggestionViewModel
         Dictionary<string, double> parameters,
         string category = "General",
         string complexity = "Common",
-        string keywords = "")
+        string keywords = "",
+        string wizardDomain = "Any",
+        string wizardEvidence = "Any",
+        string wizardShape = "Any")
     {
         Title = title;
         DistributionName = distributionName;
@@ -1291,6 +1389,9 @@ public sealed class DistributionSuggestionViewModel
         Category = category;
         Complexity = complexity;
         Keywords = keywords;
+        WizardDomain = wizardDomain;
+        WizardEvidence = wizardEvidence;
+        WizardShape = wizardShape;
     }
 
     public string Title { get; }
@@ -1302,6 +1403,9 @@ public sealed class DistributionSuggestionViewModel
     public string Category { get; }
     public string Complexity { get; }
     public string Keywords { get; }
+    public string WizardDomain { get; }
+    public string WizardEvidence { get; }
+    public string WizardShape { get; }
     public string DisplayName => $"{Title} ({DistributionName})";
     public string HelperSummary => $"{Category} • {Complexity}";
 
@@ -1317,6 +1421,58 @@ public sealed class DistributionSuggestionViewModel
                || Category.Contains(searchText, StringComparison.OrdinalIgnoreCase)
                || Keywords.Contains(searchText, StringComparison.OrdinalIgnoreCase);
     }
+
+    public int GetWizardScore(string domain, string evidence, string shape)
+    {
+        var score = 0;
+        if (!string.Equals(domain, "Any", StringComparison.OrdinalIgnoreCase)
+            && string.Equals(WizardDomain, domain, StringComparison.OrdinalIgnoreCase))
+            score++;
+
+        if (!string.Equals(evidence, "Any", StringComparison.OrdinalIgnoreCase)
+            && string.Equals(WizardEvidence, evidence, StringComparison.OrdinalIgnoreCase))
+            score++;
+
+        if (!string.Equals(shape, "Any", StringComparison.OrdinalIgnoreCase)
+            && string.Equals(WizardShape, shape, StringComparison.OrdinalIgnoreCase))
+            score++;
+
+        return score;
+    }
+
+    public static IReadOnlyList<string> WizardDomains { get; } = new[]
+    {
+        "Any",
+        "Three-point estimate",
+        "General bounded range",
+        "Symmetric around a center",
+        "Positive amount",
+        "Percentage or rate",
+        "Count or trials",
+        "Waiting time / reliability",
+        "Scenario outcomes",
+        "Extreme values"
+    };
+
+    public static IReadOnlyList<string> WizardEvidenceOptions { get; } = new[]
+    {
+        "Any",
+        "Historical data",
+        "Low / likely / high estimate",
+        "Only bounds / no center",
+        "Known trials or event rate",
+        "Named scenarios"
+    };
+
+    public static IReadOnlyList<string> WizardShapes { get; } = new[]
+    {
+        "Any",
+        "Symmetric",
+        "Right-skewed",
+        "Heavy tails",
+        "Bounded",
+        "Discrete"
+    };
 
     public static IReadOnlyList<string> Categories { get; } = new[]
     {
@@ -1351,7 +1507,10 @@ public sealed class DistributionSuggestionViewModel
             new Dictionary<string, double> { ["min"] = 80, ["mode"] = 100, ["max"] = 140 },
             "Three-point",
             "Common",
-            "low most likely high estimate pert expert judgment project cost schedule"),
+            "low most likely high estimate pert expert judgment project cost schedule",
+            "Three-point estimate",
+            "Low / likely / high estimate",
+            "Bounded"),
         new DistributionSuggestionViewModel(
             "Simple low-likely-high",
             "Triangular",
@@ -1361,7 +1520,10 @@ public sealed class DistributionSuggestionViewModel
             new Dictionary<string, double> { ["min"] = 80, ["mode"] = 100, ["max"] = 140 },
             "Three-point",
             "Common",
-            "low likely high simple transparent project cost schedule"),
+            "low likely high simple transparent project cost schedule",
+            "Three-point estimate",
+            "Low / likely / high estimate",
+            "Bounded"),
         new DistributionSuggestionViewModel(
             "Symmetric forecast error",
             "Normal",
@@ -1371,7 +1533,10 @@ public sealed class DistributionSuggestionViewModel
             new Dictionary<string, double> { ["mean"] = 0, ["stdDev"] = 1 },
             "Symmetric",
             "Common",
-            "balanced around mean forecast error variance uncertainty"),
+            "balanced around mean forecast error variance uncertainty",
+            "Symmetric around a center",
+            "Historical data",
+            "Symmetric"),
         new DistributionSuggestionViewModel(
             "Heavier-tail forecast error",
             "Logistic",
@@ -1381,7 +1546,10 @@ public sealed class DistributionSuggestionViewModel
             new Dictionary<string, double> { ["mu"] = 0, ["s"] = 1 },
             "Symmetric",
             "Advanced",
-            "heavy tails centered forecast error large misses"),
+            "heavy tails centered forecast error large misses",
+            "Symmetric around a center",
+            "Historical data",
+            "Heavy tails"),
         new DistributionSuggestionViewModel(
             "Positive skewed amount",
             "Lognormal",
@@ -1391,7 +1559,10 @@ public sealed class DistributionSuggestionViewModel
             new Dictionary<string, double> { ["mu"] = 0, ["sigma"] = 0.35 },
             "Positive skew",
             "Common",
-            "positive cost revenue deal size repair cost upside skew"),
+            "positive cost revenue deal size repair cost upside skew",
+            "Positive amount",
+            "Historical data",
+            "Right-skewed"),
         new DistributionSuggestionViewModel(
             "Positive total or duration",
             "Gamma",
@@ -1401,7 +1572,10 @@ public sealed class DistributionSuggestionViewModel
             new Dictionary<string, double> { ["shape"] = 3, ["rate"] = 0.4 },
             "Positive skew",
             "Advanced",
-            "positive duration total processing time waiting time aggregate skew"),
+            "positive duration total processing time waiting time aggregate skew",
+            "Positive amount",
+            "Historical data",
+            "Right-skewed"),
         new DistributionSuggestionViewModel(
             "Percentage or rate",
             "Beta",
@@ -1411,7 +1585,10 @@ public sealed class DistributionSuggestionViewModel
             new Dictionary<string, double> { ["alpha"] = 8, ["beta"] = 32 },
             "Percentage",
             "Common",
-            "percentage rate conversion churn defect probability bounded zero one"),
+            "percentage rate conversion churn defect probability bounded zero one",
+            "Percentage or rate",
+            "Historical data",
+            "Bounded"),
         new DistributionSuggestionViewModel(
             "No better view than a range",
             "Uniform",
@@ -1421,7 +1598,10 @@ public sealed class DistributionSuggestionViewModel
             new Dictionary<string, double> { ["min"] = 0, ["max"] = 1 },
             "Range",
             "Common",
-            "bounded range equal probability min max no better view"),
+            "bounded range equal probability min max no better view",
+            "General bounded range",
+            "Only bounds / no center",
+            "Bounded"),
         new DistributionSuggestionViewModel(
             "Exact scenarios",
             "Discrete",
@@ -1431,7 +1611,10 @@ public sealed class DistributionSuggestionViewModel
             new Dictionary<string, double> { ["value_0"] = 0, ["prob_0"] = 0.5, ["value_1"] = 1, ["prob_1"] = 0.5 },
             "Scenarios",
             "Common",
-            "scenario exact outcomes probabilities discrete cases"),
+            "scenario exact outcomes probabilities discrete cases",
+            "Scenario outcomes",
+            "Named scenarios",
+            "Discrete"),
         new DistributionSuggestionViewModel(
             "Count in a fixed period",
             "Poisson",
@@ -1441,7 +1624,10 @@ public sealed class DistributionSuggestionViewModel
             new Dictionary<string, double> { ["lambda"] = 4.5 },
             "Count",
             "Common",
-            "count events arrivals fixed period incidents"),
+            "count events arrivals fixed period incidents",
+            "Count or trials",
+            "Known trials or event rate",
+            "Discrete"),
         new DistributionSuggestionViewModel(
             "Successes out of trials",
             "Binomial",
@@ -1451,7 +1637,10 @@ public sealed class DistributionSuggestionViewModel
             new Dictionary<string, double> { ["n"] = 20, ["p"] = 0.35 },
             "Count",
             "Common",
-            "successes trials yes no wins conversions attempts probability"),
+            "successes trials yes no wins conversions attempts probability",
+            "Count or trials",
+            "Known trials or event rate",
+            "Discrete"),
         new DistributionSuggestionViewModel(
             "Attempts until first success",
             "Geometric",
@@ -1461,7 +1650,10 @@ public sealed class DistributionSuggestionViewModel
             new Dictionary<string, double> { ["p"] = 0.25 },
             "Count",
             "Advanced",
-            "tries until first success attempts calls win probability"),
+            "tries until first success attempts calls win probability",
+            "Count or trials",
+            "Known trials or event rate",
+            "Discrete"),
         new DistributionSuggestionViewModel(
             "Time to failure",
             "Weibull",
@@ -1471,7 +1663,10 @@ public sealed class DistributionSuggestionViewModel
             new Dictionary<string, double> { ["shape"] = 1.6, ["scale"] = 1200 },
             "Reliability",
             "Advanced",
-            "failure time reliability component life hazard aging"),
+            "failure time reliability component life hazard aging",
+            "Waiting time / reliability",
+            "Historical data",
+            "Right-skewed"),
         new DistributionSuggestionViewModel(
             "Waiting time to event",
             "Exponential",
@@ -1481,7 +1676,10 @@ public sealed class DistributionSuggestionViewModel
             new Dictionary<string, double> { ["rate"] = 0.2 },
             "Waiting time",
             "Common",
-            "waiting time event constant hazard arrivals service"),
+            "waiting time event constant hazard arrivals service",
+            "Waiting time / reliability",
+            "Known trials or event rate",
+            "Right-skewed"),
         new DistributionSuggestionViewModel(
             "Extreme maximum or minimum",
             "GEV",
@@ -1491,7 +1689,10 @@ public sealed class DistributionSuggestionViewModel
             new Dictionary<string, double> { ["mu"] = 100, ["sigma"] = 12, ["xi"] = 0.1 },
             "Extreme value",
             "Advanced",
-            "extreme maximum minimum annual peak demand worst loss tail")
+            "extreme maximum minimum annual peak demand worst loss tail",
+            "Extreme values",
+            "Historical data",
+            "Heavy tails")
     };
 }
 

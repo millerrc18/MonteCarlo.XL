@@ -119,7 +119,6 @@ Open work:
 
 Open work:
 
-- Expand the current category/search helper into a deeper multi-question wizard with branching prompts.
 - Add richer category metadata and filtering as more model archetypes emerge from manual testing.
 - Link each suggestion to the full `docs/DISTRIBUTION_GUIDE.md` explanation.
 - Add parameter guardrails that explain invalid parameter combinations before preview creation fails.

@@ -42,7 +42,7 @@ Open the workbook in Excel. It contains a simple model with uncertain inputs usi
 1. Open the `MonteCarlo.XL` ribbon tab.
 2. Click `Task Pane`.
 3. Add output cell `B9` on the `Smoke Model` sheet.
-4. Confirm the detected input formulas or add inputs manually. If you are adding an input from scratch, use the distribution helper's category, complexity, and search filters for a plain-English starting point, or use `Select Range` to fit from historical Excel data. The fit picker now shows a histogram/curve overlay plus a caution note when the sample is small or the best KS score is still weak.
+4. Confirm the detected input formulas or add inputs manually. If you are adding an input from scratch, start with the distribution helper's guided prompts for what the uncertainty is, what information you have, and the shape you expect. You can still refine with category, complexity, and search filters, or use `Select Range` to fit from historical Excel data. The fit picker now shows a histogram/curve overlay plus a caution note when the sample is small or the best KS score is still weak.
 5. For correlated inputs, click `Correlations`, enter pairwise Spearman correlations, export a labeled template, or select the top-left cell of a labeled/numeric matrix and use `Import Range`. If the matrix is not positive semi-definite, the editor now shows the exact conflicting pairs plus suggested lower/adjusted values before you hit `Auto-fix`.
 6. Click `Model Check` to validate the setup. It checks the saved configuration plus Excel-specific issues such as missing sheets, protected input cells, formula errors, non-numeric outputs, and manual calculation mode.
 7. Choose the `Preview` run preset for a quick 1,000-iteration run.

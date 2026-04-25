@@ -166,8 +166,79 @@
                                    FontSize="11"
                                    Margin="0,0,0,8"/>
 
-                        <TextBlock Text="What kind of uncertainty is this?"
+                        <TextBlock Text="Guided prompts"
                                    Style="{StaticResource CaptionText}"
+                                   FontWeight="SemiBold"
+                                   Margin="0,0,0,4"/>
+                        <Grid Margin="0,0,0,8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="8"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="8"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+                            <TextBlock Grid.Row="0"
+                                       Grid.Column="0"
+                                       Text="What is it?"
+                                       Style="{StaticResource CaptionText}"
+                                       Margin="0,0,0,4"/>
+                            <TextBlock Grid.Row="0"
+                                       Grid.Column="2"
+                                       Text="What do you know?"
+                                       Style="{StaticResource CaptionText}"
+                                       Margin="0,0,0,4"/>
+                            <TextBlock Grid.Row="0"
+                                       Grid.Column="4"
+                                       Text="What shape do you expect?"
+                                       Style="{StaticResource CaptionText}"
+                                       Margin="0,0,0,4"/>
+                            <ComboBox Grid.Row="1"
+                                      Grid.Column="0"
+                                      ItemsSource="{Binding DistributionWizardDomains}"
+                                      SelectedItem="{Binding SelectedDistributionWizardDomain}"
+                                      Padding="8,6"
+                                      FontFamily="{StaticResource DefaultFont}"
+                                      FontSize="13"/>
+                            <ComboBox Grid.Row="1"
+                                      Grid.Column="2"
+                                      ItemsSource="{Binding DistributionWizardEvidenceOptions}"
+                                      SelectedItem="{Binding SelectedDistributionWizardEvidence}"
+                                      Padding="8,6"
+                                      FontFamily="{StaticResource DefaultFont}"
+                                      FontSize="13"/>
+                            <ComboBox Grid.Row="1"
+                                      Grid.Column="4"
+                                      ItemsSource="{Binding DistributionWizardShapes}"
+                                      SelectedItem="{Binding SelectedDistributionWizardShape}"
+                                      Padding="8,6"
+                                      FontFamily="{StaticResource DefaultFont}"
+                                      FontSize="13"/>
+                        </Grid>
+                        <Grid Margin="0,0,0,8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0"
+                                       Text="{Binding DistributionWizardStatus}"
+                                       Style="{StaticResource CaptionText}"
+                                       VerticalAlignment="Center"
+                                       Margin="0,0,8,0"/>
+                            <Button Grid.Column="1"
+                                    Content="Reset Prompts"
+                                    Style="{StaticResource GhostButton}"
+                                    Command="{Binding ResetDistributionWizardCommand}"
+                                    Padding="8,4"/>
+                        </Grid>
+
+                        <TextBlock Text="Search and filters"
+                                   Style="{StaticResource CaptionText}"
+                                   FontWeight="SemiBold"
                                    Margin="0,0,0,4"/>
                         <Grid Margin="0,0,0,8">
                             <Grid.ColumnDefinitions>
