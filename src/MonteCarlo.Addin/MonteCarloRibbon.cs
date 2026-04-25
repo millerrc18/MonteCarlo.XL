@@ -414,17 +414,23 @@ public class MonteCarloRibbon : ExcelRibbon
     {
         RunRibbonAction("Replace MC formulas", () =>
         {
-            var confirm = MessageBox.Show(
-                "Replace all MC.* formulas in the active workbook with their current values?\r\n\r\n" +
-                "A restore map will be saved inside the workbook so you can restore the formulas later.",
-                "Replace MC Formulas",
-                MessageBoxButtons.YesNo,
-                MessageBoxIcon.Warning);
+            var service = new FunctionSwapService();
+            var catalog = service.CatalogActiveWorkbook();
+            if (catalog.Count == 0)
+            {
+                MessageBox.Show(
+                    "No MC.* formulas were found in the active workbook.",
+                    "Replace MC Formulas",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Information);
+                return;
+            }
 
-            if (confirm != DialogResult.Yes)
+            using var previewDialog = new FormulaCatalogPreviewDialog(catalog);
+            if (previewDialog.ShowDialog() != DialogResult.OK)
                 return;
 
-            var result = new FunctionSwapService().ReplaceMcFormulasWithCurrentValues();
+            var result = service.ReplaceMcFormulasWithCurrentValues();
             MessageBox.Show(
                 result.Message,
                 "Replace MC Formulas",
@@ -440,17 +446,23 @@ public class MonteCarloRibbon : ExcelRibbon
     {
         RunRibbonAction("Restore MC formulas", () =>
         {
-            var confirm = MessageBox.Show(
-                "Restore MC.* formulas from the workbook restore map?\r\n\r\n" +
-                "This will overwrite the current values in those cells.",
-                "Restore MC Formulas",
-                MessageBoxButtons.YesNo,
-                MessageBoxIcon.Question);
+            var service = new FunctionSwapService();
+            var preview = service.BuildRestorePreview();
+            if (preview == null || preview.Entries.Count == 0)
+            {
+                MessageBox.Show(
+                    "No MonteCarlo.XL formula restore map was found in this workbook.",
+                    "Restore MC Formulas",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Information);
+                return;
+            }
 
-            if (confirm != DialogResult.Yes)
+            using var previewDialog = new FormulaRestorePreviewDialog(preview);
+            if (previewDialog.ShowDialog() != DialogResult.OK)
                 return;
 
-            var result = new FunctionSwapService().RestoreMcFormulas();
+            var result = service.RestoreMcFormulas(previewDialog.Resolution);
             MessageBox.Show(
                 result.Message,
                 "Restore MC Formulas",

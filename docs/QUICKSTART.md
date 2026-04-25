@@ -118,6 +118,8 @@ If someone needs to open the workbook without MonteCarlo.XL:
 
 The active workbook stays formula-backed. The older `Replace MC Formulas` and `Restore MC Formulas` commands are still available when you intentionally want to flatten and later restore the current workbook.
 
+If you use the older replace/restore path, MonteCarlo.XL now shows a preview before replacing formulas, and the restore flow can skip cells whose values were edited after replacement.
+
 ## 9. Troubleshooting
 
 If the ribbon does not appear, the task pane does not open, or a simulation/export fails, check:

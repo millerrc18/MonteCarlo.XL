@@ -32,6 +32,20 @@ public sealed class FunctionSwapService
     }
 
     /// <summary>
+    /// Preview the active workbook restore map and flag cells whose values changed after replacement.
+    /// </summary>
+    internal FormulaRestorePreview? BuildRestorePreview()
+    {
+        var workbook = GetActiveWorkbook();
+        var snapshot = LoadSnapshot(workbook);
+        if (snapshot == null || snapshot.Entries.Count == 0)
+            return null;
+
+        var conflicts = DetectRestoreConflicts(workbook, snapshot.Entries);
+        return new FormulaRestorePreview(snapshot.Entries, conflicts);
+    }
+
+    /// <summary>
     /// Replace MC.* formulas with current cell values and save a restore map in workbook custom XML.
     /// </summary>
     public FunctionSwapResult ReplaceMcFormulasWithCurrentValues()
@@ -69,13 +83,22 @@ public sealed class FunctionSwapService
     /// <summary>
     /// Restore MC.* formulas from the active workbook restore map.
     /// </summary>
-    public FunctionSwapResult RestoreMcFormulas()
+    public FunctionSwapResult RestoreMcFormulas() =>
+        RestoreMcFormulas(RestoreConflictResolution.OverwriteAll);
+
+    internal FunctionSwapResult RestoreMcFormulas(RestoreConflictResolution resolution)
     {
         var app = (Application)ExcelDnaUtil.Application;
         var workbook = GetActiveWorkbook();
         var snapshot = LoadSnapshot(workbook);
         if (snapshot == null || snapshot.Entries.Count == 0)
             return new FunctionSwapResult(0, "No MonteCarlo.XL formula restore map was found in this workbook.");
+
+        var conflictsByKey = DetectRestoreConflicts(workbook, snapshot.Entries)
+            .ToDictionary(
+                conflict => FormulaCatalogPreviewDialog.BuildKey(conflict.Entry),
+                conflict => conflict,
+                StringComparer.OrdinalIgnoreCase);
 
         using var excelState = ExcelStateScope.Capture(app, "Restore MC formulas", restoreSelection: true);
         excelState.Apply(
@@ -84,26 +107,64 @@ public sealed class FunctionSwapService
             statusBar: "MonteCarlo.XL: restoring MC formulas...");
 
         var restored = 0;
+        var skipped = 0;
+        var alreadyRestored = 0;
+        var remainingEntries = new List<FormulaSwapEntry>();
         foreach (var entry in snapshot.Entries)
         {
             try
             {
                 var range = GetRange(workbook, entry);
+                if (CellAlreadyHasFormula(range, entry.Formula))
+                {
+                    alreadyRestored++;
+                    continue;
+                }
+
+                var key = FormulaCatalogPreviewDialog.BuildKey(entry);
+                if (resolution == RestoreConflictResolution.SkipChangedCells &&
+                    conflictsByKey.ContainsKey(key))
+                {
+                    skipped++;
+                    remainingEntries.Add(entry);
+                    continue;
+                }
+
                 range.Formula = entry.Formula;
                 restored++;
             }
             catch (Exception ex)
             {
+                remainingEntries.Add(entry);
                 StartupDiagnostics.LogException(
                     $"Restore MC formula failed for {entry.SheetName}!{entry.CellAddress}.",
                     ex);
             }
         }
 
-        if (restored == snapshot.Entries.Count)
+        if (remainingEntries.Count == 0)
+        {
             RemoveExistingSnapshot(workbook);
+        }
+        else
+        {
+            SaveSnapshot(workbook, new FormulaSwapSnapshot
+            {
+                WorkbookName = snapshot.WorkbookName,
+                CreatedAtUtc = snapshot.CreatedAtUtc,
+                Entries = remainingEntries
+            });
+        }
 
-        return new FunctionSwapResult(restored, $"Restored {restored:N0} MC.* formulas.");
+        var message = $"Restored {restored:N0} MC.* formulas.";
+        if (skipped > 0)
+            message += $"\r\nSkipped {skipped:N0} changed cell(s); the restore map was kept for those entries.";
+        if (alreadyRestored > 0)
+            message += $"\r\nRemoved {alreadyRestored:N0} entry/entries that were already back to formulas.";
+        if (remainingEntries.Count > 0 && skipped == 0)
+            message += $"\r\n{remainingEntries.Count:N0} entry/entries remain in the restore map because Excel could not restore them.";
+
+        return new FunctionSwapResult(restored, message);
     }
 
     /// <summary>
@@ -222,6 +283,87 @@ public sealed class FunctionSwapService
         var worksheet = (Worksheet)workbook.Worksheets[entry.SheetName];
         return (Range)worksheet.Range[entry.CellAddress];
     }
+
+    private static List<FormulaRestoreConflict> DetectRestoreConflicts(
+        Workbook workbook,
+        IEnumerable<FormulaSwapEntry> entries)
+    {
+        var conflicts = new List<FormulaRestoreConflict>();
+        foreach (var entry in entries)
+        {
+            try
+            {
+                var range = GetRange(workbook, entry);
+                if (CellAlreadyHasFormula(range, entry.Formula))
+                    continue;
+
+                var currentValue = NormalizeCellValue(range.Value2);
+                if (string.Equals(currentValue, entry.ValueText, StringComparison.Ordinal))
+                    continue;
+
+                conflicts.Add(new FormulaRestoreConflict(
+                    entry,
+                    DescribeCurrentCellState(range, currentValue)));
+            }
+            catch (Exception ex)
+            {
+                StartupDiagnostics.LogException(
+                    $"Preview restore conflict failed for {entry.SheetName}!{entry.CellAddress}.",
+                    ex);
+                conflicts.Add(new FormulaRestoreConflict(entry, "Could not read current cell state"));
+            }
+        }
+
+        return conflicts;
+    }
+
+    private static bool CellAlreadyHasFormula(Range range, string formula)
+    {
+        try
+        {
+            var hasFormula = range.HasFormula is bool boolValue
+                ? boolValue
+                : Convert.ToBoolean(range.HasFormula);
+            if (!hasFormula)
+                return false;
+
+            var currentFormula = Convert.ToString(range.Formula, System.Globalization.CultureInfo.InvariantCulture) ?? string.Empty;
+            return string.Equals(currentFormula, formula, StringComparison.OrdinalIgnoreCase);
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    private static string DescribeCurrentCellState(Range range, string normalizedValue)
+    {
+        try
+        {
+            var hasFormula = range.HasFormula is bool boolValue
+                ? boolValue
+                : Convert.ToBoolean(range.HasFormula);
+            if (hasFormula)
+            {
+                var currentFormula = Convert.ToString(range.Formula, System.Globalization.CultureInfo.InvariantCulture) ?? string.Empty;
+                return $"Formula: {currentFormula}";
+            }
+        }
+        catch { }
+
+        return string.IsNullOrEmpty(normalizedValue) ? "(blank)" : $"Value: {normalizedValue}";
+    }
+
+    private static string NormalizeCellValue(object? value) =>
+        value switch
+        {
+            null => string.Empty,
+            double number => number.ToString("G17", System.Globalization.CultureInfo.InvariantCulture),
+            float number => number.ToString("G9", System.Globalization.CultureInfo.InvariantCulture),
+            bool boolValue => boolValue ? "TRUE" : "FALSE",
+            DateTime dateTime => dateTime.ToString("O", System.Globalization.CultureInfo.InvariantCulture),
+            _ => Convert.ToString(value, System.Globalization.CultureInfo.InvariantCulture)?.Trim() ?? string.Empty
+        };
 
     private static void SaveSnapshot(Workbook workbook, FormulaSwapSnapshot snapshot)
     {

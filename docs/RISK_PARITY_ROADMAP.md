@@ -33,7 +33,7 @@ An item is not considered truly closed until it has survived a live Excel stress
 | 8 | Scenario / stress analysis | Foundation | Users need to understand not just the distribution, but why good or bad cases happen. | Results support target probabilities, conditional analysis for best/worst/target-hit cases, stress ranges, and baseline-vs-stressed comparisons. |
 | 9 | Goal seek under uncertainty | Foundation | Many decisions ask for the input level needed to reach a probability target. | User selects a decision cell, target output condition, desired probability/statistic, bounds, and simulation settings. The add-in iterates simulations and reports the required decision value. |
 | 10 | Excel state safety | Foundation | An Excel add-in must leave workbooks stable after success, failure, and cancel. | All simulation/export paths reliably restore calculation mode, screen updating, events, status bar, selection, active sheet, and input cell values. Failures log phase-specific diagnostics. |
-| 11 | Function swap / model sharing | Foundation | Workbooks should be shareable with people who do not have the add-in. | User can replace `MC.*` formulas with static expected values, preserve a restore map, restore formulas later, and export a non-add-in workbook copy. |
+| 11 | Function swap / model sharing | Foundation | Workbooks should be shareable with people who do not have the add-in. | User can preview and replace `MC.*` formulas with static expected values, preserve a restore map, restore formulas later with changed-cell conflict handling, and export a non-add-in workbook copy. |
 | 12 | Performance modes | Foundation | Users need predictable speed/accuracy tradeoffs. | UI exposes preview/full/deep run presets, Monte Carlo vs Latin Hypercube where supported, Excel recalc vs engine modes, iteration/sec, ETA, raw-data memory warnings, and benchmark diagnostics. |
 
 ## Current Implementation Notes
@@ -173,8 +173,6 @@ Open work:
 
 Open work:
 
-- Add a catalog preview before replacement so users can review affected sheets and cells.
-- Add conflict handling when cells have changed after replacement but before restore.
 - Manually verify replace/restore across multiple worksheets, protected sheets, and workbooks without the add-in installed.
 
 ### 12. Performance Modes

@@ -120,6 +120,8 @@ Simulation and export defaults can now be edited either as Windows-user defaults
 
 `Goal Seek` now writes confidence guidance into its report sheet and completion message so you can see whether the found decision value was cleanly bracketed, close to a search bound, or better treated as an approximation that needs another pass.
 
+`Replace MC Formulas` now opens a catalog preview before flattening the active workbook, and `Restore MC Formulas` now flags cells that changed after replacement so you can skip those conflicts instead of overwriting them blindly.
+
 The correlation editor now goes beyond a generic PSD warning. If a matrix is invalid, it lists the exact pairwise correlations that should be reduced or adjusted toward the nearest valid matrix, and Model Check carries the first recommendation into its suggested action text.
 
 The Setup view's Model Manager now uses searchable, sortable input and output tables instead of stacked rows. Labels can be edited inline there, while jump, edit, copy, highlight, remove, and bulk-clear actions stay available for each configured cell.
