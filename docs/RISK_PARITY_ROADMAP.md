@@ -53,7 +53,7 @@ An item is not considered truly closed until it has survived a live Excel stress
 - Rank correlation engine and matrix editor exist. The editor is reachable from Setup and ribbon, imports numeric n by n ranges, exports and re-imports labeled templates, warns about high/fragile matrices, shows exact conflicting pairs plus nearest-PSD adjustment guidance when the matrix is invalid, clearly shows the independent-input state, persists workbook correlation config, and passes correlations into simulation runs.
 - Results now include a Scenario Analysis card for worst-tail, best-tail, at-or-below-target, and above-target filters. It shows conditional input summaries so users can see which assumptions changed most in the selected cases.
 - Summary export now includes scenario-analysis sections comparing worst, best, and target-hit input means against all runs when a target threshold is entered before export.
-- The Results ribbon now includes a Stress Analysis workflow for configured inputs: choose one or more fixed-value, additive-shift, or range-scale rules, rerun the model with the same comparison seed for baseline and stressed runs, and add a comparison sheet with stressed assumptions, output impact ranking, and primary-output histogram/CDF comparison charts.
+- The Results ribbon now includes a Stress Analysis workflow for configured inputs: choose one or more fixed-value, additive-shift, or range-scale rules, rerun the model with the same comparison seed for baseline and stressed runs, add a comparison sheet with stressed assumptions, output impact ranking, and primary-output histogram/CDF comparison charts, and optionally export baseline and stressed raw-data sheets for the primary output.
 - Goal Seek now has a ribbon workflow for monotonic decision cells: select a deterministic decision cell, choose an output, metric, bounds, run budget, and tolerance, then MonteCarlo.XL reruns simulations, restores the decision cell, and writes a solver-history report sheet. The ribbon dialog now supports mean, percentile, P(output > target), and P(output <= target) targets.
 - Excel state capture/restore is centralized for simulation runs, goal seek trials, summary/raw exports, workbook writes, highlight refresh, hidden-sheet cleanup, and cell-selection status messages. Restore failures are logged with phase-specific diagnostics.
 - The Support ribbon includes a `Recover Excel` command that restores automatic calculation, events, screen updating, alerts, and the status bar after an interrupted run or external automation failure, then logs before/after Excel state snapshots.
@@ -149,7 +149,7 @@ Open work:
 
 Open work:
 
-- Add fuller conditional summaries such as target-linked stress thresholds, scenario exports, and optional full stress-run raw data export.
+- Add fuller conditional summaries such as target-linked stress thresholds and scenario exports.
 - Extend the stress workflow beyond configured/tagged inputs and into richer task-pane comparisons instead of the current ribbon-to-report flow.
 - Manually verify worst/best/target-hit filtering in Excel against a known workbook.
 

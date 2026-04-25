@@ -9,6 +9,11 @@ namespace MonteCarlo.Addin.Services;
 
 internal sealed class StressAnalysisWorkflowService
 {
+    private const int ExcelMaxRows = 1_048_576;
+    private const long RawDataExportWarningCellThreshold = 500_000;
+    private const string BaselineRawDataSheetPrefix = "MC Stress Raw - Baseline - ";
+    private const string StressedRawDataSheetPrefix = "MC Stress Raw - Stressed - ";
+
     public async Task RunAsync(
         SimulationOrchestrator orchestrator,
         IReadOnlyList<TaggedInput> inputs,
@@ -41,6 +46,9 @@ internal sealed class StressAnalysisWorkflowService
             return;
 
         var options = dialog.Options;
+        if (options.ExportRawData && !ConfirmStressRawDataExport(inputs.Count, options.IterationsPerRun))
+            return;
+
         var execution = executionOptions ?? ExcelExecutionOptions.Default;
 
         await orchestrator.RunSimulationAsync(
@@ -70,8 +78,13 @@ internal sealed class StressAnalysisWorkflowService
             () =>
             {
                 new StressAnalysisExporter().ExportComparison(baseline, stressed, options, comparisonSeed);
+                if (options.ExportRawData)
+                    ExportStressRawData(baseline, stressed, options);
+
                 ShowMessage(
-                    "Stress analysis complete. MonteCarlo.XL added a comparison sheet with the stressed assumptions, output impact ranking, and primary-output histogram/CDF comparison.",
+                    options.ExportRawData
+                        ? "Stress analysis complete. MonteCarlo.XL added the comparison sheet plus baseline and stressed raw-data sheets for the primary output."
+                        : "Stress analysis complete. MonteCarlo.XL added a comparison sheet with the stressed assumptions, output impact ranking, and primary-output histogram/CDF comparison.",
                     WinForms.MessageBoxIcon.Information);
             },
             CancellationToken.None).ConfigureAwait(false);
@@ -107,6 +120,65 @@ internal sealed class StressAnalysisWorkflowService
             "MonteCarlo.XL Stress Analysis",
             WinForms.MessageBoxButtons.OK,
             icon);
+
+    private static void ExportStressRawData(
+        SimulationResult baseline,
+        SimulationResult stressed,
+        StressRunOptions options)
+    {
+        var outputIndex = FindOutputIndex(baseline, options.PrimaryOutputId);
+        var exporter = new ResultsExporter();
+        exporter.ExportRawData(
+            baseline,
+            outputIndex,
+            createNewSheet: true,
+            sheetPrefixOverride: BaselineRawDataSheetPrefix);
+        exporter.ExportRawData(
+            stressed,
+            outputIndex,
+            createNewSheet: true,
+            sheetPrefixOverride: StressedRawDataSheetPrefix);
+    }
+
+    private static int FindOutputIndex(SimulationResult result, string outputId)
+    {
+        for (var index = 0; index < result.Config.Outputs.Count; index++)
+        {
+            if (string.Equals(result.Config.Outputs[index].Id, outputId, StringComparison.OrdinalIgnoreCase))
+                return index;
+        }
+
+        throw new InvalidOperationException($"Primary output '{outputId}' was not found in the simulation result.");
+    }
+
+    private static bool ConfirmStressRawDataExport(int inputCount, int iterationsPerRun)
+    {
+        var rowCount = (long)iterationsPerRun + 1;
+        var columnCount = inputCount + 2;
+
+        if (rowCount > ExcelMaxRows)
+        {
+            ShowMessage(
+                $"Stress raw-data export needs {rowCount:N0} rows per sheet, but Excel worksheets can hold only {ExcelMaxRows:N0} rows.\r\n\r\n" +
+                "Lower the stress-run iteration count or leave raw-data export unchecked.",
+                WinForms.MessageBoxIcon.Warning);
+            return false;
+        }
+
+        var exportedCellsPerSheet = rowCount * columnCount;
+        if (exportedCellsPerSheet < RawDataExportWarningCellThreshold)
+            return true;
+
+        var confirm = WinForms.MessageBox.Show(
+            $"Stress raw-data export will add two worksheets of about {exportedCellsPerSheet:N0} cells each " +
+            $"({iterationsPerRun:N0} iterations by {columnCount:N0} columns).\r\n\r\n" +
+            "This can take a while and make the workbook much larger. Continue?",
+            "Large Stress Raw Data Export",
+            WinForms.MessageBoxButtons.YesNo,
+            WinForms.MessageBoxIcon.Warning);
+
+        return confirm == WinForms.DialogResult.Yes;
+    }
 }
 
 internal sealed class StressAnalysisOptionsDialog : WinForms.Form
@@ -114,6 +186,11 @@ internal sealed class StressAnalysisOptionsDialog : WinForms.Form
     private readonly WinForms.ComboBox _outputComboBox = new();
     private readonly WinForms.TextBox _iterationsTextBox = new();
     private readonly WinForms.DataGridView _rulesGrid = new();
+    private readonly WinForms.CheckBox _exportRawDataCheckBox = new()
+    {
+        AutoSize = true,
+        Text = "Also export baseline and stressed raw-data sheets for the primary output."
+    };
 
     public StressRunOptions? Options { get; private set; }
 
@@ -169,6 +246,10 @@ internal sealed class StressAnalysisOptionsDialog : WinForms.Form
         };
         panel.SetColumnSpan(footer, 2);
         panel.Controls.Add(footer);
+
+        _exportRawDataCheckBox.Margin = new WinForms.Padding(0, 8, 0, 0);
+        panel.SetColumnSpan(_exportRawDataCheckBox, 2);
+        panel.Controls.Add(_exportRawDataCheckBox);
 
         var buttons = new WinForms.FlowLayoutPanel
         {
@@ -325,7 +406,8 @@ internal sealed class StressAnalysisOptionsDialog : WinForms.Form
             output.Output.Cell.FullReference,
             output.Output.Label,
             iterations,
-            new StressInputPlan(rules));
+            new StressInputPlan(rules),
+            _exportRawDataCheckBox.Checked);
         return true;
     }
 

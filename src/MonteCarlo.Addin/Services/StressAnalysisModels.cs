@@ -59,4 +59,5 @@ internal sealed record StressRunOptions(
     string PrimaryOutputId,
     string PrimaryOutputLabel,
     int IterationsPerRun,
-    StressInputPlan Plan);
+    StressInputPlan Plan,
+    bool ExportRawData);

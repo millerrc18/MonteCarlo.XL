@@ -108,7 +108,11 @@ public class ResultsExporter
     /// <summary>
     /// Export raw simulation data to a data sheet.
     /// </summary>
-    public void ExportRawData(SimulationResult result, int outputIndex, bool createNewSheet = true)
+    public void ExportRawData(
+        SimulationResult result,
+        int outputIndex,
+        bool createNewSheet = true,
+        string? sheetPrefixOverride = null)
     {
         var app = (Application)ExcelDnaUtil.Application;
         var workbook = app.ActiveWorkbook;
@@ -116,7 +120,8 @@ public class ResultsExporter
 
         using var excelState = ExcelStateScope.Capture(app, "Export raw data", restoreSelection: true);
         var output = result.Config.Outputs[outputIndex];
-        string sheetName = GetExportSheetName(workbook, $"{RawDataSheetPrefix}{output.Label}", createNewSheet);
+        var sheetPrefix = string.IsNullOrWhiteSpace(sheetPrefixOverride) ? RawDataSheetPrefix : sheetPrefixOverride;
+        string sheetName = GetExportSheetName(workbook, $"{sheetPrefix}{output.Label}", createNewSheet);
         var sheet = EnsureSheet(workbook, sheetName, clearIfExists: !createNewSheet);
 
         excelState.Apply(screenUpdating: false, statusBar: "MonteCarlo.XL: exporting raw data...");

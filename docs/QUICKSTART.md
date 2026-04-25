@@ -89,9 +89,10 @@ Use `Stress Analysis` when you want a baseline-vs-stressed comparison instead of
 2. Choose the primary output to highlight in the report.
 3. Pick one or more configured inputs and apply a stress rule:
    `Fixed value`, `Add shift`, or `Range scale`.
-4. Run the workflow. MonteCarlo.XL executes the current model twice using the same comparison seed, once baseline and once stressed, then adds an `MC Stress Analysis` sheet.
+4. Optionally turn on raw-data export if you want baseline and stressed iteration-level sheets for the primary output.
+5. Run the workflow. MonteCarlo.XL executes the current model twice using the same comparison seed, once baseline and once stressed, then adds an `MC Stress Analysis` sheet.
 
-The comparison sheet includes the stressed assumptions, an output impact ranking, and histogram/CDF comparison charts for the primary output.
+The comparison sheet includes the stressed assumptions, an output impact ranking, and histogram/CDF comparison charts for the primary output. When raw-data export is checked, MonteCarlo.XL also adds baseline and stressed raw-data sheets for the primary output.
 
 ## 7. Add Monte Carlo Formulas To Your Own Workbook
 
