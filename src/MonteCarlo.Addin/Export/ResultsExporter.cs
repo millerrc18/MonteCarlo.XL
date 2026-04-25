@@ -19,6 +19,9 @@ public class ResultsExporter
 {
     private const string SheetPrefix = "MC Results — ";
     private const string RawDataSheetPrefix = "MC Raw Data — ";
+    private const int ChartColumn = 5; // Column E
+    private const int ChartBlockHeightRows = 54;
+    private const int ChartBlockHeightRowsWithoutSensitivity = 36;
 
     /// <summary>
     /// Export a complete summary sheet for one output.
@@ -37,97 +40,64 @@ public class ResultsExporter
         UserSettings? effectiveSettings = null,
         bool usesWorkbookOverrides = false)
     {
-        var app = (Application)ExcelDnaUtil.Application;
-        var workbook = app.ActiveWorkbook;
-        if (workbook == null) return;
-
-        using var excelState = ExcelStateScope.Capture(app, "Export summary", restoreSelection: true);
-        var output = result.Config.Outputs[outputIndex];
-        string sheetName = GetExportSheetName(workbook, $"{SheetPrefix}{output.Label}", createNewSheet);
-
-        // Create or clear the sheet
-        var sheet = EnsureSheet(workbook, sheetName, clearIfExists: !createNewSheet);
-
-        excelState.Apply(screenUpdating: false, statusBar: "MonteCarlo.XL: exporting summary...");
-
-        int row = 1;
-
-        // Title section
-        row = WriteTitleSection(sheet, row, output);
-        row++;
-
-        // Report metadata
-        row = WriteReportMetadata(
-            sheet,
-            row,
-            workbook,
-            output,
+        var section = BuildSection(result, profile, outputIndex, stats, sensitivity);
+        ExportSummaryReport(
             result,
             profile,
-            outputIndex,
+            [section],
+            createNewSheet,
+            percentiles,
+            targetValue,
             effectiveSettings,
-            usesWorkbookOverrides);
-        row++;
+            usesWorkbookOverrides,
+            reportScope: "Selected output",
+            preferredSheetName: $"{SheetPrefix}{section.Output.Label}",
+            histogramImage,
+            tornadoImage);
+    }
 
-        // Summary statistics
-        row = WriteSummaryStats(sheet, row, stats);
-        row++;
+    /// <summary>
+    /// Export a complete summary sheet containing all outputs in one report.
+    /// </summary>
+    public void ExportSummaryAllOutputs(
+        SimulationResult result,
+        SimulationProfile profile,
+        int selectedOutputIndex,
+        bool createNewSheet = true,
+        IReadOnlyList<double>? percentiles = null,
+        double? targetValue = null,
+        UserSettings? effectiveSettings = null,
+        bool usesWorkbookOverrides = false,
+        IReadOnlyDictionary<string, IReadOnlyList<SensitivityResult>>? sensitivityByOutputId = null)
+    {
+        var orderedIndices = BuildOutputOrder(result, selectedOutputIndex);
+        var sections = new List<SummaryExportSection>(orderedIndices.Count);
 
-        // Percentiles
-        row = WritePercentiles(sheet, row, stats, percentiles);
-        row++;
-
-        // Target analysis
-        row = WriteTargetAnalysis(sheet, row, stats, targetValue);
-        row++;
-
-        // Sensitivity
-        if (sensitivity != null && sensitivity.Count > 0)
+        foreach (var outputIndex in orderedIndices)
         {
-            row = WriteSensitivity(sheet, row, sensitivity);
-            row++;
+            var output = result.Config.Outputs[outputIndex];
+            IReadOnlyList<SensitivityResult>? sensitivity = null;
+            if (sensitivityByOutputId != null)
+                sensitivityByOutputId.TryGetValue(output.Id, out sensitivity);
+            sections.Add(BuildSection(
+                result,
+                profile,
+                outputIndex,
+                new SummaryStatistics(result.GetOutputValues(output.Id)),
+                sensitivity));
         }
 
-        // Scenario analysis
-        row = WriteScenarioAnalysis(sheet, row, result, outputIndex, targetValue);
-        row++;
-
-        // Input assumptions
-        row = WriteInputAssumptions(sheet, row, profile);
-        row++;
-
-        // Correlation assumptions
-        row = WriteCorrelationAssumptions(sheet, row, profile);
-        row++;
-
-        // Auto-fit columns
-        sheet.Columns["A:D"].AutoFit();
-
-        // Embed chart images (right side)
-        int imageColumn = 5; // Column E
-        int imageRow = 1;
-
-        if (histogramImage != null)
-            EmbedImage(sheet, histogramImage, imageRow, imageColumn, 500, 280);
-        else
-            AddHistogramChart(sheet, stats, output.Label, imageRow, imageColumn, 500, 280);
-
-        imageRow += 18;
-
-        AddCdfChart(sheet, stats, output.Label, imageRow, imageColumn, 500, 280);
-        imageRow += 18;
-
-        if (tornadoImage != null)
-        {
-            EmbedImage(sheet, tornadoImage, imageRow, imageColumn, 500, 300);
-        }
-        else if (sensitivity != null && sensitivity.Count > 0)
-        {
-            AddSensitivityChart(sheet, sensitivity, stats.Median, imageRow, imageColumn, 500, 300);
-        }
-
-        // Sheet tab color (blue)
-        sheet.Tab.Color = 0xF6823B; // #3B82F6 in BGR
+        ExportSummaryReport(
+            result,
+            profile,
+            sections,
+            createNewSheet,
+            percentiles,
+            targetValue,
+            effectiveSettings,
+            usesWorkbookOverrides,
+            reportScope: $"All outputs ({sections.Count})",
+            preferredSheetName: $"{SheetPrefix}All Outputs");
     }
 
     /// <summary>
@@ -184,7 +154,148 @@ public class ResultsExporter
 
     #region Private Helpers
 
-    private static int WriteTitleSection(Worksheet sheet, int row, SimulationOutput output)
+    private void ExportSummaryReport(
+        SimulationResult result,
+        SimulationProfile profile,
+        IReadOnlyList<SummaryExportSection> sections,
+        bool createNewSheet,
+        IReadOnlyList<double>? percentiles,
+        double? targetValue,
+        UserSettings? effectiveSettings,
+        bool usesWorkbookOverrides,
+        string reportScope,
+        string preferredSheetName,
+        byte[]? histogramImage = null,
+        byte[]? tornadoImage = null)
+    {
+        if (sections.Count == 0)
+            return;
+
+        var app = (Application)ExcelDnaUtil.Application;
+        var workbook = app.ActiveWorkbook;
+        if (workbook == null)
+            return;
+
+        using var excelState = ExcelStateScope.Capture(app, "Export summary", restoreSelection: true);
+        var sheetName = GetExportSheetName(workbook, preferredSheetName, createNewSheet);
+        var sheet = EnsureSheet(workbook, sheetName, clearIfExists: !createNewSheet);
+
+        excelState.Apply(screenUpdating: false, statusBar: "MonteCarlo.XL: exporting summary...");
+
+        var primarySection = sections[0];
+        var outputSummary = SummarizeOutputs(sections);
+        var primaryOutputCell = primarySection.SavedOutput == null
+            ? primarySection.Output.Id
+            : $"{primarySection.SavedOutput.SheetName}!{primarySection.SavedOutput.CellAddress}";
+
+        var row = 1;
+        row = WriteTitleSection(
+            sheet,
+            row,
+            sections.Count == 1
+                ? $"Output: {primarySection.Output.Label}"
+                : $"Outputs: {sections.Count} in one worksheet");
+        row++;
+
+        row = WriteReportMetadata(
+            sheet,
+            row,
+            workbook,
+            result,
+            profile,
+            reportScope,
+            outputSummary,
+            primaryOutputCell,
+            effectiveSettings,
+            usesWorkbookOverrides);
+        row++;
+
+        for (var sectionIndex = 0; sectionIndex < sections.Count; sectionIndex++)
+        {
+            var section = sections[sectionIndex];
+            var sectionStartRow = row;
+            row = WriteOutputSectionHeader(sheet, row, section, sectionIndex + 1, sections.Count);
+            row++;
+
+            row = WriteSummaryStats(sheet, row, section.Stats);
+            row++;
+
+            row = WritePercentiles(sheet, row, section.Stats, percentiles);
+            row++;
+
+            row = WriteTargetAnalysis(sheet, row, section.Stats, targetValue);
+            row++;
+
+            if (section.Sensitivity != null && section.Sensitivity.Count > 0)
+            {
+                row = WriteSensitivity(sheet, row, section.Sensitivity);
+                row++;
+            }
+
+            row = WriteScenarioAnalysis(sheet, row, result, section.OutputIndex, targetValue);
+            row++;
+
+            if (sections.Count == 1 && histogramImage != null)
+                EmbedImage(sheet, histogramImage, sectionStartRow, ChartColumn, 500, 280);
+            else
+                AddHistogramChart(sheet, section.Stats, section.Output.Label, sectionStartRow, ChartColumn, 500, 280);
+
+            AddCdfChart(sheet, section.Stats, section.Output.Label, sectionStartRow + 18, ChartColumn, 500, 280);
+
+            if (sections.Count == 1 && tornadoImage != null)
+            {
+                EmbedImage(sheet, tornadoImage, sectionStartRow + 36, ChartColumn, 500, 300);
+            }
+            else if (section.Sensitivity != null && section.Sensitivity.Count > 0)
+            {
+                AddSensitivityChart(sheet, section.Sensitivity, section.Stats.Median, sectionStartRow + 36, ChartColumn, 500, 300);
+            }
+
+            var chartBottomRow = sectionStartRow + (
+                section.Sensitivity != null && section.Sensitivity.Count > 0 || tornadoImage != null
+                    ? ChartBlockHeightRows
+                    : ChartBlockHeightRowsWithoutSensitivity);
+            row = Math.Max(row, chartBottomRow) + 2;
+        }
+
+        row = WriteInputAssumptions(sheet, row, profile);
+        row++;
+
+        row = WriteCorrelationAssumptions(sheet, row, profile);
+        row++;
+
+        sheet.Columns["A:D"].AutoFit();
+        sheet.Tab.Color = 0xF6823B; // #3B82F6 in BGR
+    }
+
+    private static SummaryExportSection BuildSection(
+        SimulationResult result,
+        SimulationProfile profile,
+        int outputIndex,
+        SummaryStatistics stats,
+        IReadOnlyList<SensitivityResult>? sensitivity)
+    {
+        var output = result.Config.Outputs[outputIndex];
+        return new SummaryExportSection(
+            outputIndex,
+            output,
+            GetSavedOutput(profile, output, outputIndex),
+            stats,
+            sensitivity);
+    }
+
+    private static List<int> BuildOutputOrder(SimulationResult result, int selectedOutputIndex)
+    {
+        var indices = Enumerable.Range(0, result.Config.Outputs.Count).ToList();
+        if (selectedOutputIndex <= 0 || selectedOutputIndex >= indices.Count)
+            return indices;
+
+        indices.Remove(selectedOutputIndex);
+        indices.Insert(0, selectedOutputIndex);
+        return indices;
+    }
+
+    private static int WriteTitleSection(Worksheet sheet, int row, string subtitle)
     {
         var titleCell = sheet.Cells[row, 1];
         titleCell.Value2 = "MonteCarlo.XL Simulation Report";
@@ -192,7 +303,7 @@ public class ResultsExporter
         titleCell.Font.Bold = true;
         row++;
 
-        sheet.Cells[row, 1].Value2 = $"Output: {output.Label}";
+        sheet.Cells[row, 1].Value2 = subtitle;
         sheet.Cells[row, 1].Font.Size = 12;
         row++;
 
@@ -203,10 +314,11 @@ public class ResultsExporter
         Worksheet sheet,
         int row,
         Workbook workbook,
-        SimulationOutput output,
         SimulationResult result,
         SimulationProfile profile,
-        int outputIndex,
+        string reportScope,
+        string outputSummary,
+        string primaryOutputCell,
         UserSettings? effectiveSettings,
         bool usesWorkbookOverrides)
     {
@@ -216,17 +328,13 @@ public class ResultsExporter
         WriteTableHeader(sheet, row, "Field", "Value");
         row++;
 
-        var savedOutput = GetSavedOutput(profile, output, outputIndex);
-        var outputCell = savedOutput == null
-            ? output.Id
-            : $"{savedOutput.SheetName}!{savedOutput.CellAddress}";
-
         row = WriteMetadataRow(sheet, row, "Generated at", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"));
         row = WriteMetadataRow(sheet, row, "Workbook", SafeWorkbookName(workbook));
         row = WriteMetadataRow(sheet, row, "Workbook path", SafeWorkbookFullName(workbook));
         row = WriteMetadataRow(sheet, row, "Profile", profile.Name);
-        row = WriteMetadataRow(sheet, row, "Output", output.Label);
-        row = WriteMetadataRow(sheet, row, "Output cell", outputCell);
+        row = WriteMetadataRow(sheet, row, "Report scope", reportScope);
+        row = WriteMetadataRow(sheet, row, "Outputs included", outputSummary);
+        row = WriteMetadataRow(sheet, row, "Primary output cell", primaryOutputCell);
         row = WriteMetadataRow(sheet, row, "Iterations", result.IterationCount.ToString("N0"));
         row = WriteMetadataRow(sheet, row, "Elapsed time", FormatElapsed(result.ElapsedTime));
         row = WriteMetadataRow(sheet, row, "Inputs", result.Config.Inputs.Count.ToString("N0"));
@@ -252,6 +360,27 @@ public class ResultsExporter
         row = WriteMetadataRow(sheet, row, "Correlation", DescribeCorrelation(profile));
 
         return row;
+    }
+
+    private static int WriteOutputSectionHeader(
+        Worksheet sheet,
+        int row,
+        SummaryExportSection section,
+        int sectionNumber,
+        int totalSections)
+    {
+        var sectionTitle = totalSections == 1
+            ? $"OUTPUT — {section.Output.Label}"
+            : $"OUTPUT {sectionNumber} OF {totalSections} — {section.Output.Label}";
+        WriteSectionHeader(sheet, row, sectionTitle);
+        row++;
+
+        sheet.Cells[row, 1].Value2 = "Cell";
+        sheet.Cells[row, 2].Value2 = section.SavedOutput == null
+            ? section.Output.Id
+            : $"{section.SavedOutput.SheetName}!{section.SavedOutput.CellAddress}";
+
+        return row + 1;
     }
 
     private static int WriteSummaryStats(Worksheet sheet, int row, SummaryStatistics stats)
@@ -984,5 +1113,25 @@ public class ResultsExporter
         return result;
     }
 
+    private static string SummarizeOutputs(IReadOnlyList<SummaryExportSection> sections)
+    {
+        if (sections.Count == 1)
+            return sections[0].Output.Label;
+
+        const int maxNames = 3;
+        var labels = sections.Select(section => section.Output.Label).ToList();
+        if (labels.Count <= maxNames)
+            return string.Join(", ", labels);
+
+        return $"{string.Join(", ", labels.Take(maxNames))}, +{labels.Count - maxNames} more";
+    }
+
     #endregion
+
+    private sealed record SummaryExportSection(
+        int OutputIndex,
+        SimulationOutput Output,
+        SavedOutput? SavedOutput,
+        SummaryStatistics Stats,
+        IReadOnlyList<SensitivityResult>? Sensitivity);
 }

@@ -57,7 +57,7 @@ Use `Target Analysis` to enter a threshold and see the probability above or belo
 After a simulation finishes:
 
 1. Select the output you want to export in the results view.
-2. Use `Export Summary` for workbook/run metadata, statistics, percentiles, target analysis, scenario analysis, input assumptions, correlation assumptions, and histogram/CDF/sensitivity charts. If a target threshold is entered first, the report also includes target-hit scenario comparisons.
+2. Use `Export Summary` for workbook/run metadata, statistics, percentiles, target analysis, scenario analysis, input assumptions, correlation assumptions, and histogram/CDF/sensitivity charts. If the simulation has multiple outputs, Excel now asks whether to export only the selected output or combine all outputs into one report sheet. If a target threshold is entered first, the report also includes target-hit scenario comparisons.
 3. Use `Export Raw Data` for iteration-level input and output samples.
 
 By default, each export creates a new worksheet so prior summaries are preserved. To change that behavior, open `Settings` and turn off `Create a new worksheet for each export`.

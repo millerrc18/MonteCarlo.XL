@@ -41,7 +41,7 @@ This roadmap tracks the 12 robustness and @RISK-like initiatives identified afte
   - `src/MonteCarlo.Shared` for shared formula, parser, config, and bridge contracts
   - `src/MonteCarlo.Engine.Wasm` for browser-hosted `[JSExport]` engine methods
   - `src/MonteCarlo.OfficeAddin` for a React plus Fluent UI task pane, Office custom functions, workbook scanning, simulation execution, benchmark calls, and native Excel chart export
-- Summary export now creates a foundation report with workbook/run metadata, histogram, CDF, optional tornado chart, target analysis, scenario analysis, input assumptions, correlation assumptions, and unique worksheets by default.
+- Summary export now creates a foundation report with workbook/run metadata, histogram, CDF, optional tornado chart, target analysis, scenario analysis, input assumptions, correlation assumptions, and unique worksheets by default. Multi-output models can now export either the selected output or bundle all outputs into one summary worksheet.
 - Light/dark/system theme switching is implemented and persisted.
 - Settings now persist export worksheet behavior, default iterations, random vs fixed seed defaults, prompt-at-run seed mode, sampling method, convergence auto-stop, Excel calculation behavior, screen/event suspension, whether Model Check warnings pause a run, and default percentile lists used by summary exports.
 - Settings can now be edited in two scopes: Windows-user defaults or workbook-specific overrides stored in the active workbook. Runs, Goal Seek, exports, and Model Check warning pauses resolve against the effective merged settings, and the Run view plus summary export metadata now show which settings were applied.
@@ -142,9 +142,8 @@ Open work:
 Open work:
 
 - Define report section options.
-- Support multiple outputs in one report.
 - Offer PDF-friendly formatting after Excel report creation.
-- Add a dedicated report builder UI; current summary export is the foundation report with metadata, stats, histogram, CDF, sensitivity, target analysis, scenario analysis, assumptions, and correlations for one selected output.
+- Add a dedicated report builder UI; current summary export is the foundation report with metadata, stats, histogram, CDF, sensitivity, target analysis, scenario analysis, assumptions, and correlations for either the selected output or all outputs in one worksheet.
 
 ### 8. Scenario / Stress Analysis
 

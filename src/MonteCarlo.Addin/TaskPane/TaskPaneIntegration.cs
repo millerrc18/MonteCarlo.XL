@@ -1002,6 +1002,28 @@ internal sealed class TaskPaneIntegration : IDisposable
                                   viewModel.SetupViewModel.RandomSeed,
                                   viewModel.SetupViewModel.CorrelationMatrixValues);
 
+                var exportAllOutputs = ConfirmSummaryExportScope(result.Config.Outputs.Count);
+                if (exportAllOutputs == null)
+                    return;
+
+                if (exportAllOutputs.Value)
+                {
+                    exporter.ExportSummaryAllOutputs(
+                        result,
+                        profile,
+                        outputIndex,
+                        createNewSheet: userSettings.CreateNewWorksheetForExports,
+                        percentiles: userSettings.GetDefaultPercentileFractions(),
+                        targetValue: resultsViewModel.TargetValueNumeric,
+                        effectiveSettings: userSettings,
+                        usesWorkbookOverrides: effectiveSettings.UsesWorkbookOverrides,
+                        sensitivityByOutputId: resultsViewModel.SensitivityResults);
+
+                    StartupDiagnostics.Log(
+                        $"Export summary completed for all outputs. Primary output '{selectedOutputId}'.");
+                    return;
+                }
+
                 // Look up sensitivity data for the selected output
                 IReadOnlyList<SensitivityResult>? sensitivity = null;
                 if (resultsViewModel.SensitivityResults != null && selectedOutputId != null)
@@ -1027,6 +1049,28 @@ internal sealed class TaskPaneIntegration : IDisposable
                 _viewModel?.OnSimulationError(ex);
             }
         });
+    }
+
+    private static bool? ConfirmSummaryExportScope(int outputCount)
+    {
+        if (outputCount <= 1)
+            return false;
+
+        var choice = System.Windows.Forms.MessageBox.Show(
+            $"This simulation has {outputCount:N0} outputs.\r\n\r\n" +
+            "Yes: export all outputs into one summary report sheet.\r\n" +
+            "No: export only the currently selected output.\r\n" +
+            "Cancel: do not export anything.",
+            "Export Summary",
+            System.Windows.Forms.MessageBoxButtons.YesNoCancel,
+            System.Windows.Forms.MessageBoxIcon.Question);
+
+        return choice switch
+        {
+            System.Windows.Forms.DialogResult.Yes => true,
+            System.Windows.Forms.DialogResult.No => false,
+            _ => null
+        };
     }
 
     private static bool ConfirmRawDataExport(MonteCarlo.Engine.Simulation.SimulationResult result)
