@@ -142,8 +142,8 @@ Open work:
 
 Open work:
 
-- Define report section options.
-- Add a dedicated report builder UI; current summary export is the foundation report with metadata, stats, histogram, CDF, sensitivity, target analysis, scenario analysis, assumptions, and correlations for either the selected output or all outputs in one worksheet.
+- Live-stress-test the new report builder dialog in Excel across selected-output and all-output exports before calling this item done.
+- Consider a richer task-pane report designer later; the current implementation now has a dedicated export dialog with section toggles and multi-output scope selection, while the exporter honors those section choices for metadata, stats, percentiles, target analysis, sensitivity, scenario analysis, charts, and assumptions.
 
 ### 8. Scenario / Stress Analysis
 

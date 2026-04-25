@@ -59,7 +59,7 @@ If the workbook starts to grow, open the `Model Manager` section in Setup. It no
 After a simulation finishes:
 
 1. Select the output you want to export in the results view.
-2. Use `Export Summary` for workbook/run metadata, statistics, percentiles, target analysis, scenario analysis, input assumptions, correlation assumptions, and histogram/CDF/sensitivity charts. If the simulation has multiple outputs, Excel now asks whether to export only the selected output or combine all outputs into one report sheet. The exported summary sheet is now formatted for cleaner printing or PDF export with landscape, fit-to-width, repeat-header, and report page-break layout. If a target threshold is entered first, the report also includes target-hit scenario comparisons.
+2. Use `Export Summary` to open the report builder, choose the export scope, and include only the sections you want: metadata, statistics, percentiles, target analysis, sensitivity, scenario analysis, charts, input assumptions, and correlation assumptions. The exported summary sheet is formatted for cleaner printing or PDF export with landscape, fit-to-width, repeat-header, and report page-break layout. If a target threshold is entered first, the report also includes target-hit scenario comparisons.
 3. Use `Export Raw Data` for iteration-level input and output samples.
 
 By default, each export creates a new worksheet so prior summaries are preserved. To change that behavior, open `Settings` and turn off `Create a new worksheet for each export`.

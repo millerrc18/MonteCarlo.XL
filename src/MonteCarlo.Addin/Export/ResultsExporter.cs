@@ -39,7 +39,8 @@ public class ResultsExporter
         IReadOnlyList<double>? percentiles = null,
         double? targetValue = null,
         UserSettings? effectiveSettings = null,
-        bool usesWorkbookOverrides = false)
+        bool usesWorkbookOverrides = false,
+        SummaryReportOptions? reportOptions = null)
     {
         var section = BuildSection(result, profile, outputIndex, stats, sensitivity);
         ExportSummaryReport(
@@ -54,7 +55,8 @@ public class ResultsExporter
             reportScope: "Selected output",
             preferredSheetName: $"{SheetPrefix}{section.Output.Label}",
             histogramImage,
-            tornadoImage);
+            tornadoImage,
+            reportOptions);
     }
 
     /// <summary>
@@ -69,7 +71,8 @@ public class ResultsExporter
         double? targetValue = null,
         UserSettings? effectiveSettings = null,
         bool usesWorkbookOverrides = false,
-        IReadOnlyDictionary<string, IReadOnlyList<SensitivityResult>>? sensitivityByOutputId = null)
+        IReadOnlyDictionary<string, IReadOnlyList<SensitivityResult>>? sensitivityByOutputId = null,
+        SummaryReportOptions? reportOptions = null)
     {
         var orderedIndices = BuildOutputOrder(result, selectedOutputIndex);
         var sections = new List<SummaryExportSection>(orderedIndices.Count);
@@ -98,7 +101,8 @@ public class ResultsExporter
             effectiveSettings,
             usesWorkbookOverrides,
             reportScope: $"All outputs ({sections.Count})",
-            preferredSheetName: $"{SheetPrefix}All Outputs");
+            preferredSheetName: $"{SheetPrefix}All Outputs",
+            reportOptions: reportOptions);
     }
 
     /// <summary>
@@ -167,7 +171,8 @@ public class ResultsExporter
         string reportScope,
         string preferredSheetName,
         byte[]? histogramImage = null,
-        byte[]? tornadoImage = null)
+        byte[]? tornadoImage = null,
+        SummaryReportOptions? reportOptions = null)
     {
         if (sections.Count == 0)
             return;
@@ -183,6 +188,7 @@ public class ResultsExporter
 
         excelState.Apply(screenUpdating: false, statusBar: "MonteCarlo.XL: exporting summary...");
 
+        var options = reportOptions ?? SummaryReportOptions.Default;
         var primarySection = sections[0];
         var outputSummary = SummarizeOutputs(sections);
         var primaryOutputCell = primarySection.SavedOutput == null
@@ -199,78 +205,121 @@ public class ResultsExporter
                 : $"Outputs: {sections.Count} in one worksheet");
         row++;
 
-        row = WriteReportMetadata(
-            sheet,
-            row,
-            workbook,
-            result,
-            profile,
-            reportScope,
-            outputSummary,
-            primaryOutputCell,
-            effectiveSettings,
-            usesWorkbookOverrides);
-        row++;
-
-        for (var sectionIndex = 0; sectionIndex < sections.Count; sectionIndex++)
+        if (options.IncludeMetadata)
         {
-            var section = sections[sectionIndex];
-            var sectionStartRow = row;
-            if (sectionIndex > 0)
-                manualPageBreakRows.Add(sectionStartRow);
-            row = WriteOutputSectionHeader(sheet, row, section, sectionIndex + 1, sections.Count);
+            row = WriteReportMetadata(
+                sheet,
+                row,
+                workbook,
+                result,
+                profile,
+                reportScope,
+                outputSummary,
+                primaryOutputCell,
+                effectiveSettings,
+                usesWorkbookOverrides);
             row++;
+        }
 
-            row = WriteSummaryStats(sheet, row, section.Stats);
-            row++;
-
-            row = WritePercentiles(sheet, row, section.Stats, percentiles);
-            row++;
-
-            row = WriteTargetAnalysis(sheet, row, section.Stats, targetValue);
-            row++;
-
-            if (section.Sensitivity != null && section.Sensitivity.Count > 0)
+        var wroteOutputSections = false;
+        if (options.IncludesAnyPerOutputSections)
+        {
+            for (var sectionIndex = 0; sectionIndex < sections.Count; sectionIndex++)
             {
-                row = WriteSensitivity(sheet, row, section.Sensitivity);
+                wroteOutputSections = true;
+                var section = sections[sectionIndex];
+                var sectionStartRow = row;
+                if (sectionIndex > 0)
+                    manualPageBreakRows.Add(sectionStartRow);
+                row = WriteOutputSectionHeader(sheet, row, section, sectionIndex + 1, sections.Count);
+                row++;
+
+                if (options.IncludeSummaryStatistics)
+                {
+                    row = WriteSummaryStats(sheet, row, section.Stats);
+                    row++;
+                }
+
+                if (options.IncludePercentiles)
+                {
+                    row = WritePercentiles(sheet, row, section.Stats, percentiles);
+                    row++;
+                }
+
+                if (options.IncludeTargetAnalysis)
+                {
+                    row = WriteTargetAnalysis(sheet, row, section.Stats, targetValue);
+                    row++;
+                }
+
+                if (options.IncludeSensitivity && section.Sensitivity != null && section.Sensitivity.Count > 0)
+                {
+                    row = WriteSensitivity(sheet, row, section.Sensitivity);
+                    row++;
+                }
+
+                if (options.IncludeScenarioAnalysis)
+                {
+                    row = WriteScenarioAnalysis(sheet, row, result, section.OutputIndex, targetValue);
+                    row++;
+                }
+
+                if (options.IncludeCharts)
+                {
+                    if (sections.Count == 1 && histogramImage != null)
+                        EmbedImage(sheet, histogramImage, sectionStartRow, ChartColumn, 500, 280);
+                    else
+                        AddHistogramChart(sheet, section.Stats, section.Output.Label, sectionStartRow, ChartColumn, 500, 280);
+
+                    AddCdfChart(sheet, section.Stats, section.Output.Label, sectionStartRow + 18, ChartColumn, 500, 280);
+
+                    var showSensitivityChart =
+                        options.IncludeSensitivity &&
+                        ((sections.Count == 1 && tornadoImage != null) ||
+                         (section.Sensitivity != null && section.Sensitivity.Count > 0));
+
+                    if (showSensitivityChart)
+                    {
+                        if (sections.Count == 1 && tornadoImage != null)
+                        {
+                            EmbedImage(sheet, tornadoImage, sectionStartRow + 36, ChartColumn, 500, 300);
+                        }
+                        else if (section.Sensitivity != null && section.Sensitivity.Count > 0)
+                        {
+                            AddSensitivityChart(sheet, section.Sensitivity, section.Stats.Median, sectionStartRow + 36, ChartColumn, 500, 300);
+                        }
+                    }
+
+                    var chartBottomRow = sectionStartRow + (showSensitivityChart
+                        ? ChartBlockHeightRows
+                        : ChartBlockHeightRowsWithoutSensitivity);
+                    row = Math.Max(row, chartBottomRow) + 2;
+                }
+                else
+                {
+                    row++;
+                }
+            }
+        }
+
+        if (options.IncludeInputAssumptions || options.IncludeCorrelationAssumptions)
+        {
+            var assumptionsStartRow = row;
+            if (wroteOutputSections && sections.Count > 1)
+                manualPageBreakRows.Add(assumptionsStartRow);
+
+            if (options.IncludeInputAssumptions)
+            {
+                row = WriteInputAssumptions(sheet, row, profile);
                 row++;
             }
 
-            row = WriteScenarioAnalysis(sheet, row, result, section.OutputIndex, targetValue);
-            row++;
-
-            if (sections.Count == 1 && histogramImage != null)
-                EmbedImage(sheet, histogramImage, sectionStartRow, ChartColumn, 500, 280);
-            else
-                AddHistogramChart(sheet, section.Stats, section.Output.Label, sectionStartRow, ChartColumn, 500, 280);
-
-            AddCdfChart(sheet, section.Stats, section.Output.Label, sectionStartRow + 18, ChartColumn, 500, 280);
-
-            if (sections.Count == 1 && tornadoImage != null)
+            if (options.IncludeCorrelationAssumptions)
             {
-                EmbedImage(sheet, tornadoImage, sectionStartRow + 36, ChartColumn, 500, 300);
+                row = WriteCorrelationAssumptions(sheet, row, profile);
+                row++;
             }
-            else if (section.Sensitivity != null && section.Sensitivity.Count > 0)
-            {
-                AddSensitivityChart(sheet, section.Sensitivity, section.Stats.Median, sectionStartRow + 36, ChartColumn, 500, 300);
-            }
-
-            var chartBottomRow = sectionStartRow + (
-                section.Sensitivity != null && section.Sensitivity.Count > 0 || tornadoImage != null
-                    ? ChartBlockHeightRows
-                    : ChartBlockHeightRowsWithoutSensitivity);
-            row = Math.Max(row, chartBottomRow) + 2;
         }
-
-        var assumptionsStartRow = row;
-        if (sections.Count > 1)
-            manualPageBreakRows.Add(assumptionsStartRow);
-
-        row = WriteInputAssumptions(sheet, row, profile);
-        row++;
-
-        row = WriteCorrelationAssumptions(sheet, row, profile);
-        row++;
 
         sheet.Columns["A:D"].AutoFit();
         sheet.Tab.Color = 0xF6823B; // #3B82F6 in BGR
