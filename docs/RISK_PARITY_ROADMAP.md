@@ -48,7 +48,7 @@ This roadmap tracks the 12 robustness and @RISK-like initiatives identified afte
 - The task pane supports 15 distributions; worksheet UDFs exist for all except Discrete.
 - The add-input flow includes a guided distribution helper with category, complexity, and search filters plus plain-English starting points for all supported distributions.
 - The add-input helper can open a dedicated Excel range picker, fit candidate distributions from the selected numeric data, and apply the selected fit to the parameter editor.
-- Rank correlation engine and matrix editor exist. The editor is reachable from Setup and ribbon, imports numeric n by n ranges, exports and re-imports labeled templates, warns about high/fragile matrices, clearly shows the independent-input state, persists workbook correlation config, and passes correlations into simulation runs.
+- Rank correlation engine and matrix editor exist. The editor is reachable from Setup and ribbon, imports numeric n by n ranges, exports and re-imports labeled templates, warns about high/fragile matrices, shows exact conflicting pairs plus nearest-PSD adjustment guidance when the matrix is invalid, clearly shows the independent-input state, persists workbook correlation config, and passes correlations into simulation runs.
 - Results now include a Scenario Analysis card for worst-tail, best-tail, at-or-below-target, and above-target filters. It shows conditional input summaries so users can see which assumptions changed most in the selected cases.
 - Summary export now includes scenario-analysis sections comparing worst, best, and target-hit input means against all runs when a target threshold is entered before export.
 - The Results ribbon now includes a Stress Analysis workflow for configured inputs: choose one or more fixed-value, additive-shift, or range-scale rules, rerun the model with the same comparison seed for baseline and stressed runs, and add a comparison sheet with stressed assumptions, output impact ranking, and primary-output histogram/CDF comparison charts.
@@ -135,7 +135,6 @@ Open work:
 
 Open work:
 
-- Add richer PSD diagnostics, such as exact conflicting pairs and recommended lower correlations.
 - Add manual Excel verification for import/export, persistence after reopening, and a correlated sample smoke test.
 
 ### 7. Report Builder

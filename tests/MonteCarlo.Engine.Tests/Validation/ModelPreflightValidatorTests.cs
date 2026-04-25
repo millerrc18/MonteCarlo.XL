@@ -90,6 +90,50 @@ public class ModelPreflightValidatorTests
     }
 
     [Fact]
+    public void Validate_InvalidCorrelation_IncludesSuggestedPairAdjustment()
+    {
+        var profile = CreateValidProfile();
+        profile.Inputs.Add(new SavedInput
+        {
+            SheetName = "Sheet1",
+            CellAddress = "B3",
+            Label = "Cost",
+            DistributionName = "Normal",
+            Parameters = new Dictionary<string, double>
+            {
+                ["mean"] = 80,
+                ["stdDev"] = 10
+            }
+        });
+        profile.Inputs.Add(new SavedInput
+        {
+            SheetName = "Sheet1",
+            CellAddress = "B4",
+            Label = "Price",
+            DistributionName = "Normal",
+            Parameters = new Dictionary<string, double>
+            {
+                ["mean"] = 50,
+                ["stdDev"] = 5
+            }
+        });
+        profile.CorrelationMatrix = new double[,]
+        {
+            { 1.0, 0.9, 0.9 },
+            { 0.9, 1.0, -0.9 },
+            { 0.9, -0.9, 1.0 }
+        };
+
+        var report = ModelPreflightValidator.Validate(profile);
+
+        report.HasErrors.Should().BeTrue();
+        report.Issues.Should().Contain(issue =>
+            issue.Code == "CORRELATION_INVALID" &&
+            issue.SuggestedAction.Contains("vs", StringComparison.Ordinal) &&
+            issue.SuggestedAction.Contains("toward", StringComparison.Ordinal));
+    }
+
+    [Fact]
     public void Validate_LargeRun_ReturnsWarning()
     {
         var profile = CreateValidProfile();

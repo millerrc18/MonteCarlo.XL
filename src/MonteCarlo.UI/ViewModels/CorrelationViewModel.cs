@@ -15,6 +15,7 @@ public partial class CorrelationViewModel : ObservableObject
     [ObservableProperty] private bool _isValid = true;
     [ObservableProperty] private string _validationMessage = "No inputs configured.";
     [ObservableProperty] private string? _warningMessage;
+    [ObservableProperty] private string? _diagnosticMessage;
     [ObservableProperty] private string? _rangeStatusMessage;
     [ObservableProperty] private bool _isIndependent = true;
     [ObservableProperty] private bool _canAutoFix;
@@ -96,8 +97,10 @@ public partial class CorrelationViewModel : ObservableObject
         if (MatrixValues == null) return;
 
         var matrix = new CorrelationMatrix(MatrixValues);
+        var diagnostics = matrix.Analyze(InputLabels);
         var corrected = matrix.EnsurePositiveSemiDefinite();
         MatrixValues = corrected.ToArray();
+        RangeStatusMessage = BuildAutoFixStatusMessage(diagnostics);
         ValidateMatrix();
     }
 
@@ -169,6 +172,7 @@ public partial class CorrelationViewModel : ObservableObject
     private void ValidateMatrix()
     {
         WarningMessage = null;
+        DiagnosticMessage = null;
         IsIndependent = false;
 
         if (MatrixValues == null)
@@ -192,17 +196,22 @@ public partial class CorrelationViewModel : ObservableObject
         {
             var matrix = new CorrelationMatrix(MatrixValues);
             matrix.Validate();
+            var diagnostics = matrix.Analyze(InputLabels);
             IsValid = true;
             ValidationMessage = "✓ Matrix is valid (positive semi-definite)";
-            WarningMessage = BuildWarningMessage(MatrixValues, matrix.MinimumEigenvalue());
+            WarningMessage = BuildWarningMessage(diagnostics);
+            DiagnosticMessage = BuildDiagnosticMessage(diagnostics);
             CanAutoFix = false;
         }
         catch (ArgumentException ex)
         {
             IsValid = false;
-            if (ex.Message.Contains("positive semi-definite"))
+            if (ex.Message.Contains("positive semi-definite", StringComparison.OrdinalIgnoreCase))
             {
-                ValidationMessage = "⚠ Matrix is not positive semi-definite.";
+                var diagnostics = new CorrelationMatrix(MatrixValues).Analyze(InputLabels);
+                ValidationMessage = $"⚠ Matrix is not positive semi-definite (min eigenvalue {diagnostics.MinimumEigenvalue:0.###}).";
+                WarningMessage = BuildWarningMessage(diagnostics);
+                DiagnosticMessage = BuildDiagnosticMessage(diagnostics);
                 CanAutoFix = true;
             }
             else
@@ -213,27 +222,65 @@ public partial class CorrelationViewModel : ObservableObject
         }
     }
 
-    private static string? BuildWarningMessage(double[,] matrix, double minimumEigenvalue)
+    private static string BuildAutoFixStatusMessage(CorrelationDiagnostics diagnostics)
+    {
+        if (diagnostics.RecommendedAdjustments.Count == 0)
+            return "Auto-fix replaced the matrix with the nearest positive semi-definite version.";
+
+        var topAdjustment = diagnostics.RecommendedAdjustments[0];
+        return $"Auto-fix adjusted {diagnostics.RecommendedAdjustments.Count} pair(s). First change: {FormatAdjustment(topAdjustment)}.";
+    }
+
+    private static string? BuildWarningMessage(CorrelationDiagnostics diagnostics)
     {
         var warnings = new List<string>();
-        var maxAbs = 0.0;
-        var n = matrix.GetLength(0);
-
-        for (var i = 0; i < n; i++)
-        {
-            for (var j = i + 1; j < n; j++)
-                maxAbs = Math.Max(maxAbs, Math.Abs(matrix[i, j]));
-        }
+        var maxAbs = diagnostics.HighestMagnitudePairs.FirstOrDefault()?.AbsoluteValue ?? 0.0;
 
         if (maxAbs >= 0.95)
             warnings.Add("One or more correlations are extremely high (|r| >= 0.95), which can make the matrix fragile.");
         else if (maxAbs >= 0.90)
             warnings.Add("One or more correlations are very high (|r| >= 0.90).");
 
-        if (minimumEigenvalue < 0.05)
+        if (diagnostics.MinimumEigenvalue < 0.05)
             warnings.Add("The matrix is close to singular. Small edits may make it invalid.");
 
         return warnings.Count == 0 ? null : string.Join(" ", warnings);
+    }
+
+    private static string? BuildDiagnosticMessage(CorrelationDiagnostics diagnostics)
+    {
+        if (!diagnostics.IsPositiveSemiDefinite)
+        {
+            if (diagnostics.RecommendedAdjustments.Count == 0)
+                return "Auto-fix can move the matrix to the nearest positive semi-definite version.";
+
+            var suggestions = string.Join("; ", diagnostics.RecommendedAdjustments.Select(FormatAdjustment));
+            return $"Suggested pair adjustments for the nearest valid matrix: {suggestions}.";
+        }
+
+        var fragilePairs = diagnostics.HighestMagnitudePairs
+            .Where(pair => pair.AbsoluteValue >= 0.90)
+            .Select(FormatPair)
+            .ToArray();
+
+        if (fragilePairs.Length == 0 && diagnostics.MinimumEigenvalue >= 0.05)
+            return null;
+
+        if (fragilePairs.Length == 0)
+            return $"Minimum eigenvalue is {diagnostics.MinimumEigenvalue:0.###}. The matrix is valid but fragile.";
+
+        return $"Highest-magnitude pairs: {string.Join("; ", fragilePairs)}.";
+    }
+
+    private static string FormatPair(CorrelationPairSummary pair)
+    {
+        return $"{pair.RowLabel} vs {pair.ColumnLabel} {pair.Value:0.###}";
+    }
+
+    private static string FormatAdjustment(CorrelationPairAdjustment adjustment)
+    {
+        var verb = adjustment.ReducesMagnitude ? "reduce" : "adjust";
+        return $"{adjustment.RowLabel} vs {adjustment.ColumnLabel}: {verb} {adjustment.CurrentValue:0.###} to {adjustment.RecommendedValue:0.###}";
     }
 
     private static bool IsIdentity(double[,] matrix)

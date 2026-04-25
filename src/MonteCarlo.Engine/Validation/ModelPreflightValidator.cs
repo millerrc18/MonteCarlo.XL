@@ -309,12 +309,24 @@ public static class ModelPreflightValidator
         }
         catch (ArgumentException ex)
         {
+            var suggestedAction = "Use Auto-fix in the correlation editor or reduce conflicting pairwise correlations.";
+            if (ex.Message.Contains("positive semi-definite", StringComparison.OrdinalIgnoreCase))
+            {
+                var diagnostics = new CorrelationMatrix(matrix).Analyze(profile.Inputs.Select(GetInputLabel).ToArray());
+                var topAdjustment = diagnostics.RecommendedAdjustments.FirstOrDefault();
+                if (topAdjustment != null)
+                {
+                    suggestedAction =
+                        $"Use Auto-fix in the correlation editor or lower {topAdjustment.RowLabel} vs {topAdjustment.ColumnLabel} from {topAdjustment.CurrentValue:0.###} toward {topAdjustment.RecommendedValue:0.###}.";
+                }
+            }
+
             AddError(
                 issues,
                 "CORRELATION_INVALID",
                 "Correlation matrix is invalid",
                 ex.Message,
-                "Use Auto-fix in the correlation editor or reduce conflicting pairwise correlations.");
+                suggestedAction);
         }
     }
 
@@ -338,6 +350,11 @@ public static class ModelPreflightValidator
 
     private static string CellKey(string sheetName, string cellAddress) =>
         $"{sheetName.Trim()}!{cellAddress.Trim()}";
+
+    private static string GetInputLabel(SavedInput input) =>
+        string.IsNullOrWhiteSpace(input.Label)
+            ? $"{input.SheetName}!{input.CellAddress}"
+            : input.Label.Trim();
 
     private static string FormatBytes(long bytes)
     {

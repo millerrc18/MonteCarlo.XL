@@ -129,6 +129,45 @@ public class CorrelationMatrixTests
     }
 
     [Fact]
+    public void Analyze_NonPsdMatrix_ReturnsPairAdjustmentsWithLabels()
+    {
+        var data = new double[,]
+        {
+            { 1.0, 0.9, 0.9 },
+            { 0.9, 1.0, -0.9 },
+            { 0.9, -0.9, 1.0 }
+        };
+
+        var diagnostics = new CorrelationMatrix(data).Analyze(new[] { "Revenue", "Cost", "Demand" });
+
+        diagnostics.IsPositiveSemiDefinite.Should().BeFalse();
+        diagnostics.RecommendedAdjustments.Should().NotBeEmpty();
+        diagnostics.RecommendedAdjustments.Should().Contain(adjustment =>
+            adjustment.RowLabel == "Revenue" &&
+            adjustment.ColumnLabel == "Cost" &&
+            adjustment.AbsoluteDelta > 0.01);
+    }
+
+    [Fact]
+    public void Analyze_ValidFragileMatrix_ReturnsHighestMagnitudePairs()
+    {
+        var data = new double[,]
+        {
+            { 1.0, 0.95, 0.10 },
+            { 0.95, 1.0, 0.15 },
+            { 0.10, 0.15, 1.0 }
+        };
+
+        var diagnostics = new CorrelationMatrix(data).Analyze(new[] { "Revenue", "Cost", "Demand" });
+
+        diagnostics.IsPositiveSemiDefinite.Should().BeTrue();
+        diagnostics.HighestMagnitudePairs.Should().NotBeEmpty();
+        diagnostics.HighestMagnitudePairs[0].RowLabel.Should().Be("Revenue");
+        diagnostics.HighestMagnitudePairs[0].ColumnLabel.Should().Be("Cost");
+        diagnostics.HighestMagnitudePairs[0].AbsoluteValue.Should().BeApproximately(0.95, 1e-10);
+    }
+
+    [Fact]
     public void ToArray_ReturnsCopy()
     {
         var matrix = CorrelationMatrix.Identity(2);

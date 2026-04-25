@@ -148,6 +148,19 @@
                                Foreground="#92400E"/>
                 </Border>
 
+                <Border Background="{DynamicResource SurfaceBrush}"
+                        BorderBrush="{DynamicResource BorderBrush}"
+                        BorderThickness="1"
+                        CornerRadius="6"
+                        Padding="12,8"
+                        Margin="0,0,0,8"
+                        Visibility="{Binding DiagnosticMessage, Converter={StaticResource NullToCollapsed}}">
+                    <TextBlock Text="{Binding DiagnosticMessage}"
+                               Style="{StaticResource CaptionText}"
+                               TextWrapping="Wrap"
+                               Foreground="{DynamicResource TextSecondaryBrush}"/>
+                </Border>
+
                 <TextBlock Text="{Binding RangeStatusMessage}"
                            Style="{StaticResource CaptionText}"
                            Foreground="{DynamicResource TextTertiaryBrush}"
