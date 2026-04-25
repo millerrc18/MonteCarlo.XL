@@ -37,20 +37,22 @@ public class SimulationEngine
     public Task<SimulationResult> RunAsync(
         SimulationConfig config,
         Func<Dictionary<string, double>, Dictionary<string, double>> evaluator,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default,
+        Func<SimulationInput, double, double>? inputTransform = null)
     {
         config.Validate();
 
         if (evaluator == null)
             throw new ArgumentNullException(nameof(evaluator));
 
-        return Task.Run(() => Execute(config, evaluator, cancellationToken), cancellationToken);
+        return Task.Run(() => Execute(config, evaluator, cancellationToken, inputTransform), cancellationToken);
     }
 
     private SimulationResult Execute(
         SimulationConfig config,
         Func<Dictionary<string, double>, Dictionary<string, double>> evaluator,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        Func<SimulationInput, double, double>? inputTransform)
     {
         var sw = Stopwatch.StartNew();
         int iterations = config.IterationCount;
@@ -100,6 +102,16 @@ public class SimulationEngine
         if (config.Correlation != null)
         {
             ImanConover.Apply(inputMatrix, config.Correlation);
+        }
+
+        if (inputTransform != null)
+        {
+            for (int j = 0; j < inputCount; j++)
+            {
+                var input = config.Inputs[j];
+                for (int i = 0; i < iterations; i++)
+                    inputMatrix[i, j] = inputTransform(input, inputMatrix[i, j]);
+            }
         }
 
         // Step 4: Build output index map for fast lookup

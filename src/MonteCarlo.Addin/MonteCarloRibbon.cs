@@ -97,6 +97,11 @@ public class MonteCarloRibbon : ExcelRibbon
                           onAction='OnExportSummary'
                           screentip='Export Summary'
                           supertip='Export the selected output statistics and input assumptions to a worksheet.' />
+                  <button id='StressAnalysisButton' label='Stress Analysis'
+                          imageMso='WhatIfAnalysisMenu'
+                          onAction='OnStressAnalysis'
+                          screentip='Run Stress Analysis'
+                          supertip='Run the current model twice, once baseline and once stressed, then add a comparison report sheet.' />
                   <button id='ExportRawDataButton' label='Export Raw Data'
                           imageMso='FileSaveAsExcelXlsx'
                           onAction='OnExportRawData'
@@ -350,6 +355,28 @@ public class MonteCarloRibbon : ExcelRibbon
             ShowTaskPaneAndWire();
             AddIn.Integration?.ExportCurrentSummary();
         });
+    }
+
+    /// <summary>
+    /// Callback: Run baseline-vs-stress analysis and add a comparison worksheet.
+    /// </summary>
+    public async void OnStressAnalysis(IRibbonControl control)
+    {
+        try
+        {
+            ShowTaskPaneAndWire();
+            if (AddIn.Integration != null)
+                await AddIn.Integration.RunStressAnalysisFromRibbonAsync();
+        }
+        catch (Exception ex)
+        {
+            StartupDiagnostics.LogException("Stress Analysis failed.", ex);
+            MessageBox.Show(
+                $"Stress Analysis failed:\r\n\r\n{ex.GetType().Name}: {ex.Message}\r\n\r\nDiagnostics: {StartupDiagnostics.LogPath}",
+                "MonteCarlo.XL Error",
+                MessageBoxButtons.OK,
+                MessageBoxIcon.Error);
+        }
     }
 
     /// <summary>

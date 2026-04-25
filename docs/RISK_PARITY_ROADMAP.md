@@ -41,7 +41,7 @@ This roadmap tracks the 12 robustness and @RISK-like initiatives identified afte
   - `src/MonteCarlo.Shared` for shared formula, parser, config, and bridge contracts
   - `src/MonteCarlo.Engine.Wasm` for browser-hosted `[JSExport]` engine methods
   - `src/MonteCarlo.OfficeAddin` for a React plus Fluent UI task pane, Office custom functions, workbook scanning, simulation execution, benchmark calls, and native Excel chart export
-- Summary export now creates a foundation report with workbook/run metadata, histogram, CDF, optional tornado chart, target analysis, scenario analysis, input assumptions, correlation assumptions, and unique worksheets by default. Multi-output models can now export either the selected output or bundle all outputs into one summary worksheet.
+- Summary export now creates a foundation report with workbook/run metadata, histogram, CDF, optional tornado chart, target analysis, scenario analysis, input assumptions, correlation assumptions, and unique worksheets by default. Multi-output models can now export either the selected output or bundle all outputs into one summary worksheet, and the sheet now applies landscape, fit-to-width, repeat-header, and page-break settings so it prints more cleanly to PDF.
 - Light/dark/system theme switching is implemented and persisted.
 - Settings now persist export worksheet behavior, default iterations, random vs fixed seed defaults, prompt-at-run seed mode, sampling method, convergence auto-stop, Excel calculation behavior, screen/event suspension, whether Model Check warnings pause a run, and default percentile lists used by summary exports.
 - Settings can now be edited in two scopes: Windows-user defaults or workbook-specific overrides stored in the active workbook. Runs, Goal Seek, exports, and Model Check warning pauses resolve against the effective merged settings, and the Run view plus summary export metadata now show which settings were applied.
@@ -51,6 +51,7 @@ This roadmap tracks the 12 robustness and @RISK-like initiatives identified afte
 - Rank correlation engine and matrix editor exist. The editor is reachable from Setup and ribbon, imports numeric n by n ranges, exports and re-imports labeled templates, warns about high/fragile matrices, clearly shows the independent-input state, persists workbook correlation config, and passes correlations into simulation runs.
 - Results now include a Scenario Analysis card for worst-tail, best-tail, at-or-below-target, and above-target filters. It shows conditional input summaries so users can see which assumptions changed most in the selected cases.
 - Summary export now includes scenario-analysis sections comparing worst, best, and target-hit input means against all runs when a target threshold is entered before export.
+- The Results ribbon now includes a Stress Analysis workflow for configured inputs: choose one or more fixed-value, additive-shift, or range-scale rules, rerun the model with the same comparison seed for baseline and stressed runs, and add a comparison sheet with stressed assumptions, output impact ranking, and primary-output histogram/CDF comparison charts.
 - Goal Seek now has a ribbon workflow for monotonic decision cells: select a deterministic decision cell, choose an output, metric, bounds, run budget, and tolerance, then MonteCarlo.XL reruns simulations, restores the decision cell, and writes a solver-history report sheet. The ribbon dialog now supports mean, percentile, P(output > target), and P(output <= target) targets.
 - Excel state capture/restore is centralized for simulation runs, goal seek trials, summary/raw exports, workbook writes, highlight refresh, hidden-sheet cleanup, and cell-selection status messages. Restore failures are logged with phase-specific diagnostics.
 - The Support ribbon includes a `Recover Excel` command that restores automatic calculation, events, screen updating, alerts, and the status bar after an interrupted run or external automation failure, then logs before/after Excel state snapshots.
@@ -142,16 +143,14 @@ Open work:
 Open work:
 
 - Define report section options.
-- Offer PDF-friendly formatting after Excel report creation.
 - Add a dedicated report builder UI; current summary export is the foundation report with metadata, stats, histogram, CDF, sensitivity, target analysis, scenario analysis, assumptions, and correlations for either the selected output or all outputs in one worksheet.
 
 ### 8. Scenario / Stress Analysis
 
 Open work:
 
-- Add a dedicated stress-run setup where selected inputs can be fixed, shifted, or range-scaled for a second simulation.
-- Compare baseline and stressed output distributions side by side.
-- Add richer conditional summaries such as median/range shifts, top changed outputs, and optional full scenario data export.
+- Add fuller conditional summaries such as target-linked stress thresholds, scenario exports, and optional full stress-run raw data export.
+- Extend the stress workflow beyond configured/tagged inputs and into richer task-pane comparisons instead of the current ribbon-to-report flow.
 - Manually verify worst/best/target-hit filtering in Excel against a known workbook.
 
 ### 9. Goal Seek Under Uncertainty

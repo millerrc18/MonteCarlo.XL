@@ -20,6 +20,7 @@ public class ResultsExporter
     private const string SheetPrefix = "MC Results — ";
     private const string RawDataSheetPrefix = "MC Raw Data — ";
     private const int ChartColumn = 5; // Column E
+    private const int ReportPrintColumn = 11; // Column K
     private const int ChartBlockHeightRows = 54;
     private const int ChartBlockHeightRowsWithoutSensitivity = 36;
 
@@ -187,6 +188,7 @@ public class ResultsExporter
         var primaryOutputCell = primarySection.SavedOutput == null
             ? primarySection.Output.Id
             : $"{primarySection.SavedOutput.SheetName}!{primarySection.SavedOutput.CellAddress}";
+        var manualPageBreakRows = new List<int>();
 
         var row = 1;
         row = WriteTitleSection(
@@ -214,6 +216,8 @@ public class ResultsExporter
         {
             var section = sections[sectionIndex];
             var sectionStartRow = row;
+            if (sectionIndex > 0)
+                manualPageBreakRows.Add(sectionStartRow);
             row = WriteOutputSectionHeader(sheet, row, section, sectionIndex + 1, sections.Count);
             row++;
 
@@ -258,6 +262,10 @@ public class ResultsExporter
             row = Math.Max(row, chartBottomRow) + 2;
         }
 
+        var assumptionsStartRow = row;
+        if (sections.Count > 1)
+            manualPageBreakRows.Add(assumptionsStartRow);
+
         row = WriteInputAssumptions(sheet, row, profile);
         row++;
 
@@ -266,6 +274,12 @@ public class ResultsExporter
 
         sheet.Columns["A:D"].AutoFit();
         sheet.Tab.Color = 0xF6823B; // #3B82F6 in BGR
+        ReportLayoutFormatter.ApplyPdfFriendlyLayout(
+            sheet,
+            "MonteCarlo.XL Simulation Report",
+            row - 1,
+            ReportPrintColumn,
+            manualPageBreakRows);
     }
 
     private static SummaryExportSection BuildSection(

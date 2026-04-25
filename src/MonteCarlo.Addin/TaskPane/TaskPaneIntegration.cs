@@ -202,6 +202,72 @@ internal sealed class TaskPaneIntegration : IDisposable
         }
     }
 
+    /// <summary>
+    /// Starts the Stress Analysis workflow from host UI such as the Excel ribbon.
+    /// </summary>
+    public async Task RunStressAnalysisFromRibbonAsync()
+    {
+        EnsureWired();
+        var viewModel = _viewModel;
+        if (viewModel == null || _isRunning)
+            return;
+
+        _isRunning = true;
+        _errorRaisedDuringRun = false;
+
+        try
+        {
+            var effectiveSettings = ResolveEffectiveUserSettings();
+            var userSettings = effectiveSettings.Settings;
+            var runSeedSelection = ResolveRunSeedSelection(
+                viewModel.SetupViewModel,
+                userSettings,
+                workflowName: "Stress Analysis");
+            if (runSeedSelection == null)
+            {
+                Dispatch(() => viewModel.OnSimulationCancelled());
+                return;
+            }
+
+            var comparisonSeed = runSeedSelection.RandomSeed ?? Random.Shared.Next(1, int.MaxValue);
+            if (runSeedSelection.RandomSeed == null)
+            {
+                StartupDiagnostics.Log(
+                    $"Stress analysis generated comparison seed {comparisonSeed} from random-seed mode so baseline and stressed runs use the same sample stream.");
+            }
+
+            SyncManagersFromSetup(viewModel.SetupViewModel, clearExistingHighlights: true);
+            SaveCurrentProfile();
+
+            var service = new StressAnalysisWorkflowService();
+            await service.RunAsync(
+                _orchestrator,
+                _inputManager.GetAllInputs(),
+                _outputManager.GetAllOutputs(),
+                viewModel.ResultsViewModel.SelectedOutputId,
+                viewModel.SetupViewModel.IterationCount,
+                viewModel.SetupViewModel.CorrelationMatrixValues,
+                userSettings.SamplingMethod,
+                comparisonSeed,
+                userSettings.AutoStopOnConvergence,
+                userSettings.GetExcelExecutionOptions());
+        }
+        catch (OperationCanceledException)
+        {
+            Dispatch(() => viewModel.OnSimulationCancelled());
+        }
+        catch (Exception ex)
+        {
+            StartupDiagnostics.LogException("Stress Analysis workflow failed.", ex);
+            Dispatch(() => viewModel.OnSimulationError(ex));
+        }
+        finally
+        {
+            _isRunning = false;
+            _errorRaisedDuringRun = false;
+        }
+    }
+
     private Application? TryGetExcelApplication()
     {
         try

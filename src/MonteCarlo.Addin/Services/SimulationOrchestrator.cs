@@ -63,7 +63,8 @@ public class SimulationOrchestrator
         SamplingMethod samplingMethod = SamplingMethod.LatinHypercube,
         bool autoStopOnConvergence = false,
         double[,]? correlationMatrix = null,
-        ExcelExecutionOptions? executionOptions = null)
+        ExcelExecutionOptions? executionOptions = null,
+        Func<SimulationInput, double, double>? inputTransform = null)
     {
         _cts = new CancellationTokenSource();
         _convergenceChecker.Reset();
@@ -212,7 +213,7 @@ public class SimulationOrchestrator
                 },
                 statusBar: "MonteCarlo.XL: running simulation...");
 
-            var result = await engine.RunAsync(config, evaluator, _cts.Token);
+            var result = await engine.RunAsync(config, evaluator, _cts.Token, inputTransform);
             _lastResult = result;
 
             // 6. Compute statistics for each output

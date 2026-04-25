@@ -57,7 +57,7 @@ Use `Target Analysis` to enter a threshold and see the probability above or belo
 After a simulation finishes:
 
 1. Select the output you want to export in the results view.
-2. Use `Export Summary` for workbook/run metadata, statistics, percentiles, target analysis, scenario analysis, input assumptions, correlation assumptions, and histogram/CDF/sensitivity charts. If the simulation has multiple outputs, Excel now asks whether to export only the selected output or combine all outputs into one report sheet. If a target threshold is entered first, the report also includes target-hit scenario comparisons.
+2. Use `Export Summary` for workbook/run metadata, statistics, percentiles, target analysis, scenario analysis, input assumptions, correlation assumptions, and histogram/CDF/sensitivity charts. If the simulation has multiple outputs, Excel now asks whether to export only the selected output or combine all outputs into one report sheet. The exported summary sheet is now formatted for cleaner printing or PDF export with landscape, fit-to-width, repeat-header, and report page-break layout. If a target threshold is entered first, the report also includes target-hit scenario comparisons.
 3. Use `Export Raw Data` for iteration-level input and output samples.
 
 By default, each export creates a new worksheet so prior summaries are preserved. To change that behavior, open `Settings` and turn off `Create a new worksheet for each export`.
@@ -79,7 +79,19 @@ Use `Goal Seek` when you want to find the deterministic decision value needed to
 
 The ribbon dialog now supports `P(output > target)`, `P(output <= target)`, mean, and percentile metrics. A richer task-pane workflow, progress UI, and confidence guidance remain on the roadmap.
 
-## 6. Add Monte Carlo Formulas To Your Own Workbook
+## 6. Stress Analysis
+
+Use `Stress Analysis` when you want a baseline-vs-stressed comparison instead of only looking at tail cases.
+
+1. Open the `MonteCarlo.XL` ribbon and click `Stress Analysis`.
+2. Choose the primary output to highlight in the report.
+3. Pick one or more configured inputs and apply a stress rule:
+   `Fixed value`, `Add shift`, or `Range scale`.
+4. Run the workflow. MonteCarlo.XL executes the current model twice using the same comparison seed, once baseline and once stressed, then adds an `MC Stress Analysis` sheet.
+
+The comparison sheet includes the stressed assumptions, an output impact ranking, and histogram/CDF comparison charts for the primary output.
+
+## 7. Add Monte Carlo Formulas To Your Own Workbook
 
 Use `MC.*` formulas where your deterministic model has uncertain assumptions. For example:
 
@@ -92,7 +104,7 @@ Use `MC.*` formulas where your deterministic model has uncertain assumptions. Fo
 
 When Excel is not simulating, these formulas return an expected or representative value so the workbook still calculates normally. During a simulation, MonteCarlo.XL samples those cells and recalculates the selected output cells repeatedly.
 
-## 6. Share A Workbook Without The Add-In
+## 8. Share A Workbook Without The Add-In
 
 If someone needs to open the workbook without MonteCarlo.XL:
 
@@ -103,7 +115,7 @@ If someone needs to open the workbook without MonteCarlo.XL:
 
 The active workbook stays formula-backed. The older `Replace MC Formulas` and `Restore MC Formulas` commands are still available when you intentionally want to flatten and later restore the current workbook.
 
-## 7. Troubleshooting
+## 9. Troubleshooting
 
 If the ribbon does not appear, the task pane does not open, or a simulation/export fails, check:
 
@@ -123,7 +135,7 @@ Common fixes:
 
 See [Local Excel Debug Path](LOCAL_EXCEL_DEBUG.md) for more detailed developer notes.
 
-## 8. Experimental ARM / Office.js Host
+## 10. Experimental ARM / Office.js Host
 
 If you are testing native Windows ARM Excel, do **not** use the `install-local-addin.ps1` flow above as your main path. The current ARM track is the new Office.js host:
 

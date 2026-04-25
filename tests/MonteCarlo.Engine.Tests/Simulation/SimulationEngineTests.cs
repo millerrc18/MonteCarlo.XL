@@ -180,6 +180,66 @@ public class SimulationEngineTests
     }
 
     [Fact]
+    public async Task InputTransform_ShiftsSamplesBeforeEvaluation()
+    {
+        var config = CreateSeededConfig(42);
+        config.IterationCount = 250;
+        config.ParallelExecution = false;
+
+        var engine = new SimulationEngine();
+
+        var baseline = await engine.RunAsync(
+            config,
+            inputs => new Dictionary<string, double> { ["Out"] = inputs["X"] });
+
+        var shiftedConfig = CreateSeededConfig(42);
+        shiftedConfig.IterationCount = 250;
+        shiftedConfig.ParallelExecution = false;
+
+        var shifted = await engine.RunAsync(
+            shiftedConfig,
+            inputs => new Dictionary<string, double> { ["Out"] = inputs["X"] },
+            inputTransform: (input, sample) => input.Id == "X" ? sample + 10.0 : sample);
+
+        shifted.IterationCount.Should().Be(baseline.IterationCount);
+        for (var i = 0; i < baseline.IterationCount; i++)
+        {
+            shifted.InputMatrix[i, 0].Should().BeApproximately(baseline.InputMatrix[i, 0] + 10.0, 1e-10);
+            shifted.OutputMatrix[i, 0].Should().BeApproximately(shifted.InputMatrix[i, 0], 1e-10);
+        }
+    }
+
+    [Fact]
+    public async Task InputTransform_CanCollapseSamplesToBaseValue()
+    {
+        var config = new SimulationConfig
+        {
+            Inputs = new List<SimulationInput>
+            {
+                new() { Id = "X", Label = "X", Distribution = new NormalDistribution(100, 5, seed: 7), BaseValue = 100 }
+            },
+            Outputs = new List<SimulationOutput>
+            {
+                new() { Id = "Out", Label = "Out" }
+            },
+            IterationCount = 100,
+            ParallelExecution = false
+        };
+
+        var engine = new SimulationEngine();
+        var result = await engine.RunAsync(
+            config,
+            inputs => new Dictionary<string, double> { ["Out"] = inputs["X"] },
+            inputTransform: (input, sample) => input.BaseValue);
+
+        for (var i = 0; i < result.IterationCount; i++)
+        {
+            result.InputMatrix[i, 0].Should().Be(100);
+            result.OutputMatrix[i, 0].Should().Be(100);
+        }
+    }
+
+    [Fact]
     public async Task EmptyInputs_ThrowsArgumentException()
     {
         var config = new SimulationConfig
