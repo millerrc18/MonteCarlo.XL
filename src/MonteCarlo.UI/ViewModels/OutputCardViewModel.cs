@@ -14,7 +14,8 @@ public partial class OutputCardViewModel : ObservableObject
     public string SheetName { get; }
 
     /// <summary>Human-readable label.</summary>
-    public string Label { get; }
+    [ObservableProperty]
+    private string _label;
 
     /// <summary>Full cell reference (e.g., "Sheet1!D10").</summary>
     public string FullReference => $"{SheetName}!{CellAddress}";
@@ -23,6 +24,6 @@ public partial class OutputCardViewModel : ObservableObject
     {
         SheetName = sheetName;
         CellAddress = cellAddress;
-        Label = label;
+        _label = label;
     }
 }

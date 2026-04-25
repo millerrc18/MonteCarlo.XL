@@ -52,6 +52,8 @@ During the run, the task pane shows the run scale, completed iterations, iterati
 
 Use `Target Analysis` to enter a threshold and see the probability above or below it. Use `Scenario Analysis` to compare the input assumptions behind worst-tail, best-tail, and target-hit outcomes.
 
+If the workbook starts to grow, open the `Model Manager` section in Setup. It now gives you searchable, sortable tables for inputs and outputs, plus inline label edits before you run or export.
+
 ## 4. Export Results
 
 After a simulation finishes:

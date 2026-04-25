@@ -2,6 +2,8 @@
 
 This roadmap tracks the 12 robustness and @RISK-like initiatives identified after the first Excel workflow stabilization pass. It is intentionally honest about what is shipped, what has foundations in the codebase, and what remains unfinished.
 
+An item is not considered truly closed until it has survived a live Excel stress-test pass. Code-complete slices can move the product forward, but the roadmap should keep them open until workbook-level verification is done.
+
 ## Status Legend
 
 | Status | Meaning |
@@ -58,7 +60,7 @@ This roadmap tracks the 12 robustness and @RISK-like initiatives identified afte
 - The ribbon now includes workbook-sharing commands to save a separate shareable value-only copy, replace `MC.*` formulas with current values in the active workbook, and later restore them from a workbook custom-XML map.
 - Setup, Settings, and the ribbon now expose named run presets for Preview, Standard, Full, and Deep runs. The Run view labels the current run scale, shows live iteration/sec throughput next to elapsed and remaining time, raw-data export warns before writing large datasets or blocks exports that exceed Excel's row limit, and the Support ribbon includes a benchmark command that writes workbook recalc, synthetic engine-throughput, and synthetic export-cost diagnostics.
 - Model Check now validates the setup profile before run, blocks missing/invalid inputs and outputs, detects duplicate/conflicting cells, validates distribution parameters, checks correlation matrix shape/validity, warns about very small/large runs, adds Excel-aware checks for active workbook context, calculation/events/screen updating state, workbook protection, missing sheets/cells, protected input cells, formula errors, non-numeric outputs, and static output cells, and can pause runs on warning-only reports when enabled in Settings.
-- The Setup view now includes a Model Manager section for reviewing inputs and outputs, editing through the existing add/edit forms, copying entries, jumping to cells, refreshing highlights, and bulk-clearing inputs or outputs.
+- The Setup view now includes a Model Manager section with searchable, sortable input/output tables, inline label edits, jump-to-cell, highlight, duplicate, remove, refresh-highlights, and bulk-clear actions.
 - Stop/cancel is available through task pane, keyboard shortcut, and ribbon callback.
 
 ## Platform Track: Native ARM / Office.js Dual Host
@@ -103,10 +105,9 @@ Open work:
 
 Open work:
 
-- Replace the current stacked manager rows with a true sortable/filterable table for large models.
-- Add true edit-in-place cells for labels and parameters; current edit flow reopens the existing editor.
+- Expand inline editing beyond labels and into parameter cells; complex distribution parameter edits still reopen the existing editor.
 - Add output formula/result previews once Excel interop can safely evaluate them.
-- Add manual verification for jump-to-cell and highlight refresh across multiple sheets and workbooks.
+- Add manual verification for jump-to-cell, highlight refresh, inline label edits, and table behavior across multiple sheets and workbooks.
 
 ### 3. Better Simulation Settings
 

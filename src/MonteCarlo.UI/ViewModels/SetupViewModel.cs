@@ -1,4 +1,7 @@
 using System.Collections.ObjectModel;
+using System.Collections.Specialized;
+using System.ComponentModel;
+using System.Windows.Data;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using MonteCarlo.Engine.Analysis;
@@ -39,6 +42,22 @@ public partial class SetupViewModel : ObservableObject
     /// <summary>Whether the model manager table is visible.</summary>
     [ObservableProperty]
     private bool _isManagerVisible;
+
+    /// <summary>Search text for the input manager table.</summary>
+    [ObservableProperty]
+    private string _inputManagerSearchText = string.Empty;
+
+    /// <summary>Status text for the input manager table.</summary>
+    [ObservableProperty]
+    private string _inputManagerStatus = "0 inputs";
+
+    /// <summary>Search text for the output manager table.</summary>
+    [ObservableProperty]
+    private string _outputManagerSearchText = string.Empty;
+
+    /// <summary>Status text for the output manager table.</summary>
+    [ObservableProperty]
+    private string _outputManagerStatus = "0 outputs";
 
     // --- Input editor state ---
 
@@ -212,8 +231,16 @@ public partial class SetupViewModel : ObservableObject
     /// <summary>Label for the model manager toggle button.</summary>
     public string ManagerToggleLabel => IsManagerVisible ? "Hide Manager" : "Open Manager";
 
+    /// <summary>Sortable/filterable view of configured inputs for the manager table.</summary>
+    public ICollectionView InputManagerView { get; }
+
+    /// <summary>Sortable/filterable view of configured outputs for the manager table.</summary>
+    public ICollectionView OutputManagerView { get; }
+
     private InputCardViewModel? _editingInput;
     private OutputCardViewModel? _editingOutput;
+    private readonly HashSet<InputCardViewModel> _observedInputs = new();
+    private readonly HashSet<OutputCardViewModel> _observedOutputs = new();
 
     partial void OnIterationCountChanged(int value)
     {
@@ -236,6 +263,12 @@ public partial class SetupViewModel : ObservableObject
 
     partial void OnDistributionSuggestionSearchTextChanged(string value) =>
         RefreshDistributionSuggestions();
+
+    partial void OnInputManagerSearchTextChanged(string value) =>
+        RefreshInputManagerView();
+
+    partial void OnOutputManagerSearchTextChanged(string value) =>
+        RefreshOutputManagerView();
 
     /// <summary>Event raised when the user wants to open the correlation editor.</summary>
     public event Action? CorrelationEditorRequested;
@@ -287,13 +320,19 @@ public partial class SetupViewModel : ObservableObject
 
     public SetupViewModel()
     {
+        InputManagerView = new ListCollectionView(Inputs);
+        InputManagerView.Filter = FilterInputManagerItem;
+        InputManagerView.SortDescriptions.Add(new SortDescription(nameof(InputCardViewModel.Label), ListSortDirection.Ascending));
+
+        OutputManagerView = new ListCollectionView(Outputs);
+        OutputManagerView.Filter = FilterOutputManagerItem;
+        OutputManagerView.SortDescriptions.Add(new SortDescription(nameof(OutputCardViewModel.Label), ListSortDirection.Ascending));
+
         RefreshDistributionSuggestions();
-        Inputs.CollectionChanged += (_, _) =>
-        {
-            OnPropertyChanged(nameof(CanRun));
-            OnPropertyChanged(nameof(CanDefineCorrelations));
-        };
-        Outputs.CollectionChanged += (_, _) => OnPropertyChanged(nameof(CanRun));
+        Inputs.CollectionChanged += OnInputsCollectionChanged;
+        Outputs.CollectionChanged += OnOutputsCollectionChanged;
+        RefreshInputManagerView();
+        RefreshOutputManagerView();
     }
 
     [RelayCommand]
@@ -368,6 +407,8 @@ public partial class SetupViewModel : ObservableObject
     partial void OnIsManagerVisibleChanged(bool value)
     {
         OnPropertyChanged(nameof(ManagerToggleLabel));
+        RefreshInputManagerView();
+        RefreshOutputManagerView();
     }
 
     partial void OnSelectedDistributionChanged(string value)
@@ -827,6 +868,116 @@ public partial class SetupViewModel : ObservableObject
         else
             RandomSeed ??= 42;
     }
+
+    private void OnInputsCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
+    {
+        OnPropertyChanged(nameof(CanRun));
+        OnPropertyChanged(nameof(CanDefineCorrelations));
+        RebuildObservedInputs();
+        RefreshInputManagerView();
+    }
+
+    private void OnOutputsCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
+    {
+        OnPropertyChanged(nameof(CanRun));
+        RebuildObservedOutputs();
+        RefreshOutputManagerView();
+    }
+
+    private void RebuildObservedInputs()
+    {
+        foreach (var input in _observedInputs.Except(Inputs).ToList())
+        {
+            input.PropertyChanged -= OnInputCardPropertyChanged;
+            _observedInputs.Remove(input);
+        }
+
+        foreach (var input in Inputs.Where(input => !_observedInputs.Contains(input)))
+        {
+            input.PropertyChanged += OnInputCardPropertyChanged;
+            _observedInputs.Add(input);
+        }
+    }
+
+    private void RebuildObservedOutputs()
+    {
+        foreach (var output in _observedOutputs.Except(Outputs).ToList())
+        {
+            output.PropertyChanged -= OnOutputCardPropertyChanged;
+            _observedOutputs.Remove(output);
+        }
+
+        foreach (var output in Outputs.Where(output => !_observedOutputs.Contains(output)))
+        {
+            output.PropertyChanged += OnOutputCardPropertyChanged;
+            _observedOutputs.Add(output);
+        }
+    }
+
+    private void OnInputCardPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(InputCardViewModel.Label))
+            RefreshInputManagerView();
+    }
+
+    private void OnOutputCardPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(OutputCardViewModel.Label))
+            RefreshOutputManagerView();
+    }
+
+    private bool FilterInputManagerItem(object item)
+    {
+        if (item is not InputCardViewModel input)
+            return false;
+
+        var query = InputManagerSearchText.Trim();
+        if (string.IsNullOrWhiteSpace(query))
+            return true;
+
+        return Contains(input.Label, query)
+            || Contains(input.FullReference, query)
+            || Contains(input.DistributionName, query)
+            || Contains(input.ParameterSummary, query)
+            || Contains(input.MeanSummary, query)
+            || Contains(input.P5Summary, query)
+            || Contains(input.P95Summary, query);
+    }
+
+    private bool FilterOutputManagerItem(object item)
+    {
+        if (item is not OutputCardViewModel output)
+            return false;
+
+        var query = OutputManagerSearchText.Trim();
+        if (string.IsNullOrWhiteSpace(query))
+            return true;
+
+        return Contains(output.Label, query)
+            || Contains(output.FullReference, query);
+    }
+
+    private void RefreshInputManagerView()
+    {
+        InputManagerView.Refresh();
+        var filtered = InputManagerView.Cast<object>().Count();
+        InputManagerStatus = filtered == Inputs.Count
+            ? $"{filtered} input{(filtered == 1 ? string.Empty : "s")}"
+            : $"Showing {filtered} of {Inputs.Count} inputs";
+    }
+
+    private void RefreshOutputManagerView()
+    {
+        OutputManagerView.Refresh();
+        var filtered = OutputManagerView.Cast<object>().Count();
+        OutputManagerStatus = filtered == Outputs.Count
+            ? $"{filtered} output{(filtered == 1 ? string.Empty : "s")}"
+            : $"Showing {filtered} of {Outputs.Count} outputs";
+    }
+
+    private static bool Contains(string? value, string query) =>
+        !string.IsNullOrWhiteSpace(value)
+        && value.IndexOf(query, StringComparison.OrdinalIgnoreCase) >= 0;
 
     private Dictionary<string, double> BuildParameterDictionary()
     {

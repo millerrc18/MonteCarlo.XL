@@ -13,6 +13,53 @@
             <conv:BoolToVisibilityConverter x:Key="BoolVis"/>
             <conv:NullToCollapsedConverter x:Key="NullToCollapsed"/>
             <conv:CountToVisibilityConverter x:Key="CountToVisibility"/>
+            <Style x:Key="ManagerDataGrid" TargetType="DataGrid">
+                <Setter Property="AutoGenerateColumns" Value="False"/>
+                <Setter Property="CanUserAddRows" Value="False"/>
+                <Setter Property="CanUserDeleteRows" Value="False"/>
+                <Setter Property="CanUserResizeRows" Value="False"/>
+                <Setter Property="CanUserReorderColumns" Value="False"/>
+                <Setter Property="CanUserSortColumns" Value="True"/>
+                <Setter Property="HeadersVisibility" Value="Column"/>
+                <Setter Property="GridLinesVisibility" Value="Horizontal"/>
+                <Setter Property="RowHeaderWidth" Value="0"/>
+                <Setter Property="SelectionMode" Value="Single"/>
+                <Setter Property="SelectionUnit" Value="FullRow"/>
+                <Setter Property="Background" Value="{DynamicResource SurfaceBrush}"/>
+                <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>
+                <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}"/>
+                <Setter Property="BorderThickness" Value="1"/>
+                <Setter Property="RowBackground" Value="{DynamicResource SurfaceBrush}"/>
+                <Setter Property="AlternatingRowBackground" Value="{DynamicResource SurfaceHoverBrush}"/>
+                <Setter Property="HorizontalGridLinesBrush" Value="{DynamicResource BorderBrush}"/>
+                <Setter Property="VerticalGridLinesBrush" Value="{DynamicResource BorderBrush}"/>
+                <Setter Property="FontFamily" Value="{StaticResource DefaultFont}"/>
+                <Setter Property="FontSize" Value="12"/>
+            </Style>
+            <Style TargetType="DataGridColumnHeader">
+                <Setter Property="Background" Value="{DynamicResource SurfaceHoverBrush}"/>
+                <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>
+                <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}"/>
+                <Setter Property="BorderThickness" Value="0,0,0,1"/>
+                <Setter Property="Padding" Value="8,6"/>
+                <Setter Property="FontFamily" Value="{StaticResource DefaultFont}"/>
+                <Setter Property="FontSize" Value="11"/>
+                <Setter Property="FontWeight" Value="SemiBold"/>
+            </Style>
+            <Style TargetType="DataGridCell">
+                <Setter Property="BorderThickness" Value="0"/>
+                <Setter Property="Padding" Value="6,4"/>
+                <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>
+            </Style>
+            <Style x:Key="ManagerLabelEditor" TargetType="TextBox">
+                <Setter Property="Padding" Value="6,4"/>
+                <Setter Property="FontFamily" Value="{StaticResource DefaultFont}"/>
+                <Setter Property="FontSize" Value="12"/>
+                <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}"/>
+                <Setter Property="BorderThickness" Value="1"/>
+                <Setter Property="Background" Value="{DynamicResource SurfaceBrush}"/>
+                <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>
+            </Style>
         </ResourceDictionary>
     </UserControl.Resources>
 
@@ -473,77 +520,114 @@
                                         Command="{Binding ClearInputsCommand}"
                                         Padding="8,4"/>
                             </Grid>
+                            <Grid Margin="0,0,0,8">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="8"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBox Grid.Column="0"
+                                         Text="{Binding InputManagerSearchText, UpdateSourceTrigger=PropertyChanged}"
+                                         Padding="8,6"
+                                         FontFamily="{StaticResource DefaultFont}"
+                                         FontSize="12"
+                                         BorderBrush="{DynamicResource BorderBrush}"
+                                         BorderThickness="1"
+                                         ToolTip="Filter inputs by label, cell, distribution, parameters, or summary values."/>
+                                <TextBlock Grid.Column="2"
+                                           Text="{Binding InputManagerStatus}"
+                                           Style="{StaticResource CaptionText}"
+                                           VerticalAlignment="Center"/>
+                            </Grid>
 
-                            <ItemsControl ItemsSource="{Binding Inputs}">
-                                <ItemsControl.ItemTemplate>
-                                    <DataTemplate DataType="{x:Type vm:InputCardViewModel}">
-                                        <Border BorderBrush="{DynamicResource BorderBrush}"
-                                                BorderThickness="0,1,0,0"
-                                                Padding="0,8">
-                                            <StackPanel>
-                                                <Grid>
-                                                    <Grid.ColumnDefinitions>
-                                                        <ColumnDefinition Width="*"/>
-                                                        <ColumnDefinition Width="Auto"/>
-                                                    </Grid.ColumnDefinitions>
-                                                    <StackPanel Grid.Column="0">
-                                                        <TextBlock Text="{Binding Label}"
-                                                                   Style="{StaticResource BodyText}"
-                                                                   FontWeight="SemiBold"
-                                                                   TextTrimming="CharacterEllipsis"/>
-                                                        <TextBlock Style="{StaticResource CaptionText}">
-                                                            <Run Text="{Binding FullReference}"/>
-                                                            <Run Text=" | "/>
-                                                            <Run Text="{Binding DistributionName}"/>
-                                                        </TextBlock>
-                                                    </StackPanel>
-                                                    <WrapPanel Grid.Column="1" HorizontalAlignment="Right">
-                                                        <Button Content="Jump"
-                                                                Style="{StaticResource GhostButton}"
-                                                                Command="{Binding DataContext.JumpToInputCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
-                                                                CommandParameter="{Binding}"
-                                                                Padding="6,3"/>
-                                                        <Button Content="Edit"
-                                                                Style="{StaticResource GhostButton}"
-                                                                Command="{Binding DataContext.EditInputCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
-                                                                CommandParameter="{Binding}"
-                                                                Padding="6,3"/>
-                                                        <Button Content="Copy"
-                                                                Style="{StaticResource GhostButton}"
-                                                                Command="{Binding DataContext.DuplicateInputCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
-                                                                CommandParameter="{Binding}"
-                                                                Padding="6,3"/>
-                                                    </WrapPanel>
-                                                </Grid>
-                                                <TextBlock Text="{Binding ParameterSummary}"
-                                                           Style="{StaticResource CaptionText}"
-                                                           TextWrapping="Wrap"
-                                                           Margin="0,4,0,0"/>
-                                                <TextBlock Style="{StaticResource CaptionText}" Margin="0,2,0,0">
-                                                    <Run Text="Mean "/>
-                                                    <Run Text="{Binding MeanSummary}"/>
-                                                    <Run Text=" | P5 "/>
-                                                    <Run Text="{Binding P5Summary}"/>
-                                                    <Run Text=" | P95 "/>
-                                                    <Run Text="{Binding P95Summary}"/>
-                                                </TextBlock>
-                                                <WrapPanel Margin="0,6,0,0">
+                            <TextBlock Text="Click column headers to sort. Edit labels directly in the table."
+                                       Style="{StaticResource CaptionText}"
+                                       Margin="0,0,0,6"/>
+
+                            <DataGrid ItemsSource="{Binding InputManagerView}"
+                                      Style="{StaticResource ManagerDataGrid}"
+                                      Margin="0,0,0,14"
+                                      MaxHeight="280"
+                                      ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                                      ScrollViewer.VerticalScrollBarVisibility="Auto">
+                                <DataGrid.Columns>
+                                    <DataGridTemplateColumn Header="Label"
+                                                            SortMemberPath="Label"
+                                                            Width="180">
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <TextBox Text="{Binding Label, UpdateSourceTrigger=LostFocus}"
+                                                         Style="{StaticResource ManagerLabelEditor}"/>
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                    </DataGridTemplateColumn>
+                                    <DataGridTextColumn Header="Cell"
+                                                        Binding="{Binding FullReference}"
+                                                        SortMemberPath="FullReference"
+                                                        IsReadOnly="True"
+                                                        Width="125"/>
+                                    <DataGridTextColumn Header="Distribution"
+                                                        Binding="{Binding DistributionName}"
+                                                        SortMemberPath="DistributionName"
+                                                        IsReadOnly="True"
+                                                        Width="105"/>
+                                    <DataGridTextColumn Header="Parameters"
+                                                        Binding="{Binding ParameterSummary}"
+                                                        SortMemberPath="ParameterSummary"
+                                                        IsReadOnly="True"
+                                                        Width="220"/>
+                                    <DataGridTextColumn Header="Mean"
+                                                        Binding="{Binding MeanSummary}"
+                                                        SortMemberPath="MeanValue"
+                                                        IsReadOnly="True"
+                                                        Width="80"/>
+                                    <DataGridTextColumn Header="P5"
+                                                        Binding="{Binding P5Summary}"
+                                                        SortMemberPath="P5Value"
+                                                        IsReadOnly="True"
+                                                        Width="80"/>
+                                    <DataGridTextColumn Header="P95"
+                                                        Binding="{Binding P95Summary}"
+                                                        SortMemberPath="P95Value"
+                                                        IsReadOnly="True"
+                                                        Width="80"/>
+                                    <DataGridTemplateColumn Header="Actions"
+                                                            Width="250"
+                                                            IsReadOnly="True">
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <WrapPanel>
+                                                    <Button Content="Jump"
+                                                            Style="{StaticResource GhostButton}"
+                                                            Command="{Binding DataContext.JumpToInputCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                            CommandParameter="{Binding}"
+                                                            Padding="6,3"/>
+                                                    <Button Content="Edit"
+                                                            Style="{StaticResource GhostButton}"
+                                                            Command="{Binding DataContext.EditInputCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                            CommandParameter="{Binding}"
+                                                            Padding="6,3"/>
+                                                    <Button Content="Copy"
+                                                            Style="{StaticResource GhostButton}"
+                                                            Command="{Binding DataContext.DuplicateInputCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                            CommandParameter="{Binding}"
+                                                            Padding="6,3"/>
                                                     <Button Content="Highlight"
                                                             Style="{StaticResource GhostButton}"
-                                                            Command="{Binding DataContext.HighlightInputCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                            Command="{Binding DataContext.HighlightInputCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
                                                             CommandParameter="{Binding}"
                                                             Padding="6,3"/>
                                                     <Button Content="Remove"
                                                             Style="{StaticResource GhostButton}"
-                                                            Command="{Binding DataContext.RemoveInputCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                            Command="{Binding DataContext.RemoveInputCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
                                                             CommandParameter="{Binding}"
                                                             Padding="6,3"/>
                                                 </WrapPanel>
-                                            </StackPanel>
-                                        </Border>
-                                    </DataTemplate>
-                                </ItemsControl.ItemTemplate>
-                            </ItemsControl>
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                    </DataGridTemplateColumn>
+                                </DataGrid.Columns>
+                            </DataGrid>
 
                             <Grid Margin="0,14,0,6">
                                 <Grid.ColumnDefinitions>
@@ -560,58 +644,88 @@
                                         Command="{Binding ClearOutputsCommand}"
                                         Padding="8,4"/>
                             </Grid>
+                            <Grid Margin="0,0,0,8">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="8"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBox Grid.Column="0"
+                                         Text="{Binding OutputManagerSearchText, UpdateSourceTrigger=PropertyChanged}"
+                                         Padding="8,6"
+                                         FontFamily="{StaticResource DefaultFont}"
+                                         FontSize="12"
+                                         BorderBrush="{DynamicResource BorderBrush}"
+                                         BorderThickness="1"
+                                         ToolTip="Filter outputs by label or cell."/>
+                                <TextBlock Grid.Column="2"
+                                           Text="{Binding OutputManagerStatus}"
+                                           Style="{StaticResource CaptionText}"
+                                           VerticalAlignment="Center"/>
+                            </Grid>
 
-                            <ItemsControl ItemsSource="{Binding Outputs}">
-                                <ItemsControl.ItemTemplate>
-                                    <DataTemplate DataType="{x:Type vm:OutputCardViewModel}">
-                                        <Border BorderBrush="{DynamicResource BorderBrush}"
-                                                BorderThickness="0,1,0,0"
-                                                Padding="0,8">
-                                            <Grid>
-                                                <Grid.ColumnDefinitions>
-                                                    <ColumnDefinition Width="*"/>
-                                                    <ColumnDefinition Width="Auto"/>
-                                                </Grid.ColumnDefinitions>
-                                                <StackPanel Grid.Column="0">
-                                                    <TextBlock Text="{Binding Label}"
-                                                               Style="{StaticResource BodyText}"
-                                                               FontWeight="SemiBold"
-                                                               TextTrimming="CharacterEllipsis"/>
-                                                    <TextBlock Text="{Binding FullReference}"
-                                                               Style="{StaticResource CaptionText}"/>
-                                                </StackPanel>
-                                                <WrapPanel Grid.Column="1" HorizontalAlignment="Right">
+                            <TextBlock Text="Labels can be edited in place here before you run or export."
+                                       Style="{StaticResource CaptionText}"
+                                       Margin="0,0,0,6"/>
+
+                            <DataGrid ItemsSource="{Binding OutputManagerView}"
+                                      Style="{StaticResource ManagerDataGrid}"
+                                      MaxHeight="220"
+                                      ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                                      ScrollViewer.VerticalScrollBarVisibility="Auto">
+                                <DataGrid.Columns>
+                                    <DataGridTemplateColumn Header="Label"
+                                                            SortMemberPath="Label"
+                                                            Width="220">
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <TextBox Text="{Binding Label, UpdateSourceTrigger=LostFocus}"
+                                                         Style="{StaticResource ManagerLabelEditor}"/>
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                    </DataGridTemplateColumn>
+                                    <DataGridTextColumn Header="Cell"
+                                                        Binding="{Binding FullReference}"
+                                                        SortMemberPath="FullReference"
+                                                        IsReadOnly="True"
+                                                        Width="150"/>
+                                    <DataGridTemplateColumn Header="Actions"
+                                                            Width="250"
+                                                            IsReadOnly="True">
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <WrapPanel>
                                                     <Button Content="Jump"
                                                             Style="{StaticResource GhostButton}"
-                                                            Command="{Binding DataContext.JumpToOutputCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                            Command="{Binding DataContext.JumpToOutputCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
                                                             CommandParameter="{Binding}"
                                                             Padding="6,3"/>
                                                     <Button Content="Edit"
                                                             Style="{StaticResource GhostButton}"
-                                                            Command="{Binding DataContext.EditOutputCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                            Command="{Binding DataContext.EditOutputCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
                                                             CommandParameter="{Binding}"
                                                             Padding="6,3"/>
                                                     <Button Content="Copy"
                                                             Style="{StaticResource GhostButton}"
-                                                            Command="{Binding DataContext.DuplicateOutputCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                            Command="{Binding DataContext.DuplicateOutputCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
                                                             CommandParameter="{Binding}"
                                                             Padding="6,3"/>
                                                     <Button Content="Highlight"
                                                             Style="{StaticResource GhostButton}"
-                                                            Command="{Binding DataContext.HighlightOutputCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                            Command="{Binding DataContext.HighlightOutputCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
                                                             CommandParameter="{Binding}"
                                                             Padding="6,3"/>
                                                     <Button Content="Remove"
                                                             Style="{StaticResource GhostButton}"
-                                                            Command="{Binding DataContext.RemoveOutputCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                            Command="{Binding DataContext.RemoveOutputCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
                                                             CommandParameter="{Binding}"
                                                             Padding="6,3"/>
                                                 </WrapPanel>
-                                            </Grid>
-                                        </Border>
-                                    </DataTemplate>
-                                </ItemsControl.ItemTemplate>
-                            </ItemsControl>
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                    </DataGridTemplateColumn>
+                                </DataGrid.Columns>
+                            </DataGrid>
                         </StackPanel>
                     </StackPanel>
                 </Border>

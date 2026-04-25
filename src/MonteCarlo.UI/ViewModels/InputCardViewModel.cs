@@ -15,7 +15,8 @@ public partial class InputCardViewModel : ObservableObject
     public string SheetName { get; }
 
     /// <summary>Human-readable label.</summary>
-    public string Label { get; }
+    [ObservableProperty]
+    private string _label;
 
     /// <summary>Distribution type name (e.g., "Normal").</summary>
     public string DistributionName { get; }
@@ -26,11 +27,20 @@ public partial class InputCardViewModel : ObservableObject
     /// <summary>Distribution mean formatted for manager tables.</summary>
     public string MeanSummary => FormatFinite(Distribution.Mean);
 
+    /// <summary>Distribution mean as a numeric value for table sorting.</summary>
+    public double MeanValue => Distribution.Mean;
+
     /// <summary>Distribution 5th percentile formatted for manager tables.</summary>
     public string P5Summary => FormatFinite(Distribution.Percentile(0.05));
 
+    /// <summary>Distribution 5th percentile as a numeric value for table sorting.</summary>
+    public double P5Value => Distribution.Percentile(0.05);
+
     /// <summary>Distribution 95th percentile formatted for manager tables.</summary>
     public string P95Summary => FormatFinite(Distribution.Percentile(0.95));
+
+    /// <summary>Distribution 95th percentile as a numeric value for table sorting.</summary>
+    public double P95Value => Distribution.Percentile(0.95);
 
     /// <summary>Full cell reference (e.g., "Sheet1!B4").</summary>
     public string FullReference => $"{SheetName}!{CellAddress}";
@@ -54,7 +64,7 @@ public partial class InputCardViewModel : ObservableObject
     {
         SheetName = sheetName;
         CellAddress = cellAddress;
-        Label = label;
+        _label = label;
         DistributionName = distributionName;
         Parameters = parameters;
         Distribution = distribution;
